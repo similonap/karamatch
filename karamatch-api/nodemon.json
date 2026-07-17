@@ -1,0 +1,7 @@
+{
+  "watch": ["."],
+  "ext": "ts",
+  "ignore": ["dist", "public/uploads"],
+  "exec": "ts-node index.ts",
+  "signal": "SIGUSR2"
+}
