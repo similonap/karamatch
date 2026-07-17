@@ -4,6 +4,8 @@ import { verifyAuthToken } from "../middleware/verifyAuthToken";
 import {
     createUser,
     generateToken,
+    getGenreProfile,
+    getSongsByIds,
     getUserByEmail,
     getUserByLogin,
     getUserByUsername,
@@ -84,8 +86,12 @@ router.post("/auth/forgot", async (req, res) => {
     res.json({ message: "Password reset link sent" });
 });
 
+// Current user with favourite songs expanded and their genre profile included.
 router.get("/me", verifyAuthToken, async (req, res) => {
-    res.json(toPublicUser(res.locals.user));
+    const user = res.locals.user;
+    const favoriteSongs = await getSongsByIds(user.favoriteSongIds);
+    const genreProfile = await getGenreProfile(user);
+    res.json({ ...toPublicUser(user), favoriteSongs: favoriteSongs, genreProfile: genreProfile });
 });
 
 router.put("/me", verifyAuthToken, async (req, res) => {
