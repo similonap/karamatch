@@ -29,7 +29,7 @@ export interface Song {
     id: string;
     title: string;
     artist: string;
-    genre: string;
+    genre: string[];
 }
 
 export interface Room {

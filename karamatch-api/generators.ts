@@ -113,8 +113,8 @@ export function randomNpcIdentity() {
 // Mostly one genre with a little bleed-over, so the Match tab shows a natural
 // spread of percentages against any real user's taste.
 export function sampleFavoriteSongIds(songs: Song[], genre: string): string[] {
-    const inGenre = songs.filter(song => song.genre === genre);
-    const others = songs.filter(song => song.genre !== genre);
+    const inGenre = songs.filter(song => song.genre.includes(genre));
+    const others = songs.filter(song => !song.genre.includes(genre));
     const count = randomInt(4, 7);
     const bleed = randomInt(1, 2);
     const picks = [...pickMany(inGenre, count - bleed), ...pickMany(others, bleed)];
@@ -125,18 +125,65 @@ export function sampleFavoriteSongIds(songs: Song[], genre: string): string[] {
 // Boxes — genre-flavoured titles
 // ---------------------------------------------------------------------------
 
+// Karafun style tags that describe an arrangement, an audience or a context
+// rather than a musical taste. They stay in Song.genre (and so still count
+// towards matchmaking), but a box is never themed on one: "Duet Night" reads
+// as nonsense next to "Metal Mayhem". See dominantGenreFor in database.ts.
+export const NON_TASTE_GENRES = ["Duet", "Kids", "Traditional", "Spiritual Music"];
+
+// Keys are real karafun catalog style tags (see Song.genre). Every tag a box
+// can actually be themed on — i.e. every tag except NON_TASTE_GENRES — has an
+// entry here, so randomBoxTitle only falls back to the generic title if the
+// catalog ever grows a new tag.
 const BOX_TITLES: { [genre: string]: string[] } = {
-    "rock": ["Rock Legends Only", "Arena Rock Night", "Riffs & Anthems"],
-    "pop": ["Pop Anthems Night", "Chart Toppers Party", "Pure Pop Energy"],
-    "power-ballad": ["Ballads & Feels", "80s Power Hour", "Big Notes Only"],
-    "k-pop/j-pop": ["K-pop & J-pop Party", "Idol Night", "Seoul & Tokyo Hits"],
-    "soul/rnb": ["Soul Session", "R&B Slow Jams", "Smooth Voices Club"],
-    "hip-hop/party": ["Party Starters", "Hip-Hop Night", "Mic Drop Session"],
-    "country": ["Country Roads Night", "Boots & Ballads", "Nashville Vibes"],
-    "musical/disney": ["Showtunes Spectacular", "Disney Singalong", "Broadway Night"]
+    "Rock": ["Rock Legends Only", "Arena Rock Night", "Riffs & Anthems"],
+    "Pop": ["Pop Anthems Night", "Chart Toppers Party", "Pure Pop Energy"],
+    "Country": ["Country Roads Night", "Boots & Ballads", "Nashville Vibes"],
+    "Hip-Hop": ["Party Starters", "Hip-Hop Night", "Mic Drop Session"],
+    "R&B": ["R&B Slow Jams", "Smooth Voices Club", "Late Night R&B"],
+    "Soul": ["Soul Session", "Motown Night", "Soulful Sundays"],
+    "Metal": ["Headbangers Night", "Metal Mayhem", "Riffs of Fury"],
+    "Jazz": ["Smooth Jazz Lounge", "Jazz Standards Night", "Late Night Jazz Club"],
+    "Latin Music": ["Latin Fiesta Night", "Salsa & Sing", "Ritmo Latino Party"],
+    "Disco": ["Disco Fever Night", "Studio Karaoke", "Boogie Nights"],
+    "Funk": ["Funk & Groove Night", "Get Down Session", "Funky Town Karaoke"],
+    "Alternative": ["Alt Rock Night", "Indie Anthems", "Underground Sing-Along"],
+    "Musical": ["Showtunes Spectacular", "Broadway Night", "Musical Theatre Mashup"],
+    "Reggae": ["Island Vibes Night", "Reggae Rhythms", "One Love Session"],
+    "Dance": ["Dance Floor Anthems", "EDM Karaoke Night", "Move & Sing Party"],
+    "Schlager": ["Schlager Party Night", "Euro Hits Session", "Party Anthems"],
+    "Love": ["Ballads & Feels", "Big Notes Only", "Love Songs Night"],
+    "Soundtrack": ["Movie Night Karaoke", "Silver Screen Singalong", "Cinema Anthems"],
+    "French pop": ["Chanson Night", "Fête à la Française", "French Hits Session"],
+    "Teen pop": ["Throwback Teen Hits", "Boyband & Girlband Night", "Bubblegum Pop Party"],
+    "Soft rock": ["Yacht Rock Night", "Easy Listening Session", "Smooth Classics"],
+    "Hard Rock": ["Hard Rock Night", "Stadium Screamers", "Guitar Heroes"],
+    "Punk/Grunge": ["Punk Night", "Grunge Revival", "Three Chords & the Truth"],
+    "Rock 'n Roll": ["Rock 'n Roll Revival", "Jukebox Classics", "Fifties Diner Night"],
+    "Blues": ["Blues Bar Night", "Twelve Bar Session", "Midnight Blues"],
+    "Synthpop": ["Synthpop Night", "Neon 80s Party", "Retro Wave Session"],
+    "Electro": ["Electro Night", "Club Bangers Session", "Bass & Vocals"],
+    "Rap": ["Rap Cypher Night", "Bars & Beats", "Freestyle Session"],
+    "Folk": ["Folk & Acoustic Night", "Campfire Session", "Storytellers Circle"],
+    "World/Folk": ["World Music Night", "Global Voices Session", "Around the World"],
+    "Christmas": ["Christmas Karaoke Night", "Festive Singalong", "Holiday Hits Party"],
+    "Humor": ["Novelty Night", "Guilty Pleasures", "Cheesy Classics"],
+    "Gospel": ["Gospel Night", "Choir Session", "Raise Your Voice"],
+    "Classical": ["Classical Crossover Night", "Operatic Voices", "Grand Standards"],
+    "Ska": ["Ska Night", "Two Tone Session", "Offbeat Party"],
+    "Zouk/Creole/Soca/Calypso": ["Caribbean Carnival Night", "Soca & Calypso Party", "Tropical Vibes"],
+    "Moyen Orient": ["Middle Eastern Night", "Oriental Voices", "Levant Session"]
 };
 
-export const NPC_GENRES = Object.keys(BOX_TITLES);
+// Genres NPC hosts are generated for. Deliberately a hand-picked subset of
+// BOX_TITLES: broad, well-populated tags, so a generated crowd clusters into
+// meaningful taste groups instead of scattering across tags the catalog only
+// has a handful of songs for.
+export const NPC_GENRES = [
+    "Rock", "Pop", "Country", "Hip-Hop", "R&B", "Soul", "Metal", "Jazz",
+    "Latin Music", "Disco", "Funk", "Alternative", "Musical", "Reggae",
+    "Dance", "Schlager"
+];
 
 export function randomBoxTitle(genre: string) {
     const titles = BOX_TITLES[genre];

@@ -1,0 +1,590 @@
+{
+    "info": {
+        "_postman_id": "9a2b7c1e-4f3d-4b2a-8e5a-karamatch-api",
+        "name": "KaraMatch API",
+        "description": "Express + MongoDB REST API for the KaraMatch student project. Auth uses a Bearer token returned by /api/auth/register or /api/auth/login. Run those requests first (or /api/dev/reset to reseed) — their test scripts store the token in the `token` collection variable automatically, so every other request just works.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            { "key": "token", "value": "{{token}}", "type": "string" }
+        ]
+    },
+    "variable": [
+        { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+        { "key": "token", "value": "", "type": "string" },
+        { "key": "venueId", "value": "", "type": "string" },
+        { "key": "roomId", "value": "", "type": "string" },
+        { "key": "slotId", "value": "", "type": "string" },
+        { "key": "boxId", "value": "", "type": "string" },
+        { "key": "notificationId", "value": "", "type": "string" }
+    ],
+    "item": [
+        {
+            "name": "Root",
+            "request": {
+                "auth": { "type": "noauth" },
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] },
+                "description": "API metadata / health check."
+            },
+            "response": []
+        },
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const data = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"token\", data.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": { "type": "noauth" },
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Jane Doe\",\n    \"username\": \"janedoe\",\n    \"email\": \"jane@example.com\",\n    \"password\": \"hunter2\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+                        "description": "Creates a user and returns { user, token }. Sets the `token` collection variable on success."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const data = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"token\", data.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": { "type": "noauth" },
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"login\": \"janedoe\",\n    \"password\": \"hunter2\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+                        "description": "`login` accepts a username or email. Returns { user, token } and sets the `token` collection variable on success."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Forgot Password",
+                    "request": {
+                        "auth": { "type": "noauth" },
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"jane@example.com\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/auth/forgot", "host": ["{{baseUrl}}"], "path": ["api", "auth", "forgot"] },
+                        "description": "Mock endpoint — always succeeds, no email is actually sent."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Me",
+            "item": [
+                {
+                    "name": "Get current user",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api", "me"] },
+                        "description": "Current user with favoriteSongs expanded and genreProfile included."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Jane Doe\",\n    \"bio\": \"Karaoke enthusiast\",\n    \"favoriteSongIds\": [\"SONG_ID_1\", \"SONG_ID_2\", \"SONG_ID_3\"]\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api", "me"] },
+                        "description": "All fields optional. favoriteSongIds, if present, must contain between 3 and 10 ids."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update location",
+                    "request": {
+                        "method": "PUT",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"lat\": 51.2194,\n    \"lng\": 4.4025,\n    \"label\": \"Antwerp\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/me/location", "host": ["{{baseUrl}}"], "path": ["api", "me", "location"] }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Upload photo",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                { "key": "photo", "type": "file", "src": [] }
+                            ]
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/me/photo", "host": ["{{baseUrl}}"], "path": ["api", "me", "photo"] },
+                        "description": "multipart/form-data with a single 'photo' file field."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Songs & Genres",
+            "item": [
+                {
+                    "name": "Search songs",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/songs?q=",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "songs"],
+                            "query": [{ "key": "q", "value": "", "description": "Search term, matched against title/artist" }]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List genres",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": { "raw": "{{baseUrl}}/api/genres", "host": ["{{baseUrl}}"], "path": ["api", "genres"] }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Venues",
+            "item": [
+                {
+                    "name": "Nearby venues",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/venues?lat=51.2194&lng=4.4025&distance=3",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "venues"],
+                            "query": [
+                                { "key": "lat", "value": "51.2194", "description": "Falls back to the user's stored location if omitted" },
+                                { "key": "lng", "value": "4.4025" },
+                                { "key": "distance", "value": "3", "description": "km, clamped between 0.5 and 25 (default 3)" }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get venue by id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/venues/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "venues", ":id"],
+                            "variable": [{ "key": "id", "value": "{{venueId}}" }]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Venue slots",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/venues/:id/slots?from=&to=",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "venues", ":id", "slots"],
+                            "query": [
+                                { "key": "from", "value": "", "description": "ISO date, default now" },
+                                { "key": "to", "value": "", "description": "ISO date, default now + 3 days" }
+                            ],
+                            "variable": [{ "key": "id", "value": "{{venueId}}" }]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Boxes",
+            "item": [
+                {
+                    "name": "Create box",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const data = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"boxId\", data.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"venueId\": \"{{venueId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"slotId\": \"{{slotId}}\",\n    \"title\": \"Friday night karaoke\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/boxes", "host": ["{{baseUrl}}"], "path": ["api", "boxes"] },
+                        "description": "Books a slot and creates a box owned (as host) by the caller. Sets the `boxId` collection variable on success."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Open boxes near me",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/open?lat=&lng=&distance=3&from=&to=",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", "open"],
+                            "query": [
+                                { "key": "lat", "value": "", "description": "Falls back to the user's stored location" },
+                                { "key": "lng", "value": "" },
+                                { "key": "distance", "value": "3", "description": "km, clamped between 0.5 and 25" },
+                                { "key": "from", "value": "", "description": "ISO date, default now" },
+                                { "key": "to", "value": "", "description": "ISO date, default now + 7 days" }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Genre matches near me",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/matches?lat=&lng=&distance=3&from=&to=&minOverlap=0",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", "matches"],
+                            "query": [
+                                { "key": "lat", "value": "", "description": "Falls back to the user's stored location" },
+                                { "key": "lng", "value": "" },
+                                { "key": "distance", "value": "3", "description": "km, clamped between 0.5 and 25" },
+                                { "key": "from", "value": "", "description": "ISO date, default now" },
+                                { "key": "to", "value": "", "description": "ISO date, default now + 7 days" },
+                                { "key": "minOverlap", "value": "0", "description": "Minimum shared favorite genres" }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "My boxes",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": { "raw": "{{baseUrl}}/api/boxes/mine", "host": ["{{baseUrl}}"], "path": ["api", "boxes", "mine"] }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get box by id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Caller must be a member of the box."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update box visibility",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"openToPublic\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Host only."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Join box",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id/join",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id", "join"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Box must be openToPublic, upcoming, and have free capacity."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Pay for box",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id/pay",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id", "pay"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Simulated payment — always succeeds for a member of the box."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List messages",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id/messages",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id", "messages"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Send message",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"text\": \"On our way!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id/messages",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id", "messages"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Occasionally triggers an NPC reply, visible on the next GET."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Invite to box",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usernames\": [\"friend1\", \"friend2\"]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id/invites",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id", "invites"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Host only. Accepts `usernames` (array) or `target` (single username/@handle/email)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get crew (post-event)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id/crew",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id", "crew"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Only available once the box has ended."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Rate crew",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ratings\": [\n        { \"username\": \"friend1\", \"stars\": 5, \"text\": \"Great singer!\" }\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/boxes/:id/ratings",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "boxes", ":id", "ratings"],
+                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                        },
+                        "description": "Only for ended boxes; each rating target must be a fellow member; stars is an integer 1-5."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Friends",
+            "item": [
+                {
+                    "name": "List friends",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": { "raw": "{{baseUrl}}/api/friends", "host": ["{{baseUrl}}"], "path": ["api", "friends"] }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Search users",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/users?q=",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "users"],
+                            "query": [{ "key": "q", "value": "", "description": "Empty query returns an empty list" }]
+                        },
+                        "description": "Includes NPC users generated by the world layer."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add friend",
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"friend1\"\n}"
+                        },
+                        "url": { "raw": "{{baseUrl}}/api/friends", "host": ["{{baseUrl}}"], "path": ["api", "friends"] }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Notifications",
+            "item": [
+                {
+                    "name": "List notifications",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": { "raw": "{{baseUrl}}/api/notifications", "host": ["{{baseUrl}}"], "path": ["api", "notifications"] },
+                        "description": "Guarantees at least one pending invite the first time it's called."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Accept notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/notifications/:id/accept",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "notifications", ":id", "accept"],
+                            "variable": [{ "key": "id", "value": "{{notificationId}}" }]
+                        },
+                        "description": "Reserves the spot. Pay separately via POST /api/boxes/:id/pay."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Decline notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/notifications/:id/decline",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "notifications", ":id", "decline"],
+                            "variable": [{ "key": "id", "value": "{{notificationId}}" }]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Dev",
+            "item": [
+                {
+                    "name": "Reset database",
+                    "request": {
+                        "auth": { "type": "noauth" },
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{baseUrl}}/api/dev/reset", "host": ["{{baseUrl}}"], "path": ["api", "dev", "reset"] },
+                        "description": "Resets the database to seed data. No auth required."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ]
+}

@@ -255,11 +255,11 @@ describe("booking & payment", () => {
     }, 20000);
 
     it("scores nearby boxes by taste and sorts by matchPct", async () => {
-        // rock favourites from the seeded catalog → a real genre profile
+        // Rock favourites from the seeded catalog → a real genre profile
         await request(app)
             .put("/api/me")
             .set("Authorization", "Bearer " + joinerToken)
-            .send({ favoriteSongIds: ["s1", "s2", "s3"] });
+            .send({ favoriteSongIds: ["12617", "12543", "11335"] });
 
         const response = await request(app)
             .get("/api/boxes/matches")
@@ -493,7 +493,7 @@ describe("songs & profile", () => {
             .get("/api/songs")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(200);
-        const firstGenres = response.body.slice(0, 8).map((song: any) => song.genre);
+        const firstGenres = response.body.slice(0, 8).map((song: any) => song.genre[0]);
         expect(new Set(firstGenres).size).toBe(8);
     });
 
@@ -501,13 +501,13 @@ describe("songs & profile", () => {
         await request(app)
             .put("/api/me")
             .set("Authorization", "Bearer " + token)
-            .send({ favoriteSongIds: ["s1", "s2", "s3"] });
+            .send({ favoriteSongIds: ["12617", "12543", "11335"] });
         const response = await request(app)
             .get("/api/me")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(200);
         expect(response.body.favoriteSongs.length).toBe(3);
         expect(response.body.favoriteSongs[0].title).toBeTruthy();
-        expect(response.body.genreProfile.rock).toBe(3);
+        expect(response.body.genreProfile.Rock).toBe(3);
     });
 });

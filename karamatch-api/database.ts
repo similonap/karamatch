@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { User, Song, Venue, Room, Box, BoxMember, Notification, Cell, Slot, Message, Rating, toPublicUser } from "./types";
 import {
     randomInt, pick, newId, randomVenue, randomNpcIdentity,
-    sampleFavoriteSongIds, randomBoxTitle, randomNpcReply, NPC_GENRES
+    sampleFavoriteSongIds, randomBoxTitle, randomNpcReply, NPC_GENRES, NON_TASTE_GENRES
 } from "./generators";
 dotenv.config();
 
@@ -81,9 +81,10 @@ export async function getSongs(query?: string) {
         const songs = await songsCollection.find({}).toArray();
         const byGenre = new Map<string, Song[]>();
         for (const song of songs) {
-            const group = byGenre.get(song.genre) || [];
+            const primaryGenre = song.genre[0];
+            const group = byGenre.get(primaryGenre) || [];
             group.push(song);
-            byGenre.set(song.genre, group);
+            byGenre.set(primaryGenre, group);
         }
         const groups = [...byGenre.values()];
         const interleaved: Song[] = [];
@@ -113,7 +114,9 @@ export async function getGenres() {
     const songs = await songsCollection.find({}).toArray();
     const counts = new Map<string, number>();
     for (const song of songs) {
-        counts.set(song.genre, (counts.get(song.genre) || 0) + 1);
+        for (const genre of song.genre) {
+            counts.set(genre, (counts.get(genre) || 0) + 1);
+        }
     }
     return Array.from(counts.entries()).map(([genre, count]) => ({ genre, count }));
 }
@@ -564,7 +567,9 @@ async function genreProfileFor(user: User) {
     const songs = await getSongsByIds(user.favoriteSongIds);
     const profile = new Map<string, number>();
     for (const song of songs) {
-        profile.set(song.genre, (profile.get(song.genre) || 0) + 1);
+        for (const genre of song.genre) {
+            profile.set(genre, (profile.get(genre) || 0) + 1);
+        }
     }
     return profile;
 }
@@ -631,14 +636,22 @@ export function shareFor(box: Box) {
 }
 
 // The genre a user sings most, from their favourite songs. Used as the genre
-// of boxes they host; new users without favourites default to "pop".
+// of boxes they host; new users without favourites default to "Pop".
+// Arrangement/audience tags (NON_TASTE_GENRES) are skipped so a box is always
+// themed on an actual musical style — "Duet" is a common tag but a meaningless
+// party theme.
 export async function dominantGenreFor(user: User) {
     const songs = await getSongsByIds(user.favoriteSongIds);
     const counts = new Map<string, number>();
     for (const song of songs) {
-        counts.set(song.genre, (counts.get(song.genre) || 0) + 1);
+        for (const genre of song.genre) {
+            if (NON_TASTE_GENRES.includes(genre)) {
+                continue;
+            }
+            counts.set(genre, (counts.get(genre) || 0) + 1);
+        }
     }
-    let best = "pop";
+    let best = "Pop";
     let bestCount = 0;
     for (const [genre, count] of counts) {
         if (count > bestCount) {
@@ -934,24 +947,112 @@ export async function getMyBoxes(user: User) {
 // is generated on demand once the sparse-generation layer is implemented.
 // ---------------------------------------------------------------------------
 
+// 100 songs picked from the karafun catalog (karafuncatalog.csv) via a
+// greedy set-cover: guarantees every one of its ~41 style tags appears at
+// least once, then fills the rest proportional to each style's catalog
+// frequency (capped per artist) for a realistic, broad genre spread.
+// Ids match the karafun catalog's own numeric ids.
 const SEED_SONGS: Omit<Song, "_id">[] = [
-    { id: "s1", title: "Bohemian Rhapsody", artist: "Queen", genre: "rock" },
-    { id: "s2", title: "Livin' on a Prayer", artist: "Bon Jovi", genre: "rock" },
-    { id: "s3", title: "Mr. Brightside", artist: "The Killers", genre: "rock" },
-    { id: "s4", title: "Dancing Queen", artist: "ABBA", genre: "pop" },
-    { id: "s5", title: "Firework", artist: "Katy Perry", genre: "pop" },
-    { id: "s6", title: "Wannabe", artist: "Spice Girls", genre: "pop" },
-    { id: "s7", title: "Total Eclipse of the Heart", artist: "Bonnie Tyler", genre: "power-ballad" },
-    { id: "s8", title: "I Want It That Way", artist: "Backstreet Boys", genre: "power-ballad" },
-    { id: "s9", title: "Idol", artist: "YOASOBI", genre: "k-pop/j-pop" },
-    { id: "s10", title: "Gee", artist: "Girls' Generation", genre: "k-pop/j-pop" },
-    { id: "s11", title: "Valerie", artist: "Amy Winehouse", genre: "soul/rnb" },
-    { id: "s12", title: "Rolling in the Deep", artist: "Adele", genre: "soul/rnb" },
-    { id: "s13", title: "Wannabe a Baller", artist: "Lil Troy", genre: "hip-hop/party" },
-    { id: "s14", title: "Sweet Caroline", artist: "Neil Diamond", genre: "country" },
-    { id: "s15", title: "Jolene", artist: "Dolly Parton", genre: "country" },
-    { id: "s16", title: "Let It Go", artist: "Idina Menzel", genre: "musical/disney" },
-    { id: "s17", title: "A Whole New World", artist: "Peabo Bryson & Regina Belle", genre: "musical/disney" }
+    { id: "52172", title: "Little Drummer Boy", artist: "Whitney Houston", genre: ["Christmas", "Soul", "Pop", "R&B", "Love", "Spiritual Music", "Duet"] },
+    { id: "54812", title: "Points of Authority / 99 Problems / One Step Closer", artist: "Linkin Park", genre: ["Metal", "Hip-Hop", "Hard Rock", "Rap", "Alternative", "Duet"] },
+    { id: "71487", title: "I Got a Feeling in My Body (Stuart Price)", artist: "Elvis (film)", genre: ["Soundtrack", "Electro", "Rock 'n Roll", "Dance", "Rock", "Pop"] },
+    { id: "12727", title: "Il vit en toi", artist: "The Lion King (musical)", genre: ["Musical", "French pop", "Kids", "Gospel", "Zouk/Creole/Soca/Calypso", "Duet"] },
+    { id: "33678", title: "Dance Away", artist: "Roxy Music", genre: ["Soft rock", "Synthpop", "Disco", "Latin Music"] },
+    { id: "28218", title: "All Together Now", artist: "The Beatles", genre: ["Folk", "Blues", "Country"] },
+    { id: "50969", title: "40oz. to Freedom", artist: "Sublime", genre: ["Reggae", "Punk/Grunge", "Ska", "Rock", "Alternative"] },
+    { id: "16873", title: "Viva Colonia", artist: "Höhner", genre: ["Schlager", "Pop", "Humor", "Rock", "Traditional"] },
+    { id: "17883", title: "Here's That Rainy Day", artist: "Frank Sinatra", genre: ["Classical", "Jazz"] },
+    { id: "8508", title: "Desert Rose", artist: "Sting", genre: ["Pop", "Rock", "Moyen Orient", "World/Folk"] },
+    { id: "51608", title: "Girls Talk Boys", artist: "5 Seconds of Summer", genre: ["Rock", "Funk", "Teen pop", "Soundtrack"] },
+    { id: "56578", title: "Diggin' My Grave", artist: "A Star is Born (2018 film)", genre: ["Soundtrack", "Rock", "Blues", "Country", "Pop", "Duet"] },
+    { id: "56894", title: "Dirty Dancing Medley", artist: "Dirty Dancing", genre: ["Soundtrack", "Pop", "Rock", "Love", "Latin Music"] },
+    { id: "69197", title: "Dang!", artist: "Mac Miller", genre: ["Pop", "Hip-Hop", "Rap", "R&B", "Jazz", "Funk", "Duet"] },
+    { id: "71971", title: "Sweet Symphony", artist: "Joy Oladokun", genre: ["Love", "Country", "Rock", "Pop", "Duet"] },
+    { id: "46350", title: "Zero", artist: "Yeah Yeah Yeahs", genre: ["Alternative", "Rock", "Synthpop", "Pop", "Dance", "Punk/Grunge"] },
+    { id: "27871", title: "Le mambo du décalco", artist: "Richard Gotainer", genre: ["Pop", "Synthpop", "French pop", "Humor", "Latin Music"] },
+    { id: "22488", title: "Don't Trust Me", artist: "3OH!3", genre: ["Alternative", "Rock", "Electro", "Pop", "Dance"] },
+    { id: "82452", title: "Come un tuono", artist: "Rose Villain", genre: ["R&B", "Hip-Hop", "Latin Music", "Pop", "Duet"] },
+    { id: "50717", title: "Ik hou van u", artist: "Noordkaap", genre: ["Schlager", "Pop", "Rock", "Folk", "Soundtrack"] },
+    { id: "36984", title: "La chanson d'Orphée", artist: "Gloria Lasso", genre: ["French pop", "Love", "Latin Music", "Soundtrack", "Musical"] },
+    { id: "47693", title: "The CCR Mix", artist: "Creedence Clearwater Revival", genre: ["Rock", "Folk", "Country", "Soul", "Blues"] },
+    { id: "64258", title: "Pretty Savage", artist: "BLACKPINK", genre: ["Hip-Hop", "Teen pop", "Pop", "Electro", "Rap", "Dance"] },
+    { id: "53027", title: "Sixty Years Ago", artist: "Derek Ryan", genre: ["Country", "Love", "Pop", "Folk", "Traditional"] },
+    { id: "70392", title: "Tommy the Cat", artist: "Primus", genre: ["Metal", "Alternative", "Hard Rock", "Funk", "Rock", "Duet"] },
+    { id: "37734", title: "Bella Luna", artist: "Jason Mraz", genre: ["Pop", "Soul", "Soft rock", "Latin Music"] },
+    { id: "12359", title: "Angela", artist: "Saian Supa Crew", genre: ["Hip-Hop", "Zouk/Creole/Soca/Calypso", "French pop", "Rap", "Soul", "Reggae"] },
+    { id: "30642", title: "Johnny", artist: "Vaya Con Dios", genre: ["French pop", "Folk", "Jazz", "Latin Music"] },
+    { id: "9827", title: "Money, Money", artist: "Cabaret", genre: ["Musical", "Soundtrack", "Jazz", "Humor", "Pop", "Duet"] },
+    { id: "51945", title: "Sainte Nuit", artist: "Roch Voisine", genre: ["Christmas", "Love", "French pop", "Kids", "Spiritual Music"] },
+    { id: "56747", title: "Bosom of Abraham (Where No One Stands Alone)", artist: "Elvis Presley", genre: ["Country", "Rock", "Gospel", "Folk", "Spiritual Music"] },
+    { id: "43491", title: "Come Along", artist: "Titiyo", genre: ["Soul", "Pop", "Electro", "Soft rock", "Synthpop"] },
+    { id: "86338", title: "This Is How I Disappear", artist: "My Chemical Romance", genre: ["Metal", "Alternative", "Punk/Grunge", "Hard Rock", "Rock"] },
+    { id: "30599", title: "Soñar", artist: "Allan Théo", genre: ["French pop", "Latin Music", "Teen pop", "Dance"] },
+    { id: "38942", title: "I'm Gonna Sit Right Down and Write Myself a Letter", artist: "Barry Manilow", genre: ["Blues", "Rock 'n Roll", "Country", "Pop"] },
+    { id: "34391", title: "Silent Night", artist: "Children's Chorus", genre: ["Christmas", "Spiritual Music", "Traditional", "Kids", "Jazz"] },
+    { id: "52623", title: "Roses", artist: "OutKast", genre: ["R&B", "Hip-Hop", "Soul", "Rap", "Alternative", "Duet"] },
+    { id: "46484", title: "Kalimba de luna", artist: "Dalida", genre: ["Disco", "French pop", "Latin Music", "Synthpop"] },
+    { id: "16922", title: "Could I Have This Dance", artist: "Anne Murray", genre: ["Country", "Soundtrack", "Soft rock", "Love"] },
+    { id: "56213", title: "Ich will immer wieder... dieses Fieber spür'n (Live)", artist: "Helene Fischer", genre: ["Schlager", "Dance", "Electro", "Jazz"] },
+    { id: "71293", title: "Everything's Ruined", artist: "Faith No More", genre: ["Metal", "Hard Rock", "Funk", "Rock", "Alternative"] },
+    { id: "51602", title: "Calypso Queen", artist: "Calypso Rose", genre: ["Latin Music", "World/Folk", "Reggae", "Zouk/Creole/Soca/Calypso"] },
+    { id: "54474", title: "Jingle Bell Rock", artist: "Glee", genre: ["Christmas", "Rock 'n Roll", "Soundtrack", "Musical"] },
+    { id: "84155", title: "Battle Hymn of the Republic (live)", artist: "Johnny Cash", genre: ["Country", "Gospel", "Spiritual Music", "Traditional"] },
+    { id: "48936", title: "Augenbling", artist: "Seeed", genre: ["Rap", "Hip-Hop", "R&B", "Schlager"] },
+    { id: "16215", title: "Como la vida", artist: "Hanna", genre: ["Pop", "Soft rock", "Teen pop", "Latin Music"] },
+    { id: "45607", title: "Sandy", artist: "Sylvie Vartan", genre: ["Rock 'n Roll", "French pop", "Country"] },
+    { id: "19264", title: "Dschinghis Khan", artist: "Dschinghis Khan", genre: ["Disco", "Schlager", "Humor"] },
+    { id: "19162", title: "Hey Baby", artist: "No Doubt", genre: ["Reggae", "Ska", "Pop", "Rock", "Duet", "R&B"] },
+    { id: "53335", title: "Is You Is or Is You Ain't Ma' Baby", artist: "Five Guys Named Moe", genre: ["Musical", "Blues", "Jazz", "Soul"] },
+    { id: "78218", title: "Monster", artist: "STARSET", genre: ["Metal", "Hard Rock", "Electro"] },
+    { id: "61579", title: "La femme de mon ami", artist: "Enrico Macias", genre: ["French pop", "Moyen Orient", "World/Folk"] },
+    { id: "62402", title: "Auf der Suche nach Weihnachten", artist: "Rolf Zuckowski", genre: ["Christmas", "Schlager", "Folk", "Kids"] },
+    { id: "67821", title: "'O sole mio", artist: "Il Volo", genre: ["Love", "Classical", "Latin Music", "Traditional"] },
+    { id: "5488", title: "Making Your Mind Up", artist: "Bucks Fizz", genre: ["Rock 'n Roll", "Synthpop", "Disco"] },
+    { id: "24468", title: "Turn Right", artist: "Jonas Brothers", genre: ["Teen pop", "Soft rock", "Country"] },
+    { id: "22442", title: "Jai Ho! (You Are My Destiny)", artist: "The Pussycat Dolls", genre: ["R&B", "World/Folk", "Dance", "Soundtrack"] },
+    { id: "71079", title: "Lord of the Thighs", artist: "Aerosmith", genre: ["Hard Rock", "Punk/Grunge"] },
+    { id: "13572", title: "Requiem Aeternam", artist: "Le Roi Soleil", genre: ["Musical", "Gospel", "Classical"] },
+    { id: "53589", title: "Feels", artist: "Calvin Harris", genre: ["Electro", "Pop", "Funk", "Ska"] },
+    { id: "13284", title: "La danse de Zorba", artist: "Dalida", genre: ["French pop", "Moyen Orient"] },
+    { id: "49375", title: "Tennessee Whiskey", artist: "Chris Stapleton", genre: ["Blues", "Country", "Soul", "Rock"] },
+    { id: "6534", title: "Sweet Caroline", artist: "Neil Diamond", genre: ["Pop"] },
+    { id: "12543", title: "Creep", artist: "Radiohead", genre: ["Rock", "Alternative"] },
+    { id: "90690", title: "Choosin' Texas", artist: "Ella Langley", genre: ["Country"] },
+    { id: "56442", title: "Shallow", artist: "A Star is Born (2018 film)", genre: ["Soundtrack", "Pop", "Duet"] },
+    { id: "14121", title: "Take Me Home, Country Roads", artist: "John Denver", genre: ["Country", "Folk"] },
+    { id: "5632", title: "Mr. Brightside", artist: "The Killers", genre: ["Alternative", "Pop", "Rock"] },
+    { id: "12617", title: "Bohemian Rhapsody", artist: "Queen", genre: ["Rock"] },
+    { id: "14609", title: "Don't Stop Believin'", artist: "Journey", genre: ["Rock", "Pop"] },
+    { id: "53998", title: "Valerie", artist: "Amy Winehouse", genre: ["Pop", "Soul"] },
+    { id: "13469", title: "Before He Cheats", artist: "Carrie Underwood", genre: ["Country"] },
+    { id: "7300", title: "Dancing Queen", artist: "ABBA", genre: ["Disco", "Pop"] },
+    { id: "5103", title: "My Way", artist: "Frank Sinatra", genre: ["Jazz", "Pop"] },
+    { id: "14236", title: "Zombie", artist: "The Cranberries", genre: ["Rock", "Alternative"] },
+    { id: "6475", title: "What's Up?", artist: "4 Non Blondes", genre: ["Rock", "Pop"] },
+    { id: "8530", title: "I Want It That Way", artist: "Backstreet Boys", genre: ["Teen pop"] },
+    { id: "11646", title: "J'irai où tu iras", artist: "Céline Dion", genre: ["French pop", "Duet"] },
+    { id: "11335", title: "Wonderwall", artist: "Oasis", genre: ["Rock", "Alternative"] },
+    { id: "79097", title: "Pink Pony Club", artist: "Chappell Roan", genre: ["Pop"] },
+    { id: "36600", title: "Can't Help Falling in Love", artist: "Elvis Presley", genre: ["Love", "Soundtrack"] },
+    { id: "6117", title: "Total Eclipse of the Heart", artist: "Bonnie Tyler", genre: ["Pop", "Rock"] },
+    { id: "7064", title: "Picture", artist: "Kid Rock", genre: ["Country", "Duet"] },
+    { id: "6229", title: "Neon Moon", artist: "Brooks & Dunn", genre: ["Country"] },
+    { id: "10973", title: "Dreams", artist: "Fleetwood Mac", genre: ["Soft rock"] },
+    { id: "5318", title: "Unwritten", artist: "Natasha Bedingfield", genre: ["Pop", "Soft rock", "Teen pop"] },
+    { id: "13272", title: "Teenage Dirtbag", artist: "Wheatus", genre: ["Alternative", "Rock", "Soundtrack"] },
+    { id: "19332", title: "Piano Man", artist: "Billy Joel", genre: ["Soft rock"] },
+    { id: "5468", title: "I Wanna Dance with Somebody", artist: "Whitney Houston", genre: ["Synthpop", "Pop"] },
+    { id: "7125", title: "Friends in Low Places", artist: "Garth Brooks", genre: ["Country"] },
+    { id: "41659", title: "Beauty and a Beat", artist: "Justin Bieber", genre: ["Dance", "Pop", "R&B", "Teen pop"] },
+    { id: "12258", title: "Billie Jean", artist: "Michael Jackson", genre: ["Disco", "Pop", "Funk"] },
+    { id: "88727", title: "Golden", artist: "KPop Demon Hunters", genre: ["Soundtrack", "Duet"] },
+    { id: "36011", title: "Someone Like You", artist: "Adele", genre: ["Pop", "Soul", "Love"] },
+    { id: "11902", title: "Confessions nocturnes", artist: "Diam's", genre: ["Rap", "Hip-Hop", "R&B", "Duet"] },
+    { id: "9673", title: "Man! I Feel Like a Woman!", artist: "Shania Twain", genre: ["Country", "Pop"] },
+    { id: "16401", title: "Your Man", artist: "Josh Turner", genre: ["Country"] },
+    { id: "27935", title: "Baby", artist: "Justin Bieber", genre: ["Teen pop", "Duet"] },
+    { id: "24207", title: "Party in the U.S.A.", artist: "Miley Cyrus", genre: ["Teen pop"] },
+    { id: "5921", title: "I Will Survive", artist: "Gloria Gaynor", genre: ["Disco"] }
 ];
 
 async function seed() {
@@ -968,7 +1069,7 @@ async function seed() {
             bio: "",
             photoUrl: null,
             location: null,
-            favoriteSongIds: [],
+            favoriteSongIds: sampleFavoriteSongIds(SEED_SONGS as Song[], pick(NPC_GENRES)),
             singerRating: 5,
             eventsCount: 0,
             friendIds: [],
