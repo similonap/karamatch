@@ -47,11 +47,12 @@ router.get("/venues/:id/slots", verifyAuthToken, async (req, res) => {
         res.status(404).json({ error: "Venue not found" });
         return;
     }
-    // Default range: tonight → +3 days. The calendar materializes as you look.
+    // Default range: tonight → +7 days, same window the seed materializes and
+    // the same one GET /boxes/open uses. The calendar grows as you look further.
     const from = typeof req.query.from === "string" ? new Date(req.query.from) : new Date();
     const to = typeof req.query.to === "string"
         ? new Date(req.query.to)
-        : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     if (isNaN(from.getTime()) || isNaN(to.getTime()) || from > to) {
         res.status(400).json({ error: "Invalid from/to range" });
         return;

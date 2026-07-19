@@ -1055,6 +1055,39 @@ const SEED_SONGS: Omit<Song, "_id">[] = [
     { id: "5921", title: "I Will Survive", artist: "Gloria Gaynor", genre: ["Disco"] }
 ];
 
+// ---------------------------------------------------------------------------
+// Seeded world — the lazy generators (§2.1–2.3) are run once up front around
+// the demo location, so a fresh database is never empty on first launch.
+// ---------------------------------------------------------------------------
+
+// Antwerp, 51.231° N 4.418° E.
+const SEED_LAT = 51.231;
+const SEED_LNG = 4.418;
+const SEED_RADIUS_KM = 3;
+const SEED_DAYS_AHEAD = 7;
+const SEED_BOX_COUNT = 8;
+
+// Slots only ever exist in the future: ensureSlots skips any hour before `from`,
+// and `to` caps the calendar at a week out.
+export function seedWindow() {
+    const from = new Date();
+    const to = new Date(from.getTime() + SEED_DAYS_AHEAD * 24 * 60 * 60 * 1000);
+    return { from: from, to: to };
+}
+
+async function seedHomeArea(user: User) {
+    const { from, to } = seedWindow();
+    const venues = await ensureVenuesNear(SEED_LAT, SEED_LNG, SEED_RADIUS_KM);
+    for (const venue of venues) {
+        await ensureSlots(venue, from, to);
+    }
+    // NPC hosts, members and their open boxes (some of which invite the user).
+    for (let i = 0; i < SEED_BOX_COUNT; i++) {
+        await generateNpcBox(user, venues, from, to);
+    }
+    console.log("[seed] " + venues.length + " venues around " + SEED_LAT + ", " + SEED_LNG);
+}
+
 async function seed() {
     if (await songsCollection.countDocuments() === 0) {
         await songsCollection.insertMany(SEED_SONGS);
@@ -1075,6 +1108,12 @@ async function seed() {
             friendIds: [],
             isNpc: false
         });
+    }
+    if (await venuesCollection.countDocuments() === 0) {
+        const demoUser = await getUserByUsername("alexsings");
+        if (demoUser) {
+            await seedHomeArea(demoUser);
+        }
     }
 }
 

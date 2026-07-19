@@ -31,20 +31,99 @@ export function newId(prefix: string) {
 // Venues — adjective × noun names in the style of the design
 // ---------------------------------------------------------------------------
 
+// A venue name is built from four independent slots:
+//   [prefix] adjective subject type
+// e.g. "Downtown Velvet Encore Lounge", "Neon Note Karaoke".
+// 12 x 52 x 44 x 40 = 1.098.240 distinct names (> 2^20).
+
+const VENUE_PREFIXES = [
+    "", "The", "Casa", "Le", "Little", "Grand",
+    "Royal", "Big", "Super", "Old", "New", "Downtown"
+];
+
 const VENUE_ADJECTIVES = [
     "Neon", "Echo", "Velvet", "Golden", "Midnight", "Electric",
-    "Crystal", "Lucky", "Retro", "Cosmic", "Silver", "Sakura"
+    "Crystal", "Lucky", "Retro", "Cosmic", "Silver", "Sakura",
+    "Amber", "Ruby", "Jade", "Copper", "Marble", "Glitter",
+    "Sunset", "Sunrise", "Moonlit", "Starlit", "Twilight", "Aurora",
+    "Thunder", "Wildfire", "Frozen", "Tropic", "Monsoon", "Paper",
+    "Ivory", "Obsidian", "Chrome", "Platinum", "Vinyl", "Sapphire",
+    "Emerald", "Scarlet", "Indigo", "Crimson", "Lunar", "Solar",
+    "Nomad", "Secret", "Hidden", "Wild", "Bright", "Smokey",
+    "Dusty", "Rusty", "Bamboo", "Lantern"
 ];
 
-const VENUE_NOUNS = [
-    "Note Karaoke", "Chamber", "Mic Box Club", "Verse Lounge", "Voice Studio",
-    "Stage Rooms", "Melody Bar", "Sound Box", "Sing Hall", "Tune Rooms"
+const VENUE_SUBJECTS = [
+    "Note", "Mic", "Verse", "Chorus", "Melody", "Tempo",
+    "Rhythm", "Encore", "Anthem", "Ballad", "Harmony", "Falsetto",
+    "Vibrato", "Reverb", "Treble", "Bass", "Octave", "Cadence",
+    "Refrain", "Serenade", "Duet", "Solo", "Riff", "Groove",
+    "Chord", "Tune", "Lyric", "Showtime", "Songbird", "Nightingale",
+    "Diva", "Crooner", "Maestro", "Chanson", "Fever", "Applause",
+    "Spotlight", "Curtain", "Stage", "Marquee", "Jukebox", "Playlist",
+    "Setlist", "Soundwave"
 ];
 
-const ROOM_NAMES = [
-    "Aurora Room", "Bass Room", "Chorus Room", "Diva Room",
-    "Encore Room", "Falsetto Room", "Groove Room", "Harmony Room"
+const VENUE_TYPES = [
+    "Karaoke", "Karaoke Bar", "Karaoke Club", "Lounge", "Club", "Bar",
+    "Rooms", "Room Club", "Studio", "Studios", "Box", "Box Club",
+    "Hall", "Palace", "Parlour", "Salon", "House", "Cabin",
+    "Den", "Loft", "Cellar", "Basement", "Garage", "Arcade",
+    "Café", "Bistro", "Tavern", "Pub", "Social Club", "Sing Rooms",
+    "Song Rooms", "Voice Studio", "Sound Box", "Sing Hall", "Stage Rooms", "Melody Bar",
+    "Booths", "Suites", "Sessions", "Nightclub"
 ];
+
+// A room name is built the same way, with a suite number as the fourth slot:
+//   qualifier noun type number
+// e.g. "Velvet Encore Booth 12".
+// 50 x 46 x 20 x 30 = 1.380.000 distinct names (> 2^20).
+
+const ROOM_QUALIFIERS = [
+    "Aurora", "Amber", "Velvet", "Crimson", "Coral", "Indigo",
+    "Ivory", "Jade", "Lilac", "Mint", "Neon", "Onyx",
+    "Opal", "Pearl", "Rose", "Ruby", "Saffron", "Sapphire",
+    "Scarlet", "Silver", "Teal", "Topaz", "Violet", "Cobalt",
+    "Copper", "Golden", "Midnight", "Sunset", "Moonlight", "Starlight",
+    "Cloud", "Cherry", "Peach", "Papaya", "Lemon", "Lotus",
+    "Bamboo", "Cedar", "Willow", "Maple", "Ember", "Frost",
+    "Storm", "Comet", "Nova", "Orbit", "Prism", "Mirage",
+    "Lantern", "Marble"
+];
+
+const ROOM_NOUNS = [
+    "Chorus", "Diva", "Encore", "Falsetto", "Groove", "Harmony",
+    "Bass", "Treble", "Tempo", "Rhythm", "Melody", "Cadence",
+    "Refrain", "Verse", "Bridge", "Anthem", "Ballad", "Serenade",
+    "Duet", "Solo", "Riff", "Chord", "Octave", "Vibrato",
+    "Reverb", "Echo", "Crescendo", "Finale", "Overture", "Interlude",
+    "Sonnet", "Lyric", "Note", "Tune", "Jam", "Mic",
+    "Spotlight", "Curtain", "Applause", "Ovation", "Songbird", "Nightingale",
+    "Crooner", "Maestro", "Jukebox", "Playback"
+];
+
+const ROOM_TYPES = [
+    "Room", "Booth", "Suite", "Studio", "Cabin", "Box",
+    "Lounge", "Den", "Nook", "Chamber", "Loft", "Cove",
+    "Hall", "Corner", "Pod", "Stage", "Salon", "Parlour",
+    "Cabana", "Alcove"
+];
+
+const ROOM_NUMBER_MAX = 30;
+
+export function randomVenueName() {
+    const prefix = pick(VENUE_PREFIXES);
+    const name = pick(VENUE_ADJECTIVES) + " " + pick(VENUE_SUBJECTS) + " " + pick(VENUE_TYPES);
+    if (prefix === "") {
+        return name;
+    } else {
+        return prefix + " " + name;
+    }
+}
+
+export function randomRoomName() {
+    return pick(ROOM_QUALIFIERS) + " " + pick(ROOM_NOUNS) + " " + pick(ROOM_TYPES) + " " + randomInt(1, ROOM_NUMBER_MAX);
+}
 
 // Matches the images seeded in public/venues (1.png .. 41.png).
 const VENUE_IMAGE_COUNT = 41;
@@ -62,18 +141,24 @@ function randomProfileImageUrl() {
 
 export function randomVenue(lat: number, lng: number): Venue {
     const roomCount = randomInt(2, 4);
-    const rooms: Room[] = pickMany(ROOM_NAMES, roomCount).map((name) => {
-        const seats = randomInt(4, 12);
-        return {
-            id: newId("r"),
-            name: name,
-            seats: seats,
-            pricePerHour: Math.max(20, seats * 5 + randomInt(-4, 4))
-        };
-    });
+    const rooms: Room[] = [];
+    const usedNames: string[] = [];
+    while (rooms.length < roomCount) {
+        const name = randomRoomName();
+        if (!usedNames.includes(name)) {
+            usedNames.push(name);
+            const seats = randomInt(4, 12);
+            rooms.push({
+                id: newId("r"),
+                name: name,
+                seats: seats,
+                pricePerHour: Math.max(20, seats * 5 + randomInt(-4, 4))
+            });
+        }
+    }
     return {
         id: newId("v"),
-        name: pick(VENUE_ADJECTIVES) + " " + pick(VENUE_NOUNS),
+        name: randomVenueName(),
         lat: lat,
         lng: lng,
         rating: Math.round((4 + Math.random() * 0.9) * 10) / 10,

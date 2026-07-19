@@ -53,8 +53,14 @@ implemented**, nothing is stubbed:
   first query covering a cell rolls 0–2 venues into it and marks the cell generated —
   never regenerated, so every user sees the same world. If fewer than 4 venues land in
   the requested radius, extras are force-placed so the Venues tab is never empty.
-- Slots are 1-hour evening sessions (18:00–02:00 local). Querying a range where a room
-  has fewer than 4 free slots materializes the missing hours (some pre-booked).
+- Slots are 1-hour evening sessions (18:00–02:00 local), always in the future — hours
+  before "now" are skipped. Querying a range where a room has fewer than 4 free slots
+  materializes the missing hours (some pre-booked). Default range is tonight → +7 days,
+  for both `GET /venues/:id/slots` and `GET /boxes/open`.
+- On an empty database (first `connect()`, or after `POST /dev/reset`) the seed runs those
+  generators once around **51.231° N, 4.418° E** (Antwerp, 3 km): venues with rooms, a
+  week of slots, NPC singers and 8 open boxes — so the app has a populated world before
+  the first pin is dropped. Constants live at the top of the seed section in `database.ts`.
 - `GET /boxes/open` guarantees ≥ 3 joinable NPC-hosted boxes nearby; NPC hosts get
   genre-coherent favourite songs, and occasionally invite you (see `GET /notifications`,
   which guarantees at least one pending invite on first call).
