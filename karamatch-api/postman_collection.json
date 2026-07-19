@@ -275,10 +275,10 @@
                         "header": [{ "key": "Content-Type", "value": "application/json" }],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"venueId\": \"{{venueId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"slotId\": \"{{slotId}}\",\n    \"title\": \"Friday night karaoke\"\n}"
+                            "raw": "{\n    \"venueId\": \"{{venueId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"slotId\": \"{{slotId}}\",\n    \"title\": \"Friday night karaoke\",\n    \"spots\": 3\n}"
                         },
                         "url": { "raw": "{{baseUrl}}/api/boxes", "host": ["{{baseUrl}}"], "path": ["api", "boxes"] },
-                        "description": "Books a slot and creates a box owned (as host) by the caller. Sets the `boxId` collection variable on success."
+                        "description": "Books a slot and creates a box owned (as host) by the caller. Optional `spots` is how many seats are offered to other singers (1 to room seats − 1, default: every seat but the host's) — lower it to keep room for guests you bring yourself. Sets the `boxId` collection variable on success."
                     },
                     "response": []
                 },

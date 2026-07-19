@@ -210,7 +210,9 @@ export interface Box {
     _id?: ObjectId; id: string;
     title: string; genre: string;
     venueId: string; roomId: string; slotId: string;
-    capacity: number; totalPrice: number; openToPublic: boolean;
+    seats: number;                               // seats in the room — the price is split over these
+    capacity: number;                            // spots this box offers, host included (≤ seats)
+    totalPrice: number; openToPublic: boolean;
     status: "pending_payment" | "upcoming" | "ended";
     members: BoxMember[]; invitedUsernames: string[];
 }
@@ -219,7 +221,8 @@ export interface Notification { _id?: ObjectId; id: string; toUserId: number; fr
 export interface Rating       { _id?: ObjectId; id: string; boxId: string; fromUserId: number; toUserId: number; stars: number; text: string; }
 ```
 
-Derived, never stored: `share = round(totalPrice / capacity)`, `spotsOpen`, `distanceKm`
+Derived, never stored: `share = round(totalPrice / seats)` (same rule as a room's
+`pricePerSeat`), `spotsOpen`, `distanceKm`
 (haversine), `matchPct`, genre profiles. `singerRating` is recomputed from `ratings` on
 each new rating.
 
@@ -280,13 +283,13 @@ parameters override it. `distance` is in km (default 3, max 25).
 | | |
 |---|---|
 | 🔒 `GET /venues?distance=3` | **Search around your location.** Ensures venue density in the covered cells (generates + persists on first look), returns venues sorted by haversine distance with `distanceKm` and `fromPrice` |
-| 🔒 `GET /venues/:id` | Venue detail incl. rooms; 404 if unknown |
+| 🔒 `GET /venues/:id` | Venue detail incl. rooms; every room carries `pricePerSeat` (= the `share` a box in it charges) and `spotOptions` — each spots choice priced as `{ spots, share, hostPays }` — so clients never compute a price; 404 if unknown |
 | 🔒 `GET /venues/:id/slots?from=&to=` | Free slots per room in the range (default: tonight → +3 days). **Generates more slots if a room has < 4 free in range** |
 
 ### Boxes, booking & payment — `routers/boxes.ts`
 | | |
 |---|---|
-| 🔒 `POST /boxes` | Host books: `{ venueId, roomId, slotId, title? }` → 201 `pending_payment` box with `totalPrice` + `share`; 400 if slot taken |
+| 🔒 `POST /boxes` | Host books: `{ venueId, roomId, slotId, title?, spots? }` → 201 `pending_payment` box with `totalPrice` + `share`; `spots` = seats offered to other singers (default `room.seats − 1`, so `capacity = spots + 1`), lower keeps seats free for guests the host brings and settles with themselves; 400 if slot taken or `spots` ∉ 1–(`seats`−1) |
 | 🔒 `POST /boxes/:id/join` | Reserve a spot on a public box → `{ boxId, share }`; 400 if full/own box |
 | 🔒 `POST /boxes/:id/pay` | Simulated payment, always succeeds. Host → box `upcoming` + slot `booked`; joiner → paid member. Invite-accepts land here too |
 | 🔒 `GET /boxes/open?distance=&from=&to=` | Nearby public boxes with spots. **Ensures ≥ 3 exist (generates NPC-hosted boxes)** |

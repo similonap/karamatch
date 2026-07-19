@@ -81,6 +81,12 @@ export interface Box {
     venueId: string;
     roomId: string;
     slotId: string;
+    // Seats in the room itself. The price is always split over these, so
+    // joiners pay the normal per-seat price no matter how many spots the host
+    // opened up.
+    seats: number;
+    // Spots this box offers through the app, host included. Lower than seats
+    // when the host keeps room for guests they bring themselves.
     capacity: number;
     totalPrice: number;
     openToPublic: boolean;

@@ -119,11 +119,23 @@ export interface UserProfile extends MatchedUser {
     isSelf: boolean;
 }
 
+// One priced choice on a room: open `spots` to other singers, they each pay
+// `share`, and the host is left carrying `hostPays` once those spots fill.
+export interface SpotOption {
+    spots: number;
+    share: number;
+    hostPays: number;
+}
+
 export interface Room {
     id: string;
     name: string;
     seats: number;
     pricePerHour: number;
+    // What one seat costs — the server owns the split, clients only display it.
+    pricePerSeat: number;
+    // Every spots choice, priced by the server. Indexed by `spots`, ascending.
+    spotOptions: SpotOption[];
 }
 
 export interface Venue {
@@ -188,6 +200,8 @@ export interface BoxRoom {
     roomName: string;
     start: string;
     end: string;
+    // Seats in the room; capacity is how many of them this box offers.
+    seats: number;
     capacity: number;
     totalPrice: number;
     share: number;
@@ -287,7 +301,7 @@ export const api = {
     },
 
     // Boxes
-    bookBox(body: { venueId: string; roomId: string; slotId: string; title?: string }) {
+    bookBox(body: { venueId: string; roomId: string; slotId: string; title?: string; spots?: number }) {
         return request<{ id: string; totalPrice: number; capacity: number; share: number }>("/boxes", {
             method: "POST",
             body: JSON.stringify(body)

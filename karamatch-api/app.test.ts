@@ -166,6 +166,8 @@ describe("booking & payment", () => {
     let venueId: string;
     let roomId: string;
     let slotId: string;
+    let otherSlotId: string;
+    let roomSeats: number;
     let boxId: string;
 
     beforeAll(async () => {
@@ -178,12 +180,14 @@ describe("booking & payment", () => {
         const slots = await request(app)
             .get("/api/venues/" + venueId + "/slots")
             .set("Authorization", "Bearer " + hostToken);
-        const roomWithSlots = slots.body.find((entry: any) => entry.slots.length > 0);
+        const roomWithSlots = slots.body.find((entry: any) => entry.slots.length > 1);
         roomId = roomWithSlots.room.id;
+        roomSeats = roomWithSlots.room.seats;
         slotId = roomWithSlots.slots[0].id;
+        otherSlotId = roomWithSlots.slots[1].id;
     }, 20000);
 
-    it("books a free slot as pending_payment", async () => {
+    it("books a free slot as pending_payment, filling the room by default", async () => {
         const response = await request(app)
             .post("/api/boxes")
             .set("Authorization", "Bearer " + hostToken)
@@ -192,7 +196,67 @@ describe("booking & payment", () => {
         expect(response.body.status).toBe("pending_payment");
         expect(response.body.title).toBe("Test Night");
         expect(response.body.share).toBeGreaterThan(0);
+        expect(response.body.capacity).toBe(roomSeats);
         boxId = response.body.id;
+    });
+
+    it("lets the host open fewer spots than the room holds", async () => {
+        const full = await request(app)
+            .post("/api/boxes")
+            .set("Authorization", "Bearer " + hostToken)
+            .send({ venueId, roomId, slotId: otherSlotId, spots: 2 });
+        expect(full.status).toBe(201);
+        expect(full.body.capacity).toBe(3);
+        expect(full.body.seats).toBe(roomSeats);
+        // Holding seats back must not make the spot pricier for joiners: the
+        // share stays the room's per-seat price, and the host carries the rest.
+        expect(full.body.share).toBe(Math.round(full.body.totalPrice / roomSeats));
+    });
+
+    it("quotes the same per-seat price on the room as the box charges", async () => {
+        const slots = await request(app)
+            .get("/api/venues/" + venueId + "/slots")
+            .set("Authorization", "Bearer " + hostToken);
+        const room = slots.body.find((entry: any) => entry.room.id === roomId).room;
+        expect(room.pricePerSeat).toBe(Math.round(room.pricePerHour / room.seats));
+
+        const detail = await request(app)
+            .get("/api/venues/" + venueId)
+            .set("Authorization", "Bearer " + hostToken);
+        const sameRoom = detail.body.rooms.find((entry: any) => entry.id === roomId);
+        expect(sameRoom.pricePerSeat).toBe(room.pricePerSeat);
+
+        // The booking screen shows room.pricePerSeat before the box exists; it
+        // has to match the share the box hands out afterwards.
+        const box = await request(app)
+            .get("/api/boxes/" + boxId)
+            .set("Authorization", "Bearer " + hostToken);
+        expect(box.body.share).toBe(room.pricePerSeat);
+    });
+
+    it("prices every spots choice on the room up front", async () => {
+        const slots = await request(app)
+            .get("/api/venues/" + venueId + "/slots")
+            .set("Authorization", "Bearer " + hostToken);
+        const room = slots.body.find((entry: any) => entry.room.id === roomId).room;
+
+        // One option per spot count the host may pick: 1 … seats - 1.
+        expect(room.spotOptions.map((option: any) => option.spots))
+            .toEqual(Array.from({ length: room.seats - 1 }, (_, index) => index + 1));
+        for (const option of room.spotOptions) {
+            // A joiner pays the same whatever the host opened; the host carries
+            // whatever the opened spots do not cover.
+            expect(option.share).toBe(room.pricePerSeat);
+            expect(option.hostPays).toBe(room.pricePerHour - room.pricePerSeat * option.spots);
+        }
+    });
+
+    it("rejects more spots than the room has seats for", async () => {
+        const response = await request(app)
+            .post("/api/boxes")
+            .set("Authorization", "Bearer " + hostToken)
+            .send({ venueId, roomId, slotId: otherSlotId, spots: roomSeats });
+        expect(response.status).toBe(400);
     });
 
     it("host payment confirms the box and books the slot", async () => {

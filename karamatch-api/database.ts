@@ -151,7 +151,49 @@ function boundingBox(lat: number, lng: number, distanceKm: number) {
 // Space — venues around you, generated on first look (§2.1)
 // ---------------------------------------------------------------------------
 
-export interface VenueNearby extends Venue {
+// One priced choice a host can make on a room: open `spots` to other singers,
+// they each pay `share`, and `hostPays` is what the host is left carrying once
+// those spots are full (the seats they kept back are theirs to settle).
+export interface SpotOption {
+    spots: number;
+    share: number;
+    hostPays: number;
+}
+
+// A room as clients see it: the stored room, the per-seat price, and every
+// spots choice already priced out. Rooms hold at most a dozen seats, so the
+// whole table ships with the room and the booking screen does no arithmetic.
+export interface RoomView extends Room {
+    pricePerSeat: number;
+    spotOptions: SpotOption[];
+}
+
+export function toRoomView(room: Room): RoomView {
+    const pricePerSeat = splitPrice(room.pricePerHour, room.seats);
+    const spotOptions: SpotOption[] = [];
+    // The host always takes a seat, so at most seats - 1 go to other singers.
+    for (let spots = 1; spots <= room.seats - 1; spots++) {
+        spotOptions.push({
+            spots: spots,
+            // Same for every choice — a joiner's price never depends on how
+            // many spots the host opened. Repeated per option so the client
+            // reads one object instead of combining fields.
+            share: pricePerSeat,
+            hostPays: room.pricePerHour - pricePerSeat * spots
+        });
+    }
+    return { ...room, pricePerSeat: pricePerSeat, spotOptions: spotOptions };
+}
+
+export interface VenueView extends Venue {
+    rooms: RoomView[];
+}
+
+export function toVenueView(venue: Venue): VenueView {
+    return { ...venue, rooms: venue.rooms.map(toRoomView) };
+}
+
+export interface VenueNearby extends VenueView {
     distanceKm: number;
     fromPrice: number;
 }
@@ -222,7 +264,7 @@ export async function ensureVenuesNear(lat: number, lng: number, distanceKm: num
 
     return venues
         .map(venue => ({
-            ...venue,
+            ...toVenueView(venue),
             distanceKm: Math.round(haversineKm(lat, lng, venue.lat, venue.lng) * 10) / 10,
             fromPrice: Math.min(...venue.rooms.map(room => room.pricePerHour))
         }))
@@ -238,7 +280,7 @@ export async function getVenueById(id: string): Promise<Venue | null> {
 // ---------------------------------------------------------------------------
 
 export interface RoomSlots {
-    room: { id: string; name: string; seats: number; pricePerHour: number };
+    room: RoomView;
     slots: { id: string; start: string; end: string }[];
 }
 
@@ -288,7 +330,7 @@ export async function ensureSlots(venue: Venue, from: Date, to: Date): Promise<R
             .filter(slot => slot.status === "available")
             .sort((a, b) => a.start.localeCompare(b.start));
         result.push({
-            room: { id: room.id, name: room.name, seats: room.seats, pricePerHour: room.pricePerHour },
+            room: toRoomView(room),
             slots: free.map(slot => ({ id: slot.id, start: slot.start, end: slot.end }))
         });
     }
@@ -448,7 +490,7 @@ async function toBoxView(box: Box, lat: number, lng: number): Promise<BoxView | 
         membersCount: box.members.length,
         capacity: box.capacity,
         spotsOpen: box.capacity - box.members.length,
-        share: Math.round(box.totalPrice / box.capacity),
+        share: shareFor(box),
         status: box.status
     };
 }
@@ -574,6 +616,7 @@ async function generateNpcBox(user: User, venues: VenueNearby[], from: Date, to:
         venueId: venue.id,
         roomId: chosen.room.id,
         slotId: slot.id,
+        seats: chosen.room.seats,
         capacity: chosen.room.seats,
         totalPrice: chosen.room.pricePerHour,
         openToPublic: true,
@@ -670,7 +713,7 @@ export async function ensureNotificationsFor(user: User) {
                 genre: box.genre,
                 venueName: venue ? venue.name : "",
                 start: slot ? slot.start : "",
-                share: Math.round(box.totalPrice / box.capacity)
+                share: shareFor(box)
             }
         });
     }
@@ -769,8 +812,19 @@ export async function ensureMatchesNear(user: User, lat: number, lng: number, di
 // Booking & payment (§6) — payment is simulated and always succeeds
 // ---------------------------------------------------------------------------
 
+// The one rule for splitting a booking: the price of the hour over the seats in
+// the room. It lives here so no client ever re-derives it — the rooms handed out
+// by the venue endpoints already carry the answer as pricePerSeat.
+export function splitPrice(total: number, seats: number) {
+    return Math.round(total / seats);
+}
+
+// Split over the room's seats, never over the (possibly smaller) capacity: a
+// host who keeps seats free for their own guests carries that cost themselves
+// and settles up with those guests outside the app. Everyone joining through
+// the app pays the same per-seat price they would in a wide-open box.
 export function shareFor(box: Box) {
-    return Math.round(box.totalPrice / box.capacity);
+    return splitPrice(box.totalPrice, box.seats);
 }
 
 // The genre a user sings most, from their favourite songs. Used as the genre
@@ -801,8 +855,10 @@ export async function dominantGenreFor(user: User) {
 }
 
 // Host books a room slot: the box starts pending_payment; the slot is only
-// marked booked once the host pays.
-export async function createBox(host: User, venue: Venue, room: Room, slot: Slot, title: string): Promise<Box> {
+// marked booked once the host pays. openSpots is how many seats the host offers
+// to other singers — fewer than the room holds leaves seats for people the host
+// brings along outside the app.
+export async function createBox(host: User, venue: Venue, room: Room, slot: Slot, title: string, openSpots: number): Promise<Box> {
     const genre = await dominantGenreFor(host);
     const box: Box = {
         id: newId("b"),
@@ -811,7 +867,9 @@ export async function createBox(host: User, venue: Venue, room: Room, slot: Slot
         venueId: venue.id,
         roomId: room.id,
         slotId: slot.id,
-        capacity: room.seats,
+        seats: room.seats,
+        // The host takes one of the seats themself.
+        capacity: openSpots + 1,
         totalPrice: room.pricePerHour,
         openToPublic: true,
         status: "pending_payment",
@@ -883,6 +941,7 @@ export async function getBoxRoom(box: Box, viewer: User) {
         roomName: room ? room.name : "",
         start: slot ? slot.start : "",
         end: slot ? slot.end : "",
+        seats: box.seats,
         capacity: box.capacity,
         totalPrice: box.totalPrice,
         share: shareFor(box),
@@ -1048,6 +1107,7 @@ async function createPastBox(user: User): Promise<Box | null> {
         venueId: venue.id,
         roomId: room.id,
         slotId: slot.id,
+        seats: room.seats,
         capacity: room.seats,
         totalPrice: room.pricePerHour,
         openToPublic: false,

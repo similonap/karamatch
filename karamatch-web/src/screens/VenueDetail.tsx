@@ -20,6 +20,8 @@ export default function VenueDetail() {
     const [roomId, setRoomId] = useState<string | null>(null);
     const [day, setDay] = useState<string | null>(null);
     const [time, setTime] = useState<string | null>(null);
+    // null = follow the room's own size (every seat but the host's is offered).
+    const [spots, setSpots] = useState<number | null>(null);
     const [busy, setBusy] = useState(false);
 
     const roomSlots: RoomSlots[] = useMemo(() => slots.data ?? [], [slots.data]);
@@ -76,8 +78,16 @@ export default function VenueDetail() {
     }, [roomSlots, roomId, activeDay, activeTime]);
 
     const total = selectedRoom ? selectedRoom.pricePerHour : 0;
-    const share = selectedRoom ? Math.round(selectedRoom.pricePerHour / selectedRoom.seats) : 0;
-    const canBook = Boolean(selectedRoom && selectedSlot) && !busy;
+    // Spots offered to other singers, and what that choice costs — both come
+    // from the server's priced table, so nothing here is calculated.
+    const spotOptions = selectedRoom ? selectedRoom.spotOptions : [];
+    const minSpots = spotOptions.length > 0 ? spotOptions[0].spots : 0;
+    const maxSpots = spotOptions.length > 0 ? spotOptions[spotOptions.length - 1].spots : 0;
+    const openSpots = Math.min(Math.max(spots ?? maxSpots, minSpots), maxSpots);
+    const quote = spotOptions.find(option => option.spots === openSpots) ?? null;
+    const share = quote ? quote.share : 0;
+    const hostCost = quote ? quote.hostPays : 0;
+    const canBook = Boolean(selectedRoom && selectedSlot && quote) && !busy;
 
     async function book() {
         if (!selectedRoom || !selectedSlot || !venue.data) {
@@ -88,7 +98,8 @@ export default function VenueDetail() {
             const created = await api.bookBox({
                 venueId: venue.data.id,
                 roomId: selectedRoom.id,
-                slotId: selectedSlot.id
+                slotId: selectedSlot.id,
+                spots: openSpots
             });
             app.startPay({ kind: "host", boxId: created.id, amount: created.totalPrice });
         } catch (err) {
@@ -230,6 +241,7 @@ export default function VenueDetail() {
                                     onClick={() => {
                                         setRoomId(room.id);
                                         setTime(null);
+                                        setSpots(null);
                                     }}
                                     style={{
                                         height: 60,
@@ -258,6 +270,55 @@ export default function VenueDetail() {
                     </div>
                 </div>
 
+                {selectedRoom ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>Spots for other singers</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <button
+                                onClick={() => setSpots(Math.max(minSpots, openSpots - 1))}
+                                disabled={openSpots <= minSpots}
+                                style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 12,
+                                    border: "1px solid",
+                                    fontSize: 20,
+                                    fontWeight: 700,
+                                    cursor: openSpots <= minSpots ? "default" : "pointer",
+                                    opacity: openSpots <= minSpots ? 0.4 : 1,
+                                    ...optionStyle(false)
+                                }}
+                            >
+                                −
+                            </button>
+                            <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700, minWidth: 28, textAlign: "center" }}>
+                                {openSpots}
+                            </div>
+                            <button
+                                onClick={() => setSpots(Math.min(maxSpots, openSpots + 1))}
+                                disabled={openSpots >= maxSpots}
+                                style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 12,
+                                    border: "1px solid",
+                                    fontSize: 20,
+                                    fontWeight: 700,
+                                    cursor: openSpots >= maxSpots ? "default" : "pointer",
+                                    opacity: openSpots >= maxSpots ? 0.4 : 1,
+                                    ...optionStyle(false)
+                                }}
+                            >
+                                +
+                            </button>
+                        </div>
+                        <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+                            {selectedRoom.seats} seats in this box: you plus {openSpots} open
+                            {openSpots < maxSpots ? " · " + (maxSpots - openSpots) + " kept free for people you bring yourself" : ""}
+                        </div>
+                    </div>
+                ) : null}
+
                 <div
                     style={{
                         borderRadius: 16,
@@ -277,13 +338,20 @@ export default function VenueDetail() {
                         <span style={{ color: C.text, fontWeight: 700 }}>{money(total)}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.textMuted }}>
-                        <span>per person if full</span>
+                        <span>per seat</span>
                         <span style={{ color: C.cyan, fontWeight: 600 }}>
                             {selectedRoom ? money(share) + " / person" : "—"}
                         </span>
                     </div>
+                    {selectedRoom && openSpots < maxSpots ? (
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.textMuted }}>
+                            <span>your part if all {openSpots} spots fill</span>
+                            <span style={{ color: C.cyan, fontWeight: 600 }}>{money(hostCost)}</span>
+                        </div>
+                    ) : null}
                     <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5, marginTop: 4 }}>
-                        As host you pay the full amount now. Everyone who joins pays their share back to you.
+                        As host you pay the full amount now. Everyone who joins pays {selectedRoom ? money(share) : "their share"}{" "}
+                        back to you — the seats you keep free are yours to settle with the guests you bring.
                     </div>
                 </div>
             </div>

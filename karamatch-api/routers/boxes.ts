@@ -39,8 +39,20 @@ router.post("/boxes", verifyAuthToken, async (req, res) => {
         res.status(400).json({ error: "Slot already taken" });
         return;
     }
+    // How many spots the host opens up to other singers. Defaults to the whole
+    // room minus the host's own seat; a lower number keeps seats free for people
+    // the host brings along themselves.
+    const maxSpots = room.seats - 1;
+    let openSpots = maxSpots;
+    if (req.body.spots !== undefined) {
+        if (!Number.isInteger(req.body.spots) || req.body.spots < 1 || req.body.spots > maxSpots) {
+            res.status(400).json({ error: "spots must be a whole number between 1 and " + maxSpots });
+            return;
+        }
+        openSpots = req.body.spots;
+    }
     const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
-    const box = await createBox(user, venue, room, slot, title);
+    const box = await createBox(user, venue, room, slot, title, openSpots);
     res.status(201).json({ ...box, share: shareFor(box) });
 });
 
