@@ -317,7 +317,7 @@ export async function createNpcUser(nearLat: number, nearLng: number, genre: str
         password: newId("pw"),
         token: null,
         bio: identity.bio,
-        photoUrl: null,
+        photoUrl: identity.photoUrl,
         location: {
             lat: nearLat + (Math.random() - 0.5) * CELL_SIZE,
             lng: nearLng + (Math.random() - 0.5) * CELL_SIZE,

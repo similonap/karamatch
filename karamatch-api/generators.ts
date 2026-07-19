@@ -46,6 +46,20 @@ const ROOM_NAMES = [
     "Encore Room", "Falsetto Room", "Groove Room", "Harmony Room"
 ];
 
+// Matches the images seeded in public/venues (1.png .. 41.png).
+const VENUE_IMAGE_COUNT = 41;
+
+function randomVenueImageUrl() {
+    return "/venues/" + randomInt(1, VENUE_IMAGE_COUNT) + ".png";
+}
+
+// Matches the images seeded in public/avatars (1.png .. 20.png).
+const PROFILE_IMAGE_COUNT = 20;
+
+function randomProfileImageUrl() {
+    return "/avatars/" + randomInt(1, PROFILE_IMAGE_COUNT) + ".png";
+}
+
 export function randomVenue(lat: number, lng: number): Venue {
     const roomCount = randomInt(2, 4);
     const rooms: Room[] = pickMany(ROOM_NAMES, roomCount).map((name) => {
@@ -64,7 +78,8 @@ export function randomVenue(lat: number, lng: number): Venue {
         lng: lng,
         rating: Math.round((4 + Math.random() * 0.9) * 10) / 10,
         openUntil: pick(["01:00", "02:00", "03:00"]),
-        rooms: rooms
+        rooms: rooms,
+        imageUrl: randomVenueImageUrl()
     };
 }
 
@@ -107,7 +122,7 @@ export function randomNpcIdentity() {
     } else {
         username = first.toLowerCase() + last.toLowerCase();
     }
-    return { name: first + " " + last, username: username, bio: pick(NPC_BIOS) };
+    return { name: first + " " + last, username: username, bio: pick(NPC_BIOS), photoUrl: randomProfileImageUrl() };
 }
 
 // Mostly one genre with a little bleed-over, so the Match tab shows a natural

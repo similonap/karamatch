@@ -21,6 +21,22 @@ async function registerWithLocation(prefix: string) {
     return response.body.token;
 }
 
+// Registers a fresh user with a fixed set of favourites and returns their
+// username, so taste-based scoring is predictable.
+async function registerWithFavourites(prefix: string, favoriteSongIds: string[]) {
+    const response = await request(app).post("/api/auth/register").send({
+        name: "Test Singer",
+        username: prefix + Date.now(),
+        email: prefix + Date.now() + "@karamatch.test",
+        password: "secret123"
+    });
+    await request(app)
+        .put("/api/me")
+        .set("Authorization", "Bearer " + response.body.token)
+        .send({ favoriteSongIds: favoriteSongIds });
+    return response.body.user.username;
+}
+
 describe("GET /", () => {
     it("returns API info", async () => {
         const response = await request(app).get("/");
@@ -509,5 +525,87 @@ describe("songs & profile", () => {
         expect(response.body.favoriteSongs.length).toBe(3);
         expect(response.body.favoriteSongs[0].title).toBeTruthy();
         expect(response.body.genreProfile.Rock).toBe(3);
+    });
+});
+
+describe("match score between two singers", () => {
+    // Three tastes: two identical rock fans, one country fan, and one singer
+    // whose favourites straddle both.
+    const ROCK = ["12617", "12543", "11335"];
+    const COUNTRY = ["90690", "13469", "6229"];
+    const MIXED = ["12617", "90690", "13469"];
+
+    let token: string;
+    let rockA: string;
+    let rockB: string;
+    let country: string;
+    let mixed: string;
+
+    beforeAll(async () => {
+        token = await registerWithLocation("matchcaller");
+        rockA = await registerWithFavourites("matchrocka", ROCK);
+        rockB = await registerWithFavourites("matchrockb", ROCK);
+        country = await registerWithFavourites("matchcountry", COUNTRY);
+        mixed = await registerWithFavourites("matchmixed", MIXED);
+    }, 20000);
+
+    function match(a: string, b: string) {
+        return request(app)
+            .get("/api/match")
+            .query({ a: a, b: b })
+            .set("Authorization", "Bearer " + token);
+    }
+
+    it("scores identical taste at 100% and lists the shared songs", async () => {
+        const response = await match(rockA, rockB);
+        expect(response.status).toBe(200);
+        expect(response.body.matchPct).toBe(100);
+        expect(response.body.commonSongs.length).toBe(3);
+        expect(response.body.a.username).toBe(rockA);
+        expect(response.body.b.username).toBe(rockB);
+    });
+
+    it("scores unrelated taste at 0% with no shared songs", async () => {
+        const response = await match(rockA, country);
+        expect(response.status).toBe(200);
+        expect(response.body.matchPct).toBe(0);
+        expect(response.body.commonSongs).toEqual([]);
+    });
+
+    it("ranks partial overlap between identical and unrelated", async () => {
+        const partial = await match(rockA, mixed);
+        expect(partial.status).toBe(200);
+        expect(partial.body.matchPct).toBeGreaterThan(0);
+        expect(partial.body.matchPct).toBeLessThan(100);
+    });
+
+    it("is symmetric in a and b", async () => {
+        const forward = await match(rockA, mixed);
+        const reversed = await match(mixed, rockA);
+        expect(reversed.body.matchPct).toBe(forward.body.matchPct);
+    });
+
+    it("accepts usernames written with a leading @", async () => {
+        const response = await match("@" + rockA, "@" + rockB);
+        expect(response.status).toBe(200);
+        expect(response.body.matchPct).toBe(100);
+    });
+
+    it("rejects a missing username", async () => {
+        const response = await request(app)
+            .get("/api/match")
+            .query({ a: rockA })
+            .set("Authorization", "Bearer " + token);
+        expect(response.status).toBe(400);
+    });
+
+    it("returns 404 for an unknown username", async () => {
+        const response = await match(rockA, "definitely_not_a_singer");
+        expect(response.status).toBe(404);
+    });
+
+    it("requires a token", async () => {
+        const response = await request(app).get("/api/match").query({ a: rockA, b: rockB });
+        expect(response.status).toBe(401);
     });
 });

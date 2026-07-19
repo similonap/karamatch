@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyAuthToken } from "../middleware/verifyAuthToken";
-import { getFriends, searchUsers, getUserByUsername, addFriend } from "../database";
+import { getFriends, searchUsers, getUserByUsername, addFriend, scoreMatch } from "../database";
+import { toPublicUser } from "../types";
 
 const router = express.Router();
 
@@ -19,6 +20,37 @@ router.get("/users", verifyAuthToken, async (req, res) => {
     }
     const users = await searchUsers(query, res.locals.user);
     res.json(users);
+});
+
+// Taste compatibility between any two singers, using the same scoring as the
+// Match tab (§5). Both usernames may be written with or without a leading "@".
+// The score is symmetric, so a/b order does not matter.
+router.get("/match", verifyAuthToken, async (req, res) => {
+    const a = typeof req.query.a === "string" ? req.query.a.trim() : "";
+    const b = typeof req.query.b === "string" ? req.query.b.trim() : "";
+    if (a === "" || b === "") {
+        res.status(400).json({ error: "a and b are required usernames" });
+        return;
+    }
+
+    const userA = await getUserByUsername(a.replace(/^@/, ""));
+    if (!userA) {
+        res.status(404).json({ error: "Unknown username: " + a });
+        return;
+    }
+    const userB = await getUserByUsername(b.replace(/^@/, ""));
+    if (!userB) {
+        res.status(404).json({ error: "Unknown username: " + b });
+        return;
+    }
+
+    const score = await scoreMatch(userA, userB);
+    res.json({
+        a: toPublicUser(userA),
+        b: toPublicUser(userB),
+        matchPct: score.matchPct,
+        commonSongs: score.commonSongs
+    });
 });
 
 router.post("/friends", verifyAuthToken, async (req, res) => {

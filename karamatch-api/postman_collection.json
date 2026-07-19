@@ -512,6 +512,24 @@
                     "response": []
                 },
                 {
+                    "name": "Match score between two singers",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/match?a=&b=",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "match"],
+                            "query": [
+                                { "key": "a", "value": "", "description": "Username, with or without a leading @" },
+                                { "key": "b", "value": "", "description": "Username, with or without a leading @" }
+                            ]
+                        },
+                        "description": "Taste compatibility between any two singers, using the same scoring as the Match tab. Returns both public users, matchPct (0-100) and up to 3 commonSongs. Symmetric — a/b order does not matter."
+                    },
+                    "response": []
+                },
+                {
                     "name": "Add friend",
                     "request": {
                         "method": "POST",

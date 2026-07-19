@@ -48,6 +48,7 @@ export interface Venue {
     rating: number;
     openUntil: string;
     rooms: Room[];
+    imageUrl: string;
 }
 
 export interface Cell {
