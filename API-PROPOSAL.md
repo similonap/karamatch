@@ -313,6 +313,7 @@ parameters override it. `distance` is in km (default 3, max 25).
 | 🔒 `GET /friends` | Friends with `singerRating` + `eventsCount` |
 | 🔒 `GET /users?q=` | Search people (real + NPC) by name/username/email, excludes self & friends, max 4 |
 | 🔒 `POST /friends` | `{ username }` → mutual add (no request/accept — simple); 400 if already friends/unknown |
+| 🔒 `DELETE /friends/:username` | Mutual remove; 400 if not friends, 404 if unknown |
 
 ### Dev utilities
 | | |

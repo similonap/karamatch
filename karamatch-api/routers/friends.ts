@@ -1,6 +1,8 @@
 import express from "express";
 import { verifyAuthToken } from "../middleware/verifyAuthToken";
-import { getFriends, searchUsers, getUserByUsername, addFriend, scoreMatch } from "../database";
+import {
+    getFriends, searchUsers, getUserByUsername, addFriend, removeFriend, scoreMatch, getUserProfile
+} from "../database";
 import { toPublicUser } from "../types";
 
 const router = express.Router();
@@ -20,6 +22,19 @@ router.get("/users", verifyAuthToken, async (req, res) => {
     }
     const users = await searchUsers(query, res.locals.user);
     res.json(users);
+});
+
+// One singer's profile page — tapping anyone in a list (friends, search
+// results, box members, a host) lands here. The username may be written with
+// or without a leading "@".
+router.get("/users/:username", verifyAuthToken, async (req, res) => {
+    const other = await getUserByUsername(req.params.username.replace(/^@/, ""));
+    if (!other) {
+        res.status(404).json({ error: "Unknown username" });
+        return;
+    }
+    const profile = await getUserProfile(other, res.locals.user);
+    res.json(profile);
 });
 
 // Taste compatibility between any two singers, using the same scoring as the
@@ -71,6 +86,22 @@ router.post("/friends", verifyAuthToken, async (req, res) => {
     }
     await addFriend(user, other);
     res.status(201).json({ message: "Friend added", username: other.username });
+});
+
+// Unfriending — mutual, like adding. The username may carry a leading "@".
+router.delete("/friends/:username", verifyAuthToken, async (req, res) => {
+    const user = res.locals.user;
+    const other = await getUserByUsername(req.params.username.replace(/^@/, ""));
+    if (!other) {
+        res.status(404).json({ error: "Unknown username" });
+        return;
+    }
+    if (!user.friendIds.includes(other.id)) {
+        res.status(400).json({ error: "Not in your friends" });
+        return;
+    }
+    await removeFriend(user, other);
+    res.json({ message: "Friend removed", username: other.username });
 });
 
 export default router;

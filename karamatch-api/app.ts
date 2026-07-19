@@ -18,6 +18,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 app.use("/venues", express.static(path.join(__dirname, "public/venues")));
+app.use("/avatars", express.static(path.join(__dirname, "public/avatars")));
 
 app.get("/", (req, res) => {
     res.json({

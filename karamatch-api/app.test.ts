@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "./app";
-import { client } from "./database";
+import { boxesCollection, client, slotsCollection } from "./database";
 
 afterAll(async () => {
     await client.close();
@@ -607,5 +607,299 @@ describe("match score between two singers", () => {
     it("requires a token", async () => {
         const response = await request(app).get("/api/match").query({ a: rockA, b: rockB });
         expect(response.status).toBe(401);
+    });
+});
+
+describe("match score on lists of singers", () => {
+    const ROCK = ["12617", "12543", "11335"];
+    const COUNTRY = ["90690", "13469", "6229"];
+
+    let token: string;
+    let twin: string;
+    let opposite: string;
+
+    // Registers a singer with fixed favourites, returning token and username
+    // so the same account can both browse lists and appear in them.
+    async function registerSinger(prefix: string, favoriteSongIds: string[]) {
+        const response = await request(app).post("/api/auth/register").send({
+            name: "Test Singer",
+            username: prefix + Date.now(),
+            email: prefix + Date.now() + "@karamatch.test",
+            password: "secret123"
+        });
+        await request(app)
+            .put("/api/me")
+            .set("Authorization", "Bearer " + response.body.token)
+            .send({ favoriteSongIds: favoriteSongIds });
+        return { token: response.body.token as string, username: response.body.user.username as string };
+    }
+
+    beforeAll(async () => {
+        const viewer = await registerSinger("listviewer", ROCK);
+        token = viewer.token;
+        twin = (await registerSinger("listtwin", ROCK)).username;
+        opposite = (await registerSinger("listopposite", COUNTRY)).username;
+    }, 20000);
+
+    function search(query: string) {
+        return request(app)
+            .get("/api/users")
+            .query({ q: query })
+            .set("Authorization", "Bearer " + token);
+    }
+
+    it("scores every singer in people search against the caller", async () => {
+        const identical = await search(twin);
+        expect(identical.status).toBe(200);
+        expect(identical.body.length).toBe(1);
+        expect(identical.body[0].matchPct).toBe(100);
+
+        const unrelated = await search(opposite);
+        expect(unrelated.body[0].matchPct).toBe(0);
+    });
+
+    it("agrees with the two-singer /api/match score", async () => {
+        const viewer = await request(app).get("/api/me").set("Authorization", "Bearer " + token);
+        const pair = await request(app)
+            .get("/api/match")
+            .query({ a: viewer.body.username, b: opposite })
+            .set("Authorization", "Bearer " + token);
+        const listed = await search(opposite);
+        expect(listed.body[0].matchPct).toBe(pair.body.matchPct);
+    });
+
+    it("carries the score onto the friends list", async () => {
+        await request(app)
+            .post("/api/friends")
+            .set("Authorization", "Bearer " + token)
+            .send({ username: twin });
+
+        const friends = await request(app).get("/api/friends").set("Authorization", "Bearer " + token);
+        expect(friends.status).toBe(200);
+        const listed = friends.body.find((friend: { username: string }) => friend.username === twin);
+        expect(listed).toBeTruthy();
+        expect(listed.matchPct).toBe(100);
+    });
+
+    it("drops a friend again on delete", async () => {
+        await request(app)
+            .post("/api/friends")
+            .set("Authorization", "Bearer " + token)
+            .send({ username: opposite });
+
+        const removed = await request(app)
+            .delete("/api/friends/" + opposite)
+            .set("Authorization", "Bearer " + token);
+        expect(removed.status).toBe(200);
+
+        const friends = await request(app).get("/api/friends").set("Authorization", "Bearer " + token);
+        const listed = friends.body.find((friend: { username: string }) => friend.username === opposite);
+        expect(listed).toBeUndefined();
+    });
+
+    it("refuses to remove someone who is not a friend", async () => {
+        const response = await request(app)
+            .delete("/api/friends/" + opposite)
+            .set("Authorization", "Bearer " + token);
+        expect(response.status).toBe(400);
+    });
+});
+
+describe("singer profile", () => {
+    const ROCK = ["12617", "12543", "11335"];
+    const COUNTRY = ["90690", "13469", "6229"];
+
+    let token: string;
+    let me: string;
+    let twin: string;
+    let stranger: string;
+
+    beforeAll(async () => {
+        const response = await request(app).post("/api/auth/register").send({
+            name: "Test Singer",
+            username: "profileviewer" + Date.now(),
+            email: "profileviewer" + Date.now() + "@karamatch.test",
+            password: "secret123"
+        });
+        token = response.body.token;
+        me = response.body.user.username;
+        await request(app)
+            .put("/api/me")
+            .set("Authorization", "Bearer " + token)
+            .send({ favoriteSongIds: ROCK });
+        twin = await registerWithFavourites("profiletwin", ROCK);
+        stranger = await registerWithFavourites("profilestranger", COUNTRY);
+    }, 20000);
+
+    function profile(username: string) {
+        return request(app)
+            .get("/api/users/" + username)
+            .set("Authorization", "Bearer " + token);
+    }
+
+    it("returns the singer with taste compatibility and their favourites", async () => {
+        const response = await profile(twin);
+        expect(response.status).toBe(200);
+        expect(response.body.username).toBe(twin);
+        expect(response.body.matchPct).toBe(100);
+        expect(response.body.commonSongs.length).toBe(3);
+        expect(response.body.favoriteSongs.length).toBe(3);
+        expect(response.body.isSelf).toBe(false);
+    });
+
+    it("never leaks the password or token", async () => {
+        const response = await profile(stranger);
+        expect(response.body.password).toBeUndefined();
+        expect(response.body.token).toBeUndefined();
+    });
+
+    it("flags your own profile with a null match", async () => {
+        const response = await profile(me);
+        expect(response.status).toBe(200);
+        expect(response.body.isSelf).toBe(true);
+        expect(response.body.matchPct).toBeNull();
+    });
+
+    it("reports friendship, before and after adding", async () => {
+        const before = await profile(stranger);
+        expect(before.body.isFriend).toBe(false);
+
+        await request(app)
+            .post("/api/friends")
+            .set("Authorization", "Bearer " + token)
+            .send({ username: stranger });
+
+        const after = await profile(stranger);
+        expect(after.body.isFriend).toBe(true);
+    });
+
+    it("accepts a username written with a leading @", async () => {
+        const response = await profile("@" + twin);
+        expect(response.status).toBe(200);
+        expect(response.body.username).toBe(twin);
+    });
+
+    it("returns 404 for an unknown username", async () => {
+        const response = await profile("definitely_not_a_singer");
+        expect(response.status).toBe(404);
+    });
+
+    it("requires a token", async () => {
+        const response = await request(app).get("/api/users/" + twin);
+        expect(response.status).toBe(401);
+    });
+});
+
+describe("closing finished boxes", () => {
+    let token: string;
+    let venueId: string;
+    let roomId: string;
+
+    // Books a box on the first free slot and returns its id.
+    async function book() {
+        const slots = await request(app)
+            .get("/api/venues/" + venueId + "/slots")
+            .set("Authorization", "Bearer " + token);
+        const roomWithSlots = slots.body.find((entry: any) => entry.slots.length > 0);
+        roomId = roomWithSlots.room.id;
+        const booking = await request(app)
+            .post("/api/boxes")
+            .set("Authorization", "Bearer " + token)
+            .send({ venueId, roomId, slotId: roomWithSlots.slots[0].id });
+        return booking.body.id;
+    }
+
+    // Drags a box's slot into the past, so the next read has to close it.
+    async function rewindSlot(boxId: string) {
+        const box = await boxesCollection.findOne({ id: boxId });
+        await slotsCollection.updateOne(
+            { id: box!.slotId },
+            {
+                $set: {
+                    start: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+                    end: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+                }
+            }
+        );
+        return box!.slotId;
+    }
+
+    beforeAll(async () => {
+        token = await registerWithLocation("closing");
+        const venues = await request(app)
+            .get("/api/venues?distance=2")
+            .set("Authorization", "Bearer " + token);
+        venueId = venues.body[0].id;
+    }, 20000);
+
+    it("ends a paid box once its slot is over", async () => {
+        const boxId = await book();
+        await request(app)
+            .post("/api/boxes/" + boxId + "/pay")
+            .set("Authorization", "Bearer " + token);
+        await rewindSlot(boxId);
+
+        const room = await request(app)
+            .get("/api/boxes/" + boxId)
+            .set("Authorization", "Bearer " + token);
+        expect(room.status).toBe(200);
+        expect(room.body.status).toBe("ended");
+    });
+
+    it("moves the finished box to past and opens rating", async () => {
+        const boxId = await book();
+        await request(app)
+            .post("/api/boxes/" + boxId + "/pay")
+            .set("Authorization", "Bearer " + token);
+        await rewindSlot(boxId);
+
+        const mine = await request(app).get("/api/boxes/mine").set("Authorization", "Bearer " + token);
+        expect(mine.body.past.some((box: any) => box.id === boxId)).toBe(true);
+        expect(mine.body.upcoming.some((box: any) => box.id === boxId)).toBe(false);
+
+        // Rating is gated on "ended", so it only works once the box closed.
+        const crew = await request(app)
+            .get("/api/boxes/" + boxId + "/crew")
+            .set("Authorization", "Bearer " + token);
+        expect(crew.status).toBe(200);
+    });
+
+    it("cancels a box that was never paid for and frees the slot", async () => {
+        const boxId = await book();
+        const slotId = await rewindSlot(boxId);
+
+        const room = await request(app)
+            .get("/api/boxes/" + boxId)
+            .set("Authorization", "Bearer " + token);
+        expect(room.body.status).toBe("cancelled");
+
+        const slot = await slotsCollection.findOne({ id: slotId });
+        expect(slot!.status).toBe("available");
+
+        const mine = await request(app).get("/api/boxes/mine").set("Authorization", "Bearer " + token);
+        expect(mine.body.upcoming.some((box: any) => box.id === boxId)).toBe(false);
+        expect(mine.body.past.some((box: any) => box.id === boxId)).toBe(false);
+    });
+
+    it("refuses to pay for a cancelled box", async () => {
+        const boxId = await book();
+        await rewindSlot(boxId);
+
+        const response = await request(app)
+            .post("/api/boxes/" + boxId + "/pay")
+            .set("Authorization", "Bearer " + token);
+        expect(response.status).toBe(400);
+    });
+
+    it("keeps a box that has not started yet untouched", async () => {
+        const boxId = await book();
+        await request(app)
+            .post("/api/boxes/" + boxId + "/pay")
+            .set("Authorization", "Bearer " + token);
+
+        const room = await request(app)
+            .get("/api/boxes/" + boxId)
+            .set("Authorization", "Bearer " + token);
+        expect(room.body.status).toBe("upcoming");
     });
 });

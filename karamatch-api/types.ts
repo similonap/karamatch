@@ -84,7 +84,8 @@ export interface Box {
     capacity: number;
     totalPrice: number;
     openToPublic: boolean;
-    status: "pending_payment" | "upcoming" | "ended";
+    // "cancelled" = the slot passed while the box was still unpaid.
+    status: "pending_payment" | "upcoming" | "ended" | "cancelled";
     members: BoxMember[];
     invitedUsernames: string[];
 }
@@ -129,6 +130,12 @@ export interface PublicUser {
     favoriteSongIds: string[];
     singerRating: number;
     eventsCount: number;
+}
+
+// A singer inside a list, carrying taste compatibility with whoever asked for
+// the list. matchPct is null for the viewer themself.
+export interface MatchedUser extends PublicUser {
+    matchPct: number | null;
 }
 
 export function toPublicUser(user: User): PublicUser {

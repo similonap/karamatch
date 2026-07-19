@@ -76,6 +76,10 @@ router.post("/boxes/:id/pay", verifyAuthToken, async (req, res) => {
         res.status(400).json({ error: "Box has already ended" });
         return;
     }
+    if (box.status === "cancelled") {
+        res.status(400).json({ error: "Box was cancelled — the slot went back to the venue" });
+        return;
+    }
     // Simulated payment — always succeeds.
     const updated = await payForBox(box, res.locals.user);
     res.json({ boxId: updated.id, status: updated.status, share: shareFor(updated) });
@@ -144,7 +148,7 @@ router.get("/boxes/:id", verifyAuthToken, async (req, res) => {
     if (!box) {
         return;
     }
-    const room = await getBoxRoom(box);
+    const room = await getBoxRoom(box, res.locals.user);
     res.json(room);
 });
 

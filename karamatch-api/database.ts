@@ -333,7 +333,12 @@ export async function createNpcUser(nearLat: number, nearLng: number, genre: str
 
 export async function getFriends(user: User) {
     const users = await usersCollection.find({ id: { $in: user.friendIds } }).toArray();
-    return users.map(toPublicUser);
+    const matchPctFor = await matchScorerFor(user);
+    const friends = [];
+    for (const friend of users) {
+        friends.push({ ...toPublicUser(friend), matchPct: await matchPctFor(friend) });
+    }
+    return friends;
 }
 
 export async function searchUsers(query: string, user: User) {
@@ -341,15 +346,61 @@ export async function searchUsers(query: string, user: User) {
     const matches = await usersCollection.find({
         $or: [{ name: regex }, { username: regex }, { email: regex }]
     }).toArray();
-    return matches
+    const found = matches
         .filter(match => match.id !== user.id && !user.friendIds.includes(match.id))
-        .slice(0, 4)
-        .map(toPublicUser);
+        .slice(0, 4);
+    const matchPctFor = await matchScorerFor(user);
+    const scored = [];
+    for (const match of found) {
+        scored.push({ ...toPublicUser(match), matchPct: await matchPctFor(match) });
+    }
+    return scored;
+}
+
+// One singer's public profile as another singer sees it: taste compatibility,
+// the songs they love and whether you already sing together. Viewing yourself
+// gives matchPct null, the same rule the list endpoints follow.
+export async function getUserProfile(other: User, viewer: User) {
+    const favoriteSongs = await getSongsByIds(other.favoriteSongIds);
+    const genreProfile = await getGenreProfile(other);
+    if (other.id === viewer.id) {
+        return {
+            ...toPublicUser(other),
+            matchPct: null,
+            commonSongs: [],
+            favoriteSongs: favoriteSongs,
+            genreProfile: genreProfile,
+            isFriend: false,
+            isSelf: true
+        };
+    }
+    const score = await scoreMatch(viewer, other);
+    return {
+        ...toPublicUser(other),
+        matchPct: score.matchPct,
+        commonSongs: score.commonSongs,
+        favoriteSongs: favoriteSongs,
+        genreProfile: genreProfile,
+        isFriend: viewer.friendIds.includes(other.id),
+        isSelf: false
+    };
 }
 
 export async function addFriend(user: User, other: User) {
     await usersCollection.updateOne({ id: user.id }, { $set: { friendIds: [...user.friendIds, other.id] } });
     await usersCollection.updateOne({ id: other.id }, { $set: { friendIds: [...other.friendIds, user.id] } });
+}
+
+// Friendship is mutual, so unfriending drops both sides again.
+export async function removeFriend(user: User, other: User) {
+    await usersCollection.updateOne(
+        { id: user.id },
+        { $set: { friendIds: user.friendIds.filter(id => id !== other.id) } }
+    );
+    await usersCollection.updateOne(
+        { id: other.id },
+        { $set: { friendIds: other.friendIds.filter(id => id !== user.id) } }
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -402,11 +453,79 @@ async function toBoxView(box: Box, lat: number, lng: number): Promise<BoxView | 
     };
 }
 
+// A box is over once its slot's end time has passed. Nothing schedules that
+// transition — it happens lazily, the first time anyone reads the box, so it
+// survives restarts and needs no timer. ISO-8601 strings sort chronologically,
+// so "end < now" is a plain $lt on the stored string.
+//
+// A box that was booked but never paid for is a different story: that night
+// never happened, so it is cancelled instead of ended and the room goes back
+// to the venue.
+export async function closeFinishedBoxes() {
+    // Only boxes that are still open can need closing, and every sweep shrinks
+    // that set — so this never walks the whole history.
+    const open = await boxesCollection.find({ status: { $in: ["upcoming", "pending_payment"] } }).toArray();
+    if (open.length === 0) {
+        return;
+    }
+    const now = new Date().toISOString();
+    const finished = await slotsCollection.find({
+        id: { $in: open.map(box => box.slotId) },
+        end: { $lt: now }
+    }).toArray();
+    if (finished.length === 0) {
+        return;
+    }
+
+    const slotIds = finished.map(slot => slot.id);
+    await boxesCollection.updateMany(
+        { slotId: { $in: slotIds }, status: "upcoming" },
+        { $set: { status: "ended" } }
+    );
+
+    const abandoned = open.filter(box => box.status === "pending_payment" && slotIds.includes(box.slotId));
+    if (abandoned.length > 0) {
+        await boxesCollection.updateMany(
+            { id: { $in: abandoned.map(box => box.id) } },
+            { $set: { status: "cancelled" } }
+        );
+        await slotsCollection.updateMany(
+            { id: { $in: abandoned.map(box => box.slotId) } },
+            { $set: { status: "available" } }
+        );
+    }
+}
+
+// Same rule as closeFinishedBoxes, for a single box: cheaper than sweeping
+// everything on reads that only touch one room.
+async function closeIfFinished(box: Box): Promise<Box> {
+    if (box.status !== "upcoming" && box.status !== "pending_payment") {
+        return box;
+    }
+    const slot = await getSlotById(box.slotId);
+    if (!slot || slot.end >= new Date().toISOString()) {
+        return box;
+    }
+    if (box.status === "upcoming") {
+        await boxesCollection.updateOne({ id: box.id }, { $set: { status: "ended" } });
+        return { ...box, status: "ended" };
+    }
+    await boxesCollection.updateOne({ id: box.id }, { $set: { status: "cancelled" } });
+    await slotsCollection.updateOne({ id: box.slotId }, { $set: { status: "available" } });
+    return { ...box, status: "cancelled" };
+}
+
 export async function getBoxById(id: string): Promise<Box | null> {
-    return await boxesCollection.findOne({ id: id });
+    const box = await boxesCollection.findOne({ id: id });
+    if (!box) {
+        return null;
+    }
+    return await closeIfFinished(box);
 }
 
 async function findJoinableBoxes(user: User, lat: number, lng: number, distanceKm: number, from: Date, to: Date) {
+    // Never offer a night that is already over.
+    await closeFinishedBoxes();
     const candidates = await boxesCollection.find({ openToPublic: true, status: "upcoming" }).toArray();
     const joinable: { box: Box; view: BoxView }[] = [];
     for (const box of candidates) {
@@ -601,14 +720,33 @@ function cosineSimilarity(a: Map<string, number>, b: Map<string, number>) {
 // matchPct = round(100 * (0.6 * songOverlap + 0.4 * genreAffinity)).
 // Because the catalog is genre-discriminative, genreAffinity is meaningful
 // even when two singers share zero exact songs.
-export async function scoreMatch(me: User, host: User) {
-    const common = me.favoriteSongIds.filter(id => host.favoriteSongIds.includes(id));
-    const smallest = Math.min(me.favoriteSongIds.length, host.favoriteSongIds.length);
+// Split out of scoreMatch so a list endpoint can score many singers against
+// one viewer without rebuilding the viewer's genre profile for each candidate.
+function matchPctBetween(me: User, other: User, myProfile: Map<string, number>, otherProfile: Map<string, number>) {
+    const common = me.favoriteSongIds.filter(id => other.favoriteSongIds.includes(id));
+    const smallest = Math.min(me.favoriteSongIds.length, other.favoriteSongIds.length);
     const songOverlap = smallest === 0 ? 0 : common.length / smallest;
-    const genreAffinity = cosineSimilarity(await genreProfileFor(me), await genreProfileFor(host));
-    const matchPct = Math.round(100 * (0.6 * songOverlap + 0.4 * genreAffinity));
-    const commonSongs = (await getSongsByIds(common.slice(0, 3))).map(song => song.title);
-    return { matchPct: matchPct, commonSongs: commonSongs };
+    const genreAffinity = cosineSimilarity(myProfile, otherProfile);
+    return { matchPct: Math.round(100 * (0.6 * songOverlap + 0.4 * genreAffinity)), common: common };
+}
+
+export async function scoreMatch(me: User, host: User) {
+    const score = matchPctBetween(me, host, await genreProfileFor(me), await genreProfileFor(host));
+    const commonSongs = (await getSongsByIds(score.common.slice(0, 3))).map(song => song.title);
+    return { matchPct: score.matchPct, commonSongs: commonSongs };
+}
+
+// Returns a scorer bound to one viewer, for lists of singers. The viewer
+// scores null against themself — "100% match" next to your own name reads as
+// a bug, so the app hides the badge instead.
+export async function matchScorerFor(viewer: User) {
+    const myProfile = await genreProfileFor(viewer);
+    return async function matchPctFor(other: User) {
+        if (other.id === viewer.id) {
+            return null;
+        }
+        return matchPctBetween(viewer, other, myProfile, await genreProfileFor(other)).matchPct;
+    };
 }
 
 export async function ensureMatchesNear(user: User, lat: number, lng: number, distanceKm: number, from: Date, to: Date, minOverlap: number) {
@@ -718,15 +856,21 @@ export async function setNotificationStatus(id: string, status: "accepted" | "de
 
 // The full room view for a member: venue/room/start, members with their
 // host/paid tags, invited usernames and spots left.
-export async function getBoxRoom(box: Box) {
+export async function getBoxRoom(box: Box, viewer: User) {
     const venue = await getVenueById(box.venueId);
     const slot = await getSlotById(box.slotId);
     const room = venue ? venue.rooms.find(room => room.id === box.roomId) : undefined;
+    const matchPctFor = await matchScorerFor(viewer);
     const members = [];
     for (const member of box.members) {
         const user = await getUserById(member.userId);
         if (user) {
-            members.push({ ...toPublicUser(user), role: member.role, paid: member.paid });
+            members.push({
+                ...toPublicUser(user),
+                role: member.role,
+                paid: member.paid,
+                matchPct: await matchPctFor(user)
+            });
         }
     }
     return {
@@ -744,7 +888,10 @@ export async function getBoxRoom(box: Box) {
         share: shareFor(box),
         spotsLeft: box.capacity - box.members.length,
         members: members,
-        invitedUsernames: box.invitedUsernames
+        invitedUsernames: box.invitedUsernames,
+        // Lets an ended room show "rate your crew" or "already rated" without
+        // a second round trip.
+        rated: await hasRatedBox(viewer, box.id)
     };
 }
 
@@ -754,6 +901,7 @@ export async function setBoxOpenToPublic(box: Box, openToPublic: boolean) {
 
 // Fellow members of an ended box — the people you can rate.
 export async function getCrew(box: Box, user: User) {
+    const matchPctFor = await matchScorerFor(user);
     const crew = [];
     for (const member of box.members) {
         if (member.userId === user.id) {
@@ -761,7 +909,7 @@ export async function getCrew(box: Box, user: User) {
         }
         const fellow = await getUserById(member.userId);
         if (fellow) {
-            crew.push({ ...toPublicUser(fellow), role: member.role });
+            crew.push({ ...toPublicUser(fellow), role: member.role, matchPct: await matchPctFor(fellow) });
         }
     }
     return crew;
@@ -912,6 +1060,8 @@ async function createPastBox(user: User): Promise<Box | null> {
 }
 
 export async function getMyBoxes(user: User) {
+    // Sweep first, so a night that just finished lands under "past" here.
+    await closeFinishedBoxes();
     const all: Box[] = await boxesCollection.find({}).toArray();
     const mine = all.filter(box => box.members.some(member => member.userId === user.id));
     if (!mine.some(box => box.status === "ended")) {
@@ -926,6 +1076,10 @@ export async function getMyBoxes(user: User) {
     const upcoming = [];
     const past = [];
     for (const box of mine) {
+        // A cancelled box never happened — it belongs in neither list.
+        if (box.status === "cancelled") {
+            continue;
+        }
         const view = await toBoxView(box, lat, lng);
         if (!view) {
             continue;
