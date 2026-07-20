@@ -179,6 +179,24 @@ export default function PartyRoom() {
                     flexShrink: 0
                 }}
             >
+                {party.roomName === "" ? null : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: C.textMuted, flexShrink: 0 }}>Your room</span>
+                        <span
+                            style={{
+                                fontSize: 14,
+                                fontWeight: 700,
+                                minWidth: 0,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis"
+                            }}
+                        >
+                            {party.roomName}
+                        </span>
+                    </div>
+                )}
+
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     {party.members.map(member => (
                         <div
