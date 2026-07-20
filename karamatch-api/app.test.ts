@@ -204,7 +204,7 @@ describe("booking & payment", () => {
         const full = await request(app)
             .post("/api/parties")
             .set("Authorization", "Bearer " + hostToken)
-            .send({ venueId, roomId, slotId: otherSlotId, spots: 2 });
+            .send({ venueId, roomId, slotId: otherSlotId, title: "Held Back Night", spots: 2 });
         expect(full.status).toBe(201);
         expect(full.body.capacity).toBe(3);
         expect(full.body.seats).toBe(roomSeats);
@@ -255,8 +255,43 @@ describe("booking & payment", () => {
         const response = await request(app)
             .post("/api/parties")
             .set("Authorization", "Bearer " + hostToken)
-            .send({ venueId, roomId, slotId: otherSlotId, spots: roomSeats });
+            .send({ venueId, roomId, slotId: otherSlotId, title: "Too Many Spots", spots: roomSeats });
         expect(response.status).toBe(400);
+    });
+
+    it("requires the host to name the party", async () => {
+        const missing = await request(app)
+            .post("/api/parties")
+            .set("Authorization", "Bearer " + hostToken)
+            .send({ venueId, roomId, slotId: otherSlotId });
+        expect(missing.status).toBe(400);
+        expect(missing.body.error).toBe("title is required");
+
+        // Whitespace is not a name.
+        const blank = await request(app)
+            .post("/api/parties")
+            .set("Authorization", "Bearer " + hostToken)
+            .send({ venueId, roomId, slotId: otherSlotId, title: "   " });
+        expect(blank.status).toBe(400);
+        expect(blank.body.error).toBe("title is required");
+    });
+
+    it("rejects a title longer than 60 characters", async () => {
+        const response = await request(app)
+            .post("/api/parties")
+            .set("Authorization", "Bearer " + hostToken)
+            .send({ venueId, roomId, slotId: otherSlotId, title: "a".repeat(61) });
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe("title must be 60 characters or fewer");
+    });
+
+    it("trims the stored title", async () => {
+        const response = await request(app)
+            .post("/api/parties")
+            .set("Authorization", "Bearer " + hostToken)
+            .send({ venueId, roomId, slotId: otherSlotId, title: "  Padded Night  " });
+        expect(response.status).toBe(201);
+        expect(response.body.title).toBe("Padded Night");
     });
 
     it("host payment confirms the party and books the slot", async () => {
@@ -269,7 +304,7 @@ describe("booking & payment", () => {
         const again = await request(app)
             .post("/api/parties")
             .set("Authorization", "Bearer " + joinerToken)
-            .send({ venueId, roomId, slotId });
+            .send({ venueId, roomId, slotId, title: "Second Booking" });
         expect(again.status).toBe(400);
         expect(again.body.error).toBe("Slot already taken");
     });
@@ -409,7 +444,7 @@ describe("party room, host controls & invites", () => {
         const booking = await request(app)
             .post("/api/parties")
             .set("Authorization", "Bearer " + hostToken)
-            .send({ venueId, roomId: roomWithSlots.room.id, slotId: roomWithSlots.slots[0].id });
+            .send({ venueId, roomId: roomWithSlots.room.id, slotId: roomWithSlots.slots[0].id, title: "Chat Night" });
         partyId = booking.body.id;
         await request(app).post("/api/parties/" + partyId + "/pay").set("Authorization", "Bearer " + hostToken);
     }, 20000);
@@ -873,7 +908,7 @@ describe("closing finished parties", () => {
         const booking = await request(app)
             .post("/api/parties")
             .set("Authorization", "Bearer " + token)
-            .send({ venueId, roomId, slotId: roomWithSlots.slots[0].id });
+            .send({ venueId, roomId, slotId: roomWithSlots.slots[0].id, title: "Lifecycle Night" });
         return booking.body.id;
     }
 

@@ -2,8 +2,11 @@ import { useMemo, useState } from "react";
 import { api } from "../api";
 import type { RoomSlots } from "../api";
 import { useApp } from "../AppContext";
-import { C, primaryButton } from "../theme";
+import { C, inputStyle, primaryButton } from "../theme";
 import { ErrorNote, Loading, formatDayLabel, formatTime, money, optionStyle, useAsync } from "../ui";
+
+// Kept in step with TITLE_MAX_LENGTH in routers/parties.ts.
+const TITLE_MAX_LENGTH = 60;
 
 function dayKey(iso: string) {
     const date = new Date(iso);
@@ -22,6 +25,7 @@ export default function VenueDetail() {
     const [time, setTime] = useState<string | null>(null);
     // null = follow the room's own size (every seat but the host's is offered).
     const [spots, setSpots] = useState<number | null>(null);
+    const [title, setTitle] = useState("");
     const [busy, setBusy] = useState(false);
 
     const roomSlots: RoomSlots[] = useMemo(() => slots.data ?? [], [slots.data]);
@@ -87,10 +91,12 @@ export default function VenueDetail() {
     const quote = spotOptions.find(option => option.spots === openSpots) ?? null;
     const share = quote ? quote.share : 0;
     const hostCost = quote ? quote.hostPays : 0;
-    const canBook = Boolean(selectedRoom && selectedSlot && quote) && !busy;
+    const trimmedTitle = title.trim();
+    const roomPicked = Boolean(selectedRoom && selectedSlot && quote);
+    const canBook = roomPicked && trimmedTitle !== "" && !busy;
 
     async function book() {
-        if (!selectedRoom || !selectedSlot || !venue.data) {
+        if (!selectedRoom || !selectedSlot || !venue.data || trimmedTitle === "") {
             return;
         }
         setBusy(true);
@@ -99,6 +105,7 @@ export default function VenueDetail() {
                 venueId: venue.data.id,
                 roomId: selectedRoom.id,
                 slotId: selectedSlot.id,
+                title: trimmedTitle,
                 spots: openSpots
             });
             app.startPay({ kind: "host", partyId: created.id, amount: created.totalPrice });
@@ -319,6 +326,20 @@ export default function VenueDetail() {
                     </div>
                 ) : null}
 
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Name your party</div>
+                    <input
+                        value={title}
+                        onChange={event => setTitle(event.target.value)}
+                        maxLength={TITLE_MAX_LENGTH}
+                        placeholder="Rock Legends Only"
+                        style={{ ...inputStyle, height: 48, borderRadius: 14, fontSize: 15, padding: "0 16px" }}
+                    />
+                    <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+                        This is what singers see in the open list — say what you're here to sing.
+                    </div>
+                </div>
+
                 <div
                     style={{
                         borderRadius: 16,
@@ -373,7 +394,13 @@ export default function VenueDetail() {
                         boxShadow: canBook ? "0 8px 32px rgba(255,61,143,.35)" : "none"
                     }}
                 >
-                    {busy ? "Booking…" : canBook ? "Book & pay " + money(total) : "Select a room"}
+                    {busy
+                        ? "Booking…"
+                        : canBook
+                          ? "Book & pay " + money(total)
+                          : roomPicked
+                            ? "Name your party"
+                            : "Select a room"}
                 </button>
             </div>
         </div>

@@ -11,6 +11,9 @@ import { Party, toPublicUser } from "../types";
 
 const router = express.Router();
 
+// Long enough for a real title, short enough to stay on one line in the lists.
+const TITLE_MAX_LENGTH = 60;
+
 router.post("/parties", verifyAuthToken, async (req, res) => {
     const user = res.locals.user;
     const venueId: string = req.body.venueId;
@@ -51,7 +54,17 @@ router.post("/parties", verifyAuthToken, async (req, res) => {
         }
         openSpots = req.body.spots;
     }
+    // The host names their own party — only generated parties get an invented
+    // title, so a listing never mixes the two.
     const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+    if (title === "") {
+        res.status(400).json({ error: "title is required" });
+        return;
+    }
+    if (title.length > TITLE_MAX_LENGTH) {
+        res.status(400).json({ error: "title must be " + TITLE_MAX_LENGTH + " characters or fewer" });
+        return;
+    }
     const party = await createParty(user, venue, room, slot, title, openSpots);
     res.status(201).json({ ...party, share: shareFor(party) });
 });

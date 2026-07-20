@@ -16,7 +16,8 @@ Also working: the **party chat** (`GET`/`POST /parties/:id/messages`, members on
 the client) — NPC members answer with a canned reply now and then, so the chat feels alive.
 
 And **booking & payment** (simulated — always succeeds): `POST /parties` books a free slot
-as a `pending_payment` party (400 if the slot is taken); the host's `POST /parties/:id/pay`
+as a `pending_payment` party (400 if the slot is taken, or if the required `title` is empty
+or longer than 60 characters); the host's `POST /parties/:id/pay`
 confirms it (party `upcoming`, slot `booked`). `POST /parties/:id/join` reserves a spot on a
 public party and returns your share, which you then pay on the same `/pay` endpoint.
 Invites work the same way: `POST /notifications/:id/accept` reserves the spot and hands

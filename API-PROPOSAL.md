@@ -289,7 +289,7 @@ parameters override it. `distance` is in km (default 3, max 25).
 ### Parties, booking & payment — `routers/parties.ts`
 | | |
 |---|---|
-| 🔒 `POST /parties` | Host books: `{ venueId, roomId, slotId, title?, spots? }` → 201 `pending_payment` party with `totalPrice` + `share`; `spots` = seats offered to other singers (default `room.seats − 1`, so `capacity = spots + 1`), lower keeps seats free for guests the host brings and settles with themselves; 400 if slot taken or `spots` ∉ 1–(`seats`−1) |
+| 🔒 `POST /parties` | Host books: `{ venueId, roomId, slotId, title, spots? }` → 201 `pending_payment` party with `totalPrice` + `share`; `title` is **required** (trimmed, 1–60 chars) — only generated parties get an invented name; `spots` = seats offered to other singers (default `room.seats − 1`, so `capacity = spots + 1`), lower keeps seats free for guests the host brings and settles with themselves; 400 if slot taken, `title` empty or > 60 chars, or `spots` ∉ 1–(`seats`−1) |
 | 🔒 `POST /parties/:id/join` | Reserve a spot on a public party → `{ partyId, share }`; 400 if full/own party |
 | 🔒 `POST /parties/:id/pay` | Simulated payment, always succeeds. Host → party `upcoming` + slot `booked`; joiner → paid member. Invite-accepts land here too |
 | 🔒 `GET /parties/open?distance=&from=&to=` | Nearby public parties with spots. **Ensures ≥ 3 exist (generates NPC-hosted parties)** |

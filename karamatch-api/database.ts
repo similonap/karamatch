@@ -865,12 +865,13 @@ export async function dominantGenreFor(user: User) {
 // Host books a room slot: the party starts pending_payment; the slot is only
 // marked booked once the host pays. openSpots is how many seats the host offers
 // to other singers — fewer than the room holds leaves seats for people the host
-// brings along outside the app.
+// brings along outside the app. `title` is required and already validated by the
+// router — only generated parties fall back to randomPartyTitle.
 export async function createParty(host: User, venue: Venue, room: Room, slot: Slot, title: string, openSpots: number): Promise<Party> {
     const genre = await dominantGenreFor(host);
     const party: Party = {
         id: newId("b"),
-        title: title !== "" ? title : randomPartyTitle(genre),
+        title: title,
         genre: genre,
         venueId: venue.id,
         roomId: room.id,

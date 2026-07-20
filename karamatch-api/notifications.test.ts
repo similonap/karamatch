@@ -59,7 +59,8 @@ async function hostAnUpcomingParty(host: Singer, spots?: number) {
     const body: any = {
         venueId: venueId,
         roomId: roomWithSlots.room.id,
-        slotId: roomWithSlots.slots[0].id
+        slotId: roomWithSlots.slots[0].id,
+        title: "Invite Night"
     };
     if (spots !== undefined) {
         body.spots = spots;
