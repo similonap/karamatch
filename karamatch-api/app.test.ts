@@ -532,7 +532,11 @@ describe("crew & ratings", () => {
         const search = await request(app)
             .get("/api/users?q=" + crew[0].username)
             .set("Authorization", "Bearer " + token);
-        expect(search.body[0].singerRating).toBe(5);
+        // Search matches on a substring, and NPC usernames repeat with a random
+        // numeric suffix ("eva3" also matches "eva31"), so pick the singer we
+        // actually rated instead of trusting the first hit.
+        const rated = search.body.find((user: any) => user.username === crew[0].username);
+        expect(rated.singerRating).toBe(5);
 
         const mine = await request(app).get("/api/boxes/mine").set("Authorization", "Bearer " + token);
         const past = mine.body.past.find((box: any) => box.id === boxId);

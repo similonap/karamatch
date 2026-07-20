@@ -703,6 +703,14 @@ export async function ensureNotificationsFor(user: User) {
         }
         const venue = await getVenueById(box.venueId);
         const slot = await getSlotById(box.slotId);
+        // Expired invites: the box already ended or was cancelled, or its slot
+        // has started. Accepting these fails anyway, so don't list them.
+        if (box.status === "ended" || box.status === "cancelled") {
+            continue;
+        }
+        if (slot && new Date(slot.start) <= new Date()) {
+            continue;
+        }
         result.push({
             id: notification.id,
             status: notification.status,
