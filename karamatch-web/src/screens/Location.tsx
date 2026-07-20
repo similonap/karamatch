@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { api } from "../api";
 import { useApp } from "../AppContext";
 import { C, primaryButton, roundBack } from "../theme";
-import { TILE_ATTRIBUTION, TILE_URL } from "../ui";
+import { TILE_ATTRIBUTION, TILE_FILTER, TILE_URL } from "../ui";
 
 // The seeded world sits around Antwerp, so a fresh pin lands somewhere
 // already populated. Moving the map moves the pin for real: the API
@@ -66,6 +66,10 @@ export default function Location() {
         });
         L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: "topright" }).addTo(map);
+        const tilePane = map.getPane("tilePane");
+        if (tilePane) {
+            tilePane.style.filter = TILE_FILTER;
+        }
         mapRef.current = map;
 
         function onMove() {

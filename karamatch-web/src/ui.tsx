@@ -7,6 +7,12 @@ import { C, GRAD, avatarColor, initial, roundBack } from "./theme";
 // OpenStreetMap data through CARTO's dark basemap, so a map sits inside the
 // app's dark theme instead of glowing white. Shared with the Location picker.
 export const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+
+// CARTO's dark basemap is near-black by design, which reads as an empty panel
+// at this size. Lifting the tiles brings the streets back without turning the
+// map into a white hole in a dark screen. Applied to the tile pane only, so
+// the pin keeps its true colour.
+export const TILE_FILTER = "brightness(3.1) contrast(0.72) saturate(1.25)";
 export const TILE_ATTRIBUTION =
     "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>";
 
@@ -446,6 +452,10 @@ export function VenueMap({
         });
         L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
         L.marker([lat, lng], { icon: VENUE_PIN, interactive: false, keyboard: false }).addTo(map);
+        const tilePane = map.getPane("tilePane");
+        if (tilePane) {
+            tilePane.style.filter = TILE_FILTER;
+        }
         mapRef.current = map;
 
         return () => {
