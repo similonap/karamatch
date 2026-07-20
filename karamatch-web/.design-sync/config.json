@@ -1,0 +1,48 @@
+{
+  "projectId": "e5825dff-9a63-4282-9168-72dad6100011",
+  "shape": "package",
+  "pkg": "karamatch-web",
+  "globalName": "KaraMatch",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.app.json",
+  "cssEntry": ".design-sync/ds-styles.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "extraEntries": ["./src/theme.ts"],
+  "componentSrcMap": {
+    "PhoneFrame": "src/ui.tsx",
+    "Avatar": "src/ui.tsx",
+    "MatchBadge": "src/ui.tsx",
+    "BackButton": "src/ui.tsx",
+    "Toast": "src/ui.tsx",
+    "ConfirmDialog": "src/ui.tsx",
+    "Spinner": "src/ui.tsx",
+    "Loading": "src/ui.tsx",
+    "ErrorNote": "src/ui.tsx",
+    "EmptyCard": "src/ui.tsx",
+    "CheckRing": "src/ui.tsx",
+    "GradientTile": "src/ui.tsx"
+  },
+  "overrides": {
+    "Avatar": { "cardMode": "column" },
+    "ConfirmDialog": { "cardMode": "column" },
+    "GradientTile": { "cardMode": "column" },
+    "Loading": { "cardMode": "column" },
+    "MatchBadge": { "cardMode": "column" },
+    "Toast": { "cardMode": "column" },
+    "PhoneFrame": { "cardMode": "single", "primaryStory": "Screen" }
+  },
+  "dtsPropsFor": {
+    "PhoneFrame": "children: React.ReactNode;",
+    "Avatar": "name: string; photoUrl?: string | null; seed?: string | number; size?: number; fontSize?: number;",
+    "MatchBadge": "pct: number | null | undefined;",
+    "BackButton": "onClick: () => void;",
+    "Toast": "message: string;",
+    "ConfirmDialog": "title: string; body: string; confirmLabel: string; busy?: boolean; onConfirm: () => void; onCancel: () => void;",
+    "Spinner": "size?: number;",
+    "Loading": "label?: string;",
+    "ErrorNote": "message: string;",
+    "EmptyCard": "children: React.ReactNode;",
+    "CheckRing": "on: boolean; size?: number;",
+    "GradientTile": "size: number; radius: number; children: React.ReactNode;"
+  }
+}

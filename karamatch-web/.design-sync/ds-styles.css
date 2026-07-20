@@ -1,0 +1,58 @@
+/* Stylesheet entry for the design-system bundle (cfg.cssEntry).
+   KaraMatch's app loads its fonts from a <link> in index.html and its keyframes
+   from src/index.css. Neither is reachable by the converter's CSS scrape, so
+   this file restates the parts the components actually depend on.
+   Keep the keyframes in sync with src/index.css. */
+
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Outfit:wght@400;500;600;700&display=swap");
+
+/* The app surface every KaraMatch component is designed against. The palette is
+   dark-only: components use near-white text and translucent white borders, so
+   they are invisible on a light background. Any screen built with this design
+   system must sit on this surface. */
+.km-surface {
+    background: #0a0512;
+    color: #f5f1fa;
+    font-family: Outfit, sans-serif;
+}
+
+/* Toast + ConfirmDialog entrance */
+@keyframes km-pop {
+    0% {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Spinner (and Loading, which composes it) */
+@keyframes km-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Skeleton/placeholder pulsing */
+@keyframes km-pulse {
+    0%,
+    100% {
+        opacity: 0.55;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #6e6284;
+}
+
+input,
+textarea,
+button {
+    outline: none;
+}
