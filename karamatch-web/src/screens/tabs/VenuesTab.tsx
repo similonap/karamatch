@@ -1,7 +1,7 @@
 import { api } from "../../api";
 import { useApp } from "../../AppContext";
 import { C, screenTitle } from "../../theme";
-import { EmptyCard, ErrorNote, Loading, money, useAsync } from "../../ui";
+import { EmptyCard, ErrorNote, Loading, money, plural, useAsync } from "../../ui";
 
 export default function VenuesTab() {
     const app = useApp();
@@ -104,7 +104,7 @@ export default function VenuesTab() {
                         >
                             <span>{venue.distanceKm} km</span>
                             <span>·</span>
-                            <span>{venue.rooms.length} parties</span>
+                            <span>{plural(venue.rooms.length, "room", "rooms")}</span>
                             <span>·</span>
                             <span style={{ color: C.cyan }}>from {money(venue.fromPrice)}/hr</span>
                         </div>
