@@ -7,6 +7,15 @@ import { Avatar, ErrorNote, Loading, formatWhen, plural, useAsync } from "../ui"
 
 const POLL_MS = 4000;
 
+// The party screen holds two things that each want the whole height: the chat,
+// and everything about the party itself. They take turns.
+type Pane = "chat" | "details";
+
+const PANES: { key: Pane; label: string }[] = [
+    { key: "chat", label: "Chat" },
+    { key: "details", label: "Details" }
+];
+
 export default function PartyRoom() {
     const app = useApp();
     const partyId = app.partyId;
@@ -14,6 +23,10 @@ export default function PartyRoom() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [draft, setDraft] = useState("");
     const [inviteInput, setInviteInput] = useState("");
+    const [pane, setPane] = useState<Pane>("chat");
+    // How many messages had arrived last time the chat was on screen, so the
+    // Chat tab can show that something was said while Details was open.
+    const [seenCount, setSeenCount] = useState(0);
     const chatEnd = useRef<HTMLDivElement | null>(null);
 
     // A past party opens the same screen, read-only: the chat is history and the
@@ -49,9 +62,16 @@ export default function PartyRoom() {
         };
     }, [partyId, ended]);
 
+    // Whatever is on screen counts as read; switching back to Chat clears the dot
+    // and drops the view at the newest message.
     useEffect(() => {
-        chatEnd.current?.scrollIntoView({ block: "end" });
-    }, [messages.length]);
+        if (pane === "chat") {
+            setSeenCount(messages.length);
+            chatEnd.current?.scrollIntoView({ block: "end" });
+        }
+    }, [pane, messages.length]);
+
+    const unread = pane === "chat" ? 0 : Math.max(0, messages.length - seenCount);
 
     if (loaded.loading) {
         return <Loading label="Opening the party…" />;
@@ -169,14 +189,64 @@ export default function PartyRoom() {
                 </div>
             </div>
 
+            <div style={{ padding: "12px 20px", flexShrink: 0 }}>
+                <div
+                    style={{
+                        display: "flex",
+                        background: "rgba(255,255,255,.06)",
+                        border: "1px solid rgba(255,255,255,.1)",
+                        borderRadius: 16,
+                        padding: 4
+                    }}
+                >
+                    {PANES.map(item => (
+                        <button
+                            key={item.key}
+                            onClick={() => setPane(item.key)}
+                            style={{
+                                flex: 1,
+                                height: 36,
+                                border: "none",
+                                borderRadius: 12,
+                                background: pane === item.key ? GRAD : "transparent",
+                                color: pane === item.key ? "#fff" : C.textMuted,
+                                fontFamily: "Outfit, sans-serif",
+                                fontWeight: 700,
+                                fontSize: 13,
+                                cursor: "pointer",
+                                padding: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 7
+                            }}
+                        >
+                            {item.label}
+                            {item.key === "chat" && unread > 0 ? (
+                                <span
+                                    title={plural(unread, "new message", "new messages")}
+                                    style={{
+                                        width: 7,
+                                        height: 7,
+                                        borderRadius: "50%",
+                                        background: C.pink,
+                                        boxShadow: "0 0 8px rgba(255,61,143,.8)"
+                                    }}
+                                />
+                            ) : null}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div
                 style={{
-                    padding: "14px 20px",
-                    display: "flex",
+                    display: pane === "details" ? "flex" : "none",
+                    padding: "2px 20px 28px",
+                    flex: 1,
+                    overflow: "auto",
                     flexDirection: "column",
-                    gap: 12,
-                    borderBottom: "1px solid rgba(255,255,255,.08)",
-                    flexShrink: 0
+                    gap: 12
                 }}
             >
                 {party.roomName === "" ? null : (
@@ -397,8 +467,8 @@ export default function PartyRoom() {
                 style={{
                     flex: 1,
                     overflow: "auto",
-                    padding: "16px 20px",
-                    display: "flex",
+                    padding: "4px 20px 16px",
+                    display: pane === "chat" ? "flex" : "none",
                     flexDirection: "column",
                     gap: 10
                 }}
@@ -443,7 +513,7 @@ export default function PartyRoom() {
                 <div ref={chatEnd} />
             </div>
 
-            {ended ? (
+            {pane !== "chat" ? null : ended ? (
                 <div
                     style={{
                         padding: "16px 20px 32px",
