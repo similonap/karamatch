@@ -67,13 +67,13 @@ export interface Slot {
     status: "available" | "booked";
 }
 
-export interface BoxMember {
+export interface PartyMember {
     userId: number;
     role: "host" | "member";
     paid: boolean;
 }
 
-export interface Box {
+export interface Party {
     _id?: ObjectId;
     id: string;
     title: string;
@@ -85,21 +85,21 @@ export interface Box {
     // joiners pay the normal per-seat price no matter how many spots the host
     // opened up.
     seats: number;
-    // Spots this box offers through the app, host included. Lower than seats
+    // Spots this party offers through the app, host included. Lower than seats
     // when the host keeps room for guests they bring themselves.
     capacity: number;
     totalPrice: number;
     openToPublic: boolean;
-    // "cancelled" = the slot passed while the box was still unpaid.
+    // "cancelled" = the slot passed while the party was still unpaid.
     status: "pending_payment" | "upcoming" | "ended" | "cancelled";
-    members: BoxMember[];
+    members: PartyMember[];
     invitedUsernames: string[];
 }
 
 export interface Message {
     _id?: ObjectId;
     id: string;
-    boxId: string;
+    partyId: string;
     userId: number;
     text: string;
     sentAt: string;
@@ -110,14 +110,14 @@ export interface Notification {
     id: string;
     toUserId: number;
     fromUserId: number;
-    boxId: string;
+    partyId: string;
     status: "pending" | "accepted" | "declined";
 }
 
 export interface Rating {
     _id?: ObjectId;
     id: string;
-    boxId: string;
+    partyId: string;
     fromUserId: number;
     toUserId: number;
     stars: number;

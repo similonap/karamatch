@@ -3,14 +3,14 @@ import type { Tab } from "../AppContext";
 import { C, GRAD } from "../theme";
 import { Avatar } from "../ui";
 import VenuesTab from "./tabs/VenuesTab";
-import OpenBoxesTab from "./tabs/OpenBoxesTab";
+import OpenPartiesTab from "./tabs/OpenPartiesTab";
 import MatchTab from "./tabs/MatchTab";
 import FriendsTab from "./tabs/FriendsTab";
 import MineTab from "./tabs/MineTab";
 
 const TABS: { key: Tab; label: string }[] = [
     { key: "venues", label: "Venues" },
-    { key: "boxes", label: "Boxes" },
+    { key: "parties", label: "Parties" },
     { key: "match", label: "Match" },
     { key: "friends", label: "Friends" },
     { key: "mine", label: "Mine" }
@@ -101,7 +101,7 @@ export default function MainTabs() {
             </div>
 
             {app.tab === "venues" ? <VenuesTab /> : null}
-            {app.tab === "boxes" ? <OpenBoxesTab /> : null}
+            {app.tab === "parties" ? <OpenPartiesTab /> : null}
             {app.tab === "match" ? <MatchTab /> : null}
             {app.tab === "friends" ? <FriendsTab /> : null}
             {app.tab === "mine" ? <MineTab /> : null}

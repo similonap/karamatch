@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "./app";
-import { boxesCollection, client, slotsCollection } from "./database";
+import { partiesCollection, client, slotsCollection } from "./database";
 
 afterAll(async () => {
     await client.close();
@@ -46,13 +46,13 @@ async function registerAndLogin(prefix: string): Promise<Singer> {
     return { username: username, email: email, password: password, token: login.body.token };
 }
 
-// Drags a box's slot into the past, so the next read closes the box. Same
-// trick the "closing finished boxes" suite uses — there is no endpoint that
+// Drags a party's slot into the past, so the next read closes the party. Same
+// trick the "closing finished parties" suite uses — there is no endpoint that
 // ends a night early.
-async function rewindSlot(boxId: string) {
-    const box = await boxesCollection.findOne({ id: boxId });
+async function rewindSlot(partyId: string) {
+    const party = await partiesCollection.findOne({ id: partyId });
     await slotsCollection.updateOne(
-        { id: box!.slotId },
+        { id: party!.slotId },
         {
             $set: {
                 start: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
@@ -73,7 +73,7 @@ describe("full journey: login → book → befriend → join → chat → review
     let roomId: string;
     let slotId: string;
     let roomSeats: number;
-    let boxId: string;
+    let partyId: string;
     let share: number;
 
     beforeAll(async () => {
@@ -95,16 +95,16 @@ describe("full journey: login → book → befriend → join → chat → review
     });
 
     it("refuses the journey endpoints without a valid token", async () => {
-        const noToken = await request(app).get("/api/boxes/mine");
+        const noToken = await request(app).get("/api/parties/mine");
         expect(noToken.status).toBe(401);
 
         const badToken = await request(app)
-            .get("/api/boxes/mine")
+            .get("/api/parties/mine")
             .set("Authorization", "Bearer not-a-real-token");
         expect(badToken.status).toBe(401);
     });
 
-    // -- 2. booking a box at a venue ---------------------------------------
+    // -- 2. booking a party at a venue ---------------------------------------
 
     it("finds a venue near the host with a bookable slot", async () => {
         const venues = await request(app)
@@ -126,9 +126,9 @@ describe("full journey: login → book → befriend → join → chat → review
         slotId = roomWithSlots.slots[0].id;
     }, 30000);
 
-    it("books the slot as a box awaiting payment", async () => {
+    it("books the slot as a party awaiting payment", async () => {
         const booking = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + host.token)
             .send({ venueId: venueId, roomId: roomId, slotId: slotId, title: "Journey Night" });
         expect(booking.status).toBe(201);
@@ -136,20 +136,20 @@ describe("full journey: login → book → befriend → join → chat → review
         expect(booking.body.status).toBe("pending_payment");
         expect(booking.body.capacity).toBe(roomSeats);
         expect(booking.body.share).toBeGreaterThan(0);
-        boxId = booking.body.id;
+        partyId = booking.body.id;
         share = booking.body.share;
     });
 
     it("confirms the booking once the host pays", async () => {
         const pay = await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + host.token);
         expect(pay.status).toBe(200);
         expect(pay.body.status).toBe("upcoming");
         expect(pay.body.share).toBe(share);
 
         const room = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + host.token);
         expect(room.status).toBe(200);
         expect(room.body.status).toBe("upcoming");
@@ -160,9 +160,9 @@ describe("full journey: login → book → befriend → join → chat → review
         expect(room.body.spotsLeft).toBe(roomSeats - 1);
 
         const mine = await request(app)
-            .get("/api/boxes/mine")
+            .get("/api/parties/mine")
             .set("Authorization", "Bearer " + host.token);
-        expect(mine.body.upcoming.some((box: any) => box.id === boxId)).toBe(true);
+        expect(mine.body.upcoming.some((party: any) => party.id === partyId)).toBe(true);
     }, 30000);
 
     // -- 3. other people adding you as a friend ----------------------------
@@ -209,27 +209,27 @@ describe("full journey: login → book → befriend → join → chat → review
         expect(again.status).toBe(400);
     });
 
-    // -- 4. joining the box ------------------------------------------------
+    // -- 4. joining the party ------------------------------------------------
 
-    it("lets both friends join the host's box and pay their share", async () => {
+    it("lets both friends join the host's party and pay their share", async () => {
         for (const friend of [friendOne, friendTwo]) {
             const join = await request(app)
-                .post("/api/boxes/" + boxId + "/join")
+                .post("/api/parties/" + partyId + "/join")
                 .set("Authorization", "Bearer " + friend.token);
             expect(join.status).toBe(200);
-            expect(join.body.boxId).toBe(boxId);
+            expect(join.body.partyId).toBe(partyId);
             // Everyone pays the same per-seat price, however many spots the
             // host opened up.
             expect(join.body.share).toBe(share);
 
             const pay = await request(app)
-                .post("/api/boxes/" + boxId + "/pay")
+                .post("/api/parties/" + partyId + "/pay")
                 .set("Authorization", "Bearer " + friend.token);
             expect(pay.status).toBe(200);
         }
 
         const room = await request(app)
-            .get("/api/boxes/" + boxId + "")
+            .get("/api/parties/" + partyId + "")
             .set("Authorization", "Bearer " + host.token);
         expect(room.status).toBe(200);
         expect(room.body.members.length).toBe(3);
@@ -238,14 +238,14 @@ describe("full journey: login → book → befriend → join → chat → review
 
         // The night now shows up for the friends too.
         const mine = await request(app)
-            .get("/api/boxes/mine")
+            .get("/api/parties/mine")
             .set("Authorization", "Bearer " + friendOne.token);
-        expect(mine.body.upcoming.some((box: any) => box.id === boxId)).toBe(true);
+        expect(mine.body.upcoming.some((party: any) => party.id === partyId)).toBe(true);
     }, 30000);
 
-    it("rejects joining a box you are already in", async () => {
+    it("rejects joining a party you are already in", async () => {
         const again = await request(app)
-            .post("/api/boxes/" + boxId + "/join")
+            .post("/api/parties/" + partyId + "/join")
             .set("Authorization", "Bearer " + friendOne.token);
         expect(again.status).toBe(400);
     });
@@ -261,7 +261,7 @@ describe("full journey: login → book → befriend → join → chat → review
 
         for (const line of said) {
             const post = await request(app)
-                .post("/api/boxes/" + boxId + "/messages")
+                .post("/api/parties/" + partyId + "/messages")
                 .set("Authorization", "Bearer " + line.singer.token)
                 .send({ text: line.text });
             expect(post.status).toBe(201);
@@ -272,7 +272,7 @@ describe("full journey: login → book → befriend → join → chat → review
         // Every member reads back the same conversation, oldest first.
         for (const singer of [host, friendOne, friendTwo]) {
             const list = await request(app)
-                .get("/api/boxes/" + boxId + "/messages")
+                .get("/api/parties/" + partyId + "/messages")
                 .set("Authorization", "Bearer " + singer.token);
             expect(list.status).toBe(200);
             const ours = list.body.filter((message: any) =>
@@ -284,19 +284,19 @@ describe("full journey: login → book → befriend → join → chat → review
 
     it("rejects empty messages and keeps outsiders out of the chat", async () => {
         const empty = await request(app)
-            .post("/api/boxes/" + boxId + "/messages")
+            .post("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + host.token)
             .send({ text: "   " });
         expect(empty.status).toBe(400);
 
         const outsider = await registerAndLogin("journeyoutsider");
         const read = await request(app)
-            .get("/api/boxes/" + boxId + "/messages")
+            .get("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + outsider.token);
         expect(read.status).toBe(403);
 
         const write = await request(app)
-            .post("/api/boxes/" + boxId + "/messages")
+            .post("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + outsider.token)
             .send({ text: "let me in" });
         expect(write.status).toBe(403);
@@ -304,39 +304,39 @@ describe("full journey: login → book → befriend → join → chat → review
 
     // -- 6. after the event: reviewing the crew ----------------------------
 
-    it("refuses to rate a box that has not happened yet", async () => {
+    it("refuses to rate a party that has not happened yet", async () => {
         const early = await request(app)
-            .post("/api/boxes/" + boxId + "/ratings")
+            .post("/api/parties/" + partyId + "/ratings")
             .set("Authorization", "Bearer " + host.token)
             .send({ ratings: [{ username: friendOne.username, stars: 5, text: "too soon" }] });
         expect(early.status).toBe(400);
 
         const crew = await request(app)
-            .get("/api/boxes/" + boxId + "/crew")
+            .get("/api/parties/" + partyId + "/crew")
             .set("Authorization", "Bearer " + host.token);
         expect(crew.status).toBe(400);
     });
 
-    it("ends the box once its slot is over", async () => {
-        await rewindSlot(boxId);
+    it("ends the party once its slot is over", async () => {
+        await rewindSlot(partyId);
 
         const room = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + host.token);
         expect(room.status).toBe(200);
         expect(room.body.status).toBe("ended");
         expect(room.body.rated).toBe(false);
 
         const mine = await request(app)
-            .get("/api/boxes/mine")
+            .get("/api/parties/mine")
             .set("Authorization", "Bearer " + host.token);
-        expect(mine.body.past.some((box: any) => box.id === boxId)).toBe(true);
-        expect(mine.body.upcoming.some((box: any) => box.id === boxId)).toBe(false);
+        expect(mine.body.past.some((party: any) => party.id === partyId)).toBe(true);
+        expect(mine.body.upcoming.some((party: any) => party.id === partyId)).toBe(false);
     }, 30000);
 
     it("shows each member the rest of the crew to review", async () => {
         const crew = await request(app)
-            .get("/api/boxes/" + boxId + "/crew")
+            .get("/api/parties/" + partyId + "/crew")
             .set("Authorization", "Bearer " + host.token);
         expect(crew.status).toBe(200);
         // Everyone but yourself.
@@ -346,7 +346,7 @@ describe("full journey: login → book → befriend → join → chat → review
         expect(crew.body.every((member: any) => member.role === "member")).toBe(true);
 
         const asFriend = await request(app)
-            .get("/api/boxes/" + boxId + "/crew")
+            .get("/api/parties/" + partyId + "/crew")
             .set("Authorization", "Bearer " + friendOne.token);
         expect(asFriend.status).toBe(200);
         expect(asFriend.body.some((member: any) => member.username === host.username
@@ -355,16 +355,16 @@ describe("full journey: login → book → befriend → join → chat → review
 
     it("rejects invalid stars and strangers in a review", async () => {
         const tooManyStars = await request(app)
-            .post("/api/boxes/" + boxId + "/ratings")
+            .post("/api/parties/" + partyId + "/ratings")
             .set("Authorization", "Bearer " + host.token)
             .send({ ratings: [{ username: friendOne.username, stars: 7, text: "" }] });
         expect(tooManyStars.status).toBe(400);
 
-        const notInTheBox = await request(app)
-            .post("/api/boxes/" + boxId + "/ratings")
+        const notInTheParty = await request(app)
+            .post("/api/parties/" + partyId + "/ratings")
             .set("Authorization", "Bearer " + host.token)
             .send({ ratings: [{ username: "nobody_" + suffix, stars: 5, text: "" }] });
-        expect(notInTheBox.status).toBe(400);
+        expect(notInTheParty.status).toBe(400);
     });
 
     it("lets everyone review everyone else, and averages the stars received", async () => {
@@ -396,7 +396,7 @@ describe("full journey: login → book → befriend → join → chat → review
 
         for (const review of reviews) {
             const response = await request(app)
-                .post("/api/boxes/" + boxId + "/ratings")
+                .post("/api/parties/" + partyId + "/ratings")
                 .set("Authorization", "Bearer " + review.by.token)
                 .send({ ratings: review.ratings });
             expect(response.status).toBe(201);
@@ -416,17 +416,17 @@ describe("full journey: login → book → befriend → join → chat → review
             expect(profile.body.singerRating).toBe(entry.rating);
         }
 
-        // The box is flagged rated for everyone who reviewed, and nobody gets
+        // The party is flagged rated for everyone who reviewed, and nobody gets
         // to review the same night twice.
         for (const review of reviews) {
             const mine = await request(app)
-                .get("/api/boxes/mine")
+                .get("/api/parties/mine")
                 .set("Authorization", "Bearer " + review.by.token);
-            const past = mine.body.past.find((box: any) => box.id === boxId);
+            const past = mine.body.past.find((party: any) => party.id === partyId);
             expect(past.rated).toBe(true);
 
             const again = await request(app)
-                .post("/api/boxes/" + boxId + "/ratings")
+                .post("/api/parties/" + partyId + "/ratings")
                 .set("Authorization", "Bearer " + review.by.token)
                 .send({ ratings: review.ratings });
             expect(again.status).toBe(400);
@@ -473,10 +473,10 @@ describe("full journey: login → book → befriend → join → chat → review
     });
 
     it("leaves the finished night and its reviews intact afterwards", async () => {
-        // Unfriending must not touch the history: the box, its chat and the
+        // Unfriending must not touch the history: the party, its chat and the
         // ratings all survive.
         const room = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + host.token);
         expect(room.status).toBe(200);
         expect(room.body.status).toBe("ended");
@@ -484,7 +484,7 @@ describe("full journey: login → book → befriend → join → chat → review
         expect(room.body.members.length).toBe(3);
 
         const messages = await request(app)
-            .get("/api/boxes/" + boxId + "/messages")
+            .get("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + friendOne.token);
         expect(messages.status).toBe(200);
         expect(messages.body.length).toBeGreaterThanOrEqual(3);

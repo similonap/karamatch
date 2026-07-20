@@ -32,7 +32,7 @@ export function WithLabel() {
     );
 }
 
-// Short labels from BoxRoom and UserProfile — the common "opening X" shape.
+// Short labels from PartyRoom and UserProfile — the common "opening X" shape.
 export function ShortLabel() {
     return (
         <div style={surface}>

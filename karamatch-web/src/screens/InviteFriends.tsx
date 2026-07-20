@@ -6,21 +6,21 @@ import { Avatar, CheckRing, EmptyCard, ErrorNote, Loading, MatchBadge, plural, u
 
 export default function InviteFriends() {
     const app = useApp();
-    const boxId = app.boxId;
+    const partyId = app.partyId;
     const friends = useAsync(() => api.friends(), []);
-    const room = useAsync(() => api.box(boxId!), [boxId]);
+    const room = useAsync(() => api.party(partyId!), [partyId]);
     const [selected, setSelected] = useState<string[]>([]);
     const [busy, setBusy] = useState(false);
 
-    const box = room.data;
-    // Only people who are not already in the box or pending an invite.
+    const party = room.data;
+    // Only people who are not already in the party or pending an invite.
     const invitable = (friends.data ?? []).filter(friend => {
-        if (!box) {
+        if (!party) {
             return true;
         }
         return (
-            !box.members.some(member => member.id === friend.id) &&
-            !box.invitedUsernames.includes(friend.username)
+            !party.members.some(member => member.id === friend.id) &&
+            !party.invitedUsernames.includes(friend.username)
         );
     });
 
@@ -31,12 +31,12 @@ export default function InviteFriends() {
     }
 
     async function send() {
-        if (selected.length === 0 || !boxId) {
+        if (selected.length === 0 || !partyId) {
             return;
         }
         setBusy(true);
         try {
-            const result = await api.invite(boxId, selected);
+            const result = await api.invite(partyId, selected);
             app.toast(plural(result.invited.length, "invite sent", "invites sent"));
             app.go("room");
         } catch (err) {
@@ -57,7 +57,7 @@ export default function InviteFriends() {
                         Invite friends
                     </div>
                     <div style={{ color: C.textMuted, fontSize: 13 }}>
-                        {box ? box.title + " · " + plural(box.spotsLeft, "spot left", "spots left") : "…"}
+                        {party ? party.title + " · " + plural(party.spotsLeft, "spot left", "spots left") : "…"}
                     </div>
                 </div>
             </div>

@@ -17,12 +17,12 @@ export type Screen =
     | "profile"
     | "user";
 
-export type Tab = "venues" | "boxes" | "match" | "friends" | "mine";
+export type Tab = "venues" | "parties" | "match" | "friends" | "mine";
 
-// What the payment screen is settling: a box you host in full, or your share.
+// What the payment screen is settling: a party you host in full, or your share.
 export interface PayContext {
     kind: "host" | "join";
-    boxId: string;
+    partyId: string;
     amount: number;
     hostUsername?: string;
 }
@@ -40,9 +40,9 @@ export interface AppApi {
     // Screen parameters.
     venueId: string | null;
     openVenue: (id: string) => void;
-    boxId: string | null;
+    partyId: string | null;
     openRoom: (id: string) => void;
-    rateBoxId: string | null;
+    ratePartyId: string | null;
     openRate: (id: string) => void;
     // A singer's profile can be opened from any screen, so closeProfile goes
     // back to wherever you tapped instead of always to the tabs.

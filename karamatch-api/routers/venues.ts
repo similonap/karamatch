@@ -48,7 +48,7 @@ router.get("/venues/:id/slots", verifyAuthToken, async (req, res) => {
         return;
     }
     // Default range: tonight → +7 days, same window the seed materializes and
-    // the same one GET /boxes/open uses. The calendar grows as you look further.
+    // the same one GET /parties/open uses. The calendar grows as you look further.
     const from = typeof req.query.from === "string" ? new Date(req.query.from) : new Date();
     const to = typeof req.query.to === "string"
         ? new Date(req.query.to)

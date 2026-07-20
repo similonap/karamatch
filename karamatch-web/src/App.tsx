@@ -12,7 +12,7 @@ import SongPicker from "./screens/SongPicker";
 import MainTabs from "./screens/MainTabs";
 import VenueDetail from "./screens/VenueDetail";
 import Pay from "./screens/Pay";
-import BoxRoom from "./screens/BoxRoom";
+import PartyRoom from "./screens/PartyRoom";
 import Notifications from "./screens/Notifications";
 import InviteFriends from "./screens/InviteFriends";
 import Rate from "./screens/Rate";
@@ -25,8 +25,8 @@ export default function App() {
     const [screen, setScreen] = useState<Screen>("welcome");
     const [tab, setTab] = useState<Tab>("venues");
     const [venueId, setVenueId] = useState<string | null>(null);
-    const [boxId, setBoxId] = useState<string | null>(null);
-    const [rateBoxId, setRateBoxId] = useState<string | null>(null);
+    const [partyId, setPartyId] = useState<string | null>(null);
+    const [ratePartyId, setRatePartyId] = useState<string | null>(null);
     const [pay, setPay] = useState<PayContext | null>(null);
     const [profileUsername, setProfileUsername] = useState<string | null>(null);
     const [profileBack, setProfileBack] = useState<Screen>("app");
@@ -118,14 +118,14 @@ export default function App() {
             setVenueId(id);
             setScreen("venue");
         },
-        boxId,
+        partyId,
         openRoom: (id: string) => {
-            setBoxId(id);
+            setPartyId(id);
             setScreen("room");
         },
-        rateBoxId,
+        ratePartyId,
         openRate: (id: string) => {
-            setRateBoxId(id);
+            setRatePartyId(id);
             setScreen("rate");
         },
         profileUsername,
@@ -183,7 +183,7 @@ function CurrentScreen({ screen }: { screen: Screen }) {
         case "pay":
             return <Pay />;
         case "room":
-            return <BoxRoom />;
+            return <PartyRoom />;
         case "notifs":
             return <Notifications />;
         case "invitefriends":

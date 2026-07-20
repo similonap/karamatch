@@ -1,17 +1,17 @@
 import express, { Request, Response } from "express";
 import { verifyAuthToken } from "../middleware/verifyAuthToken";
 import {
-    ensureOpenBoxesNear, ensureMatchesNear, getMyBoxes, getBoxById, getMessagesForBox,
-    createMessage, maybeNpcReply, getVenueById, getSlotById, createBox, addBoxMember,
-    payForBox, shareFor, getBoxRoom, setBoxOpenToPublic, createInvite, getCrew,
-    createRatings, hasRatedBox, getUserByUsername, getUserByEmail
+    ensureOpenPartiesNear, ensureMatchesNear, getMyParties, getPartyById, getMessagesForParty,
+    createMessage, maybeNpcReply, getVenueById, getSlotById, createParty, addPartyMember,
+    payForParty, shareFor, getPartyRoom, setPartyOpenToPublic, createInvite, getCrew,
+    createRatings, hasRatedParty, getUserByUsername, getUserByEmail
 } from "../database";
 import { resolveLocation } from "./venues";
-import { Box, toPublicUser } from "../types";
+import { Party, toPublicUser } from "../types";
 
 const router = express.Router();
 
-router.post("/boxes", verifyAuthToken, async (req, res) => {
+router.post("/parties", verifyAuthToken, async (req, res) => {
     const user = res.locals.user;
     const venueId: string = req.body.venueId;
     const roomId: string = req.body.roomId;
@@ -52,49 +52,49 @@ router.post("/boxes", verifyAuthToken, async (req, res) => {
         openSpots = req.body.spots;
     }
     const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
-    const box = await createBox(user, venue, room, slot, title, openSpots);
-    res.status(201).json({ ...box, share: shareFor(box) });
+    const party = await createParty(user, venue, room, slot, title, openSpots);
+    res.status(201).json({ ...party, share: shareFor(party) });
 });
 
-router.post("/boxes/:id/join", verifyAuthToken, async (req, res) => {
+router.post("/parties/:id/join", verifyAuthToken, async (req, res) => {
     const user = res.locals.user;
-    const box = await getBoxById(req.params.id);
-    if (!box) {
-        res.status(404).json({ error: "Box not found" });
+    const party = await getPartyById(req.params.id);
+    if (!party) {
+        res.status(404).json({ error: "Party not found" });
         return;
     }
-    if (box.members.some(member => member.userId === user.id)) {
-        res.status(400).json({ error: "You are already in this box" });
+    if (party.members.some(member => member.userId === user.id)) {
+        res.status(400).json({ error: "You are already in this party" });
         return;
     }
-    if (!box.openToPublic || box.status !== "upcoming") {
-        res.status(400).json({ error: "Box is not open for joining" });
+    if (!party.openToPublic || party.status !== "upcoming") {
+        res.status(400).json({ error: "Party is not open for joining" });
         return;
     }
-    if (box.members.length >= box.capacity) {
-        res.status(400).json({ error: "Box is full" });
+    if (party.members.length >= party.capacity) {
+        res.status(400).json({ error: "Party is full" });
         return;
     }
-    await addBoxMember(box, user);
-    res.json({ boxId: box.id, share: shareFor(box) });
+    await addPartyMember(party, user);
+    res.json({ partyId: party.id, share: shareFor(party) });
 });
 
-router.post("/boxes/:id/pay", verifyAuthToken, async (req, res) => {
-    const box = await loadMemberBox(req.params.id, res);
-    if (!box) {
+router.post("/parties/:id/pay", verifyAuthToken, async (req, res) => {
+    const party = await loadMemberParty(req.params.id, res);
+    if (!party) {
         return;
     }
-    if (box.status === "ended") {
-        res.status(400).json({ error: "Box has already ended" });
+    if (party.status === "ended") {
+        res.status(400).json({ error: "Party has already ended" });
         return;
     }
-    if (box.status === "cancelled") {
-        res.status(400).json({ error: "Box was cancelled — the slot went back to the venue" });
+    if (party.status === "cancelled") {
+        res.status(400).json({ error: "Party was cancelled — the slot went back to the venue" });
         return;
     }
     // Simulated payment — always succeeds.
-    const updated = await payForBox(box, res.locals.user);
-    res.json({ boxId: updated.id, status: updated.status, share: shareFor(updated) });
+    const updated = await payForParty(party, res.locals.user);
+    res.json({ partyId: updated.id, status: updated.status, share: shareFor(updated) });
 });
 
 // Shared query parsing for the location + time-window endpoints (/open,
@@ -124,18 +124,18 @@ function parseWorldQuery(req: Request, res: Response) {
     return { location: location, distance: distance, from: from, to: to };
 }
 
-router.get("/boxes/open", verifyAuthToken, async (req, res) => {
+router.get("/parties/open", verifyAuthToken, async (req, res) => {
     const query = parseWorldQuery(req, res);
     if (!query) {
         return;
     }
-    const boxes = await ensureOpenBoxesNear(
+    const parties = await ensureOpenPartiesNear(
         res.locals.user, query.location.lat, query.location.lng, query.distance, query.from, query.to
     );
-    res.json(boxes);
+    res.json(parties);
 });
 
-router.get("/boxes/matches", verifyAuthToken, async (req, res) => {
+router.get("/parties/matches", verifyAuthToken, async (req, res) => {
     const query = parseWorldQuery(req, res);
     if (!query) {
         return;
@@ -150,31 +150,31 @@ router.get("/boxes/matches", verifyAuthToken, async (req, res) => {
     res.json(matches);
 });
 
-router.get("/boxes/mine", verifyAuthToken, async (req, res) => {
-    const mine = await getMyBoxes(res.locals.user);
+router.get("/parties/mine", verifyAuthToken, async (req, res) => {
+    const mine = await getMyParties(res.locals.user);
     res.json(mine);
 });
 
-router.get("/boxes/:id", verifyAuthToken, async (req, res) => {
-    const box = await loadMemberBox(req.params.id, res);
-    if (!box) {
+router.get("/parties/:id", verifyAuthToken, async (req, res) => {
+    const party = await loadMemberParty(req.params.id, res);
+    if (!party) {
         return;
     }
-    const room = await getBoxRoom(box, res.locals.user);
+    const room = await getPartyRoom(party, res.locals.user);
     res.json(room);
 });
 
-function isHost(box: Box, userId: number) {
-    return box.members.some(member => member.userId === userId && member.role === "host");
+function isHost(party: Party, userId: number) {
+    return party.members.some(member => member.userId === userId && member.role === "host");
 }
 
-router.patch("/boxes/:id", verifyAuthToken, async (req, res) => {
-    const box = await getBoxById(req.params.id);
-    if (!box) {
-        res.status(404).json({ error: "Box not found" });
+router.patch("/parties/:id", verifyAuthToken, async (req, res) => {
+    const party = await getPartyById(req.params.id);
+    if (!party) {
+        res.status(404).json({ error: "Party not found" });
         return;
     }
-    if (!isHost(box, res.locals.user.id)) {
+    if (!isHost(party, res.locals.user.id)) {
         res.status(403).json({ error: "Host only" });
         return;
     }
@@ -182,37 +182,37 @@ router.patch("/boxes/:id", verifyAuthToken, async (req, res) => {
         res.status(400).json({ error: "openToPublic must be a boolean" });
         return;
     }
-    await setBoxOpenToPublic(box, req.body.openToPublic);
-    res.json({ id: box.id, openToPublic: req.body.openToPublic });
+    await setPartyOpenToPublic(party, req.body.openToPublic);
+    res.json({ id: party.id, openToPublic: req.body.openToPublic });
 });
 
-// Loads the box and checks the caller is a member; sends the 404/403 itself
+// Loads the party and checks the caller is a member; sends the 404/403 itself
 // and returns null when the caller may not chat here.
-async function loadMemberBox(boxId: string, res: Response): Promise<Box | null> {
-    const box = await getBoxById(boxId);
-    if (!box) {
-        res.status(404).json({ error: "Box not found" });
+async function loadMemberParty(partyId: string, res: Response): Promise<Party | null> {
+    const party = await getPartyById(partyId);
+    if (!party) {
+        res.status(404).json({ error: "Party not found" });
         return null;
     }
-    if (!box.members.some(member => member.userId === res.locals.user.id)) {
+    if (!party.members.some(member => member.userId === res.locals.user.id)) {
         res.status(403).json({ error: "Members only" });
         return null;
     }
-    return box;
+    return party;
 }
 
-router.get("/boxes/:id/messages", verifyAuthToken, async (req, res) => {
-    const box = await loadMemberBox(req.params.id, res);
-    if (!box) {
+router.get("/parties/:id/messages", verifyAuthToken, async (req, res) => {
+    const party = await loadMemberParty(req.params.id, res);
+    if (!party) {
         return;
     }
-    const messages = await getMessagesForBox(box.id);
+    const messages = await getMessagesForParty(party.id);
     res.json(messages);
 });
 
-router.post("/boxes/:id/messages", verifyAuthToken, async (req, res) => {
-    const box = await loadMemberBox(req.params.id, res);
-    if (!box) {
+router.post("/parties/:id/messages", verifyAuthToken, async (req, res) => {
+    const party = await loadMemberParty(req.params.id, res);
+    if (!party) {
         return;
     }
     const text: string = typeof req.body.text === "string" ? req.body.text.trim() : "";
@@ -220,12 +220,12 @@ router.post("/boxes/:id/messages", verifyAuthToken, async (req, res) => {
         res.status(400).json({ error: "text is required" });
         return;
     }
-    const message = await createMessage(box, res.locals.user.id, text);
+    const message = await createMessage(party, res.locals.user.id, text);
     // Now and then an NPC member replies — it shows up on the next poll.
-    await maybeNpcReply(box, res.locals.user.id);
+    await maybeNpcReply(party, res.locals.user.id);
     res.status(201).json({
         id: message.id,
-        boxId: message.boxId,
+        partyId: message.partyId,
         userId: message.userId,
         from: toPublicUser(res.locals.user),
         text: message.text,
@@ -242,18 +242,18 @@ async function resolveInvitee(target: string) {
     return await getUserByEmail(target);
 }
 
-router.post("/boxes/:id/invites", verifyAuthToken, async (req, res) => {
+router.post("/parties/:id/invites", verifyAuthToken, async (req, res) => {
     const user = res.locals.user;
-    const box = await getBoxById(req.params.id);
-    if (!box) {
-        res.status(404).json({ error: "Box not found" });
+    const party = await getPartyById(req.params.id);
+    if (!party) {
+        res.status(404).json({ error: "Party not found" });
         return;
     }
-    if (!isHost(box, user.id)) {
+    if (!isHost(party, user.id)) {
         res.status(403).json({ error: "Host only" });
         return;
     }
-    if (box.members.length >= box.capacity) {
+    if (party.members.length >= party.capacity) {
         res.status(400).json({ error: "No spots left to invite for" });
         return;
     }
@@ -274,14 +274,14 @@ router.post("/boxes/:id/invites", verifyAuthToken, async (req, res) => {
         if (!invitee || invitee.id === user.id) {
             continue;
         }
-        if (box.members.some(member => member.userId === invitee.id)) {
+        if (party.members.some(member => member.userId === invitee.id)) {
             continue;
         }
-        const current = await getBoxById(box.id);
+        const current = await getPartyById(party.id);
         if (current && current.invitedUsernames.includes(invitee.username)) {
             continue;
         }
-        await createInvite(box, user, invitee);
+        await createInvite(party, user, invitee);
         invited.push(invitee.username);
     }
     if (invited.length === 0) {
@@ -291,30 +291,30 @@ router.post("/boxes/:id/invites", verifyAuthToken, async (req, res) => {
     res.status(201).json({ invited: invited });
 });
 
-router.get("/boxes/:id/crew", verifyAuthToken, async (req, res) => {
-    const box = await loadMemberBox(req.params.id, res);
-    if (!box) {
+router.get("/parties/:id/crew", verifyAuthToken, async (req, res) => {
+    const party = await loadMemberParty(req.params.id, res);
+    if (!party) {
         return;
     }
-    if (box.status !== "ended") {
-        res.status(400).json({ error: "Box has not ended yet" });
+    if (party.status !== "ended") {
+        res.status(400).json({ error: "Party has not ended yet" });
         return;
     }
-    const crew = await getCrew(box, res.locals.user);
+    const crew = await getCrew(party, res.locals.user);
     res.json(crew);
 });
 
-router.post("/boxes/:id/ratings", verifyAuthToken, async (req, res) => {
+router.post("/parties/:id/ratings", verifyAuthToken, async (req, res) => {
     const user = res.locals.user;
-    const box = await loadMemberBox(req.params.id, res);
-    if (!box) {
+    const party = await loadMemberParty(req.params.id, res);
+    if (!party) {
         return;
     }
-    if (box.status !== "ended") {
-        res.status(400).json({ error: "You can only rate an ended box" });
+    if (party.status !== "ended") {
+        res.status(400).json({ error: "You can only rate an ended party" });
         return;
     }
-    if (await hasRatedBox(user, box.id)) {
+    if (await hasRatedParty(user, party.id)) {
         res.status(400).json({ error: "You already rated this crew" });
         return;
     }
@@ -331,8 +331,8 @@ router.post("/boxes/:id/ratings", verifyAuthToken, async (req, res) => {
         }
         const username = typeof rating.username === "string" ? rating.username.replace(/^@/, "") : "";
         const fellow = await getUserByUsername(username);
-        if (!fellow || fellow.id === user.id || !box.members.some(member => member.userId === fellow.id)) {
-            res.status(400).json({ error: "\"" + rating.username + "\" is not a fellow member of this box" });
+        if (!fellow || fellow.id === user.id || !party.members.some(member => member.userId === fellow.id)) {
+            res.status(400).json({ error: "\"" + rating.username + "\" is not a fellow member of this party" });
             return;
         }
         entries.push({
@@ -341,7 +341,7 @@ router.post("/boxes/:id/ratings", verifyAuthToken, async (req, res) => {
             text: typeof rating.text === "string" ? rating.text : ""
         });
     }
-    await createRatings(box, user, entries);
+    await createRatings(party, user, entries);
     res.status(201).json({ message: "Reviews posted — thanks!" });
 });
 

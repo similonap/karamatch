@@ -13,10 +13,10 @@ export default function MatchTab() {
     async function join(match: MatchView) {
         setJoining(match.id);
         try {
-            const result = await api.joinBox(match.id);
+            const result = await api.joinParty(match.id);
             app.startPay({
                 kind: "join",
-                boxId: result.boxId,
+                partyId: result.partyId,
                 amount: result.share,
                 hostUsername: match.host.username
             });
@@ -40,10 +40,10 @@ export default function MatchTab() {
         >
             <div style={screenTitle}>Find a match</div>
             <div style={{ color: C.textDim, fontSize: 14, marginTop: -6 }}>
-                Boxes ranked by how much their setlist overlaps with yours.
+                Parties ranked by how much their setlist overlaps with yours.
             </div>
 
-            {matches.loading ? <Loading label="Scoring boxes against your taste…" /> : null}
+            {matches.loading ? <Loading label="Scoring parties against your taste…" /> : null}
             {matches.error ? <ErrorNote message={matches.error} /> : null}
             {!matches.loading && (matches.data ?? []).length === 0 ? (
                 <EmptyCard>

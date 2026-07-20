@@ -53,18 +53,18 @@ export function Radii() {
     );
 }
 
-// Its real job: the leading thumbnail on a box / venue row.
+// Its real job: the leading thumbnail on a party / venue row.
 export function AsThumbnail() {
-    const boxes = [
+    const parties = [
         { glyph: "🎤", title: "Friday Night Pop", meta: "Kokoro Karaoke · 21:00 · 3 spots" },
         { glyph: "🎸", title: "Rock Classics", meta: "Sing Sing Antwerpen · 20:30 · full" },
         { glyph: "💃", title: "Latin Hour", meta: "Casa Melodía · 22:00 · 1 spot" }
     ];
     return (
         <div style={{ ...surface, display: "flex", flexDirection: "column", gap: 8 }}>
-            {boxes.map(box => (
+            {parties.map(party => (
                 <div
-                    key={box.title}
+                    key={party.title}
                     style={{
                         display: "flex",
                         alignItems: "center",
@@ -76,12 +76,12 @@ export function AsThumbnail() {
                     }}
                 >
                     <GradientTile size={48} radius={14}>
-                        {box.glyph}
+                        {party.glyph}
                     </GradientTile>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>{box.title}</div>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{party.title}</div>
                         <div style={{ ...caption, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {box.meta}
+                            {party.meta}
                         </div>
                     </div>
                 </div>

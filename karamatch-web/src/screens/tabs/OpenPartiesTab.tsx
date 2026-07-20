@@ -1,24 +1,24 @@
 import { useState } from "react";
 import { api } from "../../api";
-import type { BoxView } from "../../api";
+import type { PartyView } from "../../api";
 import { useApp } from "../../AppContext";
 import { C, GRAD, screenTitle } from "../../theme";
 import { Avatar, EmptyCard, ErrorNote, Loading, formatWhen, money, plural, useAsync } from "../../ui";
 
-export default function OpenBoxesTab() {
+export default function OpenPartiesTab() {
     const app = useApp();
-    const boxes = useAsync(() => api.openBoxes(3), []);
+    const parties = useAsync(() => api.openParties(3), []);
     const [joining, setJoining] = useState<string | null>(null);
 
-    async function join(box: BoxView) {
-        setJoining(box.id);
+    async function join(party: PartyView) {
+        setJoining(party.id);
         try {
-            const result = await api.joinBox(box.id);
+            const result = await api.joinParty(party.id);
             app.startPay({
                 kind: "join",
-                boxId: result.boxId,
+                partyId: result.partyId,
                 amount: result.share,
-                hostUsername: box.host.username
+                hostUsername: party.host.username
             });
         } catch (err) {
             app.toast((err as Error).message);
@@ -38,24 +38,24 @@ export default function OpenBoxesTab() {
                 gap: 14
             }}
         >
-            <div style={screenTitle}>Open boxes</div>
+            <div style={screenTitle}>Open parties</div>
             <div style={{ color: C.textDim, fontSize: 14, marginTop: -6 }}>
                 Rooms with free spots — jump in and sing.
             </div>
 
-            {boxes.loading ? <Loading label="Looking for open boxes…" /> : null}
-            {boxes.error ? <ErrorNote message={boxes.error} /> : null}
-            {!boxes.loading && (boxes.data ?? []).length === 0 ? (
+            {parties.loading ? <Loading label="Looking for open parties…" /> : null}
+            {parties.error ? <ErrorNote message={parties.error} /> : null}
+            {!parties.loading && (parties.data ?? []).length === 0 ? (
                 <EmptyCard>
-                    No open boxes nearby right now.
+                    No open parties nearby right now.
                     <br />
                     Book one yourself from the Venues tab.
                 </EmptyCard>
             ) : null}
 
-            {(boxes.data ?? []).map(box => (
+            {(parties.data ?? []).map(party => (
                 <div
-                    key={box.id}
+                    key={party.id}
                     style={{
                         borderRadius: 20,
                         border: "1px solid rgba(255,255,255,.1)",
@@ -69,9 +69,9 @@ export default function OpenBoxesTab() {
                 >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                         <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, fontSize: 16 }}>{box.title}</div>
+                            <div style={{ fontWeight: 700, fontSize: 16 }}>{party.title}</div>
                             <div style={{ color: C.textMuted, fontSize: 13, marginTop: 2 }}>
-                                {box.venue.name} · {formatWhen(box.start)}
+                                {party.venue.name} · {formatWhen(party.start)}
                             </div>
                         </div>
                         <div
@@ -86,33 +86,33 @@ export default function OpenBoxesTab() {
                                 borderRadius: 999
                             }}
                         >
-                            {plural(box.spotsOpen, "spot open", "spots open")}
+                            {plural(party.spotsOpen, "spot open", "spots open")}
                         </div>
                     </div>
 
                     <div
-                        onClick={() => app.openProfile(box.host.username)}
+                        onClick={() => app.openProfile(party.host.username)}
                         style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", alignSelf: "flex-start" }}
                     >
                         <Avatar
-                            name={box.host.name}
-                            photoUrl={box.host.photoUrl}
-                            seed={box.host.id}
+                            name={party.host.name}
+                            photoUrl={party.host.photoUrl}
+                            seed={party.host.id}
                             size={32}
                             fontSize={13}
                         />
                         <div style={{ color: C.textMuted, fontSize: 13 }}>
-                            hosted by @{box.host.username} · {plural(box.membersCount, "singer", "singers")}
+                            hosted by @{party.host.username} · {plural(party.membersCount, "singer", "singers")}
                         </div>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                         <div style={{ fontSize: 14, color: C.textDim }}>
-                            your share <span style={{ color: C.text, fontWeight: 700 }}>{money(box.share)}</span>
+                            your share <span style={{ color: C.text, fontWeight: 700 }}>{money(party.share)}</span>
                         </div>
                         <button
-                            onClick={() => join(box)}
-                            disabled={joining === box.id}
+                            onClick={() => join(party)}
+                            disabled={joining === party.id}
                             style={{
                                 height: 40,
                                 padding: "0 20px",
@@ -124,10 +124,10 @@ export default function OpenBoxesTab() {
                                 fontSize: 14,
                                 fontFamily: "Outfit, sans-serif",
                                 cursor: "pointer",
-                                opacity: joining === box.id ? 0.6 : 1
+                                opacity: joining === party.id ? 0.6 : 1
                             }}
                         >
-                            {joining === box.id ? "Joining…" : "Join"}
+                            {joining === party.id ? "Joining…" : "Join"}
                         </button>
                     </div>
                 </div>

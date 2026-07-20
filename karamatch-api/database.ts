@@ -1,10 +1,10 @@
 import { Collection, MongoClient } from "mongodb";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import { User, Song, Venue, Room, Box, BoxMember, Notification, Cell, Slot, Message, Rating, toPublicUser } from "./types";
+import { User, Song, Venue, Room, Party, PartyMember, Notification, Cell, Slot, Message, Rating, toPublicUser } from "./types";
 import {
     randomInt, pick, newId, randomVenue, randomNpcIdentity,
-    sampleFavoriteSongIds, randomBoxTitle, randomNpcReply, NPC_GENRES, NON_TASTE_GENRES
+    sampleFavoriteSongIds, randomPartyTitle, randomNpcReply, NPC_GENRES, NON_TASTE_GENRES
 } from "./generators";
 dotenv.config();
 
@@ -16,7 +16,7 @@ export const songsCollection: Collection<Song> = db.collection<Song>("songs");
 export const venuesCollection: Collection<Venue> = db.collection<Venue>("venues");
 export const cellsCollection: Collection<Cell> = db.collection<Cell>("cells");
 export const slotsCollection: Collection<Slot> = db.collection<Slot>("slots");
-export const boxesCollection: Collection<Box> = db.collection<Box>("boxes");
+export const partiesCollection: Collection<Party> = db.collection<Party>("parties");
 export const messagesCollection: Collection<Message> = db.collection<Message>("messages");
 export const notificationsCollection: Collection<Notification> = db.collection<Notification>("notifications");
 export const ratingsCollection: Collection<Rating> = db.collection<Rating>("ratings");
@@ -199,16 +199,16 @@ export interface VenueNearby extends VenueView {
 }
 
 export async function ensureVenuesNear(lat: number, lng: number, distanceKm: number): Promise<VenueNearby[]> {
-    const box = boundingBox(lat, lng, distanceKm);
+    const party = boundingBox(lat, lng, distanceKm);
 
-    // Every cell covered by the bounding box that was never generated gets
+    // Every cell covered by the bounding party that was never generated gets
     // rolled once (0–2 venues), then marked generated — so the world is stable.
     const rows: number[] = [];
-    for (let row = Math.floor(box.minLat / CELL_SIZE); row <= Math.floor(box.maxLat / CELL_SIZE); row++) {
+    for (let row = Math.floor(party.minLat / CELL_SIZE); row <= Math.floor(party.maxLat / CELL_SIZE); row++) {
         rows.push(row);
     }
     const cols: number[] = [];
-    for (let col = Math.floor(box.minLng / CELL_SIZE); col <= Math.floor(box.maxLng / CELL_SIZE); col++) {
+    for (let col = Math.floor(party.minLng / CELL_SIZE); col <= Math.floor(party.maxLng / CELL_SIZE); col++) {
         cols.push(col);
     }
     const cellIds: string[] = [];
@@ -244,10 +244,10 @@ export async function ensureVenuesNear(lat: number, lng: number, distanceKm: num
         await cellsCollection.insertMany(newCells);
     }
 
-    // Bounding box query with course-taught operators, then exact haversine filter.
+    // Bounding party query with course-taught operators, then exact haversine filter.
     let venues: Venue[] = await venuesCollection.find({
-        lat: { $gte: box.minLat, $lte: box.maxLat },
-        lng: { $gte: box.minLng, $lte: box.maxLng }
+        lat: { $gte: party.minLat, $lte: party.maxLat },
+        lng: { $gte: party.minLng, $lte: party.maxLng }
     }).toArray();
     venues = venues.filter(venue => haversineKm(lat, lng, venue.lat, venue.lng) <= distanceKm);
 
@@ -446,10 +446,10 @@ export async function removeFriend(user: User, other: User) {
 }
 
 // ---------------------------------------------------------------------------
-// Boxes — NPC-hosted open boxes near you (§2.3)
+// Parties — NPC-hosted open parties near you (§2.3)
 // ---------------------------------------------------------------------------
 
-export interface BoxView {
+export interface PartyView {
     id: string;
     title: string;
     genre: string;
@@ -465,19 +465,19 @@ export interface BoxView {
     status: string;
 }
 
-async function toBoxView(box: Box, lat: number, lng: number): Promise<BoxView | null> {
-    const venue = await getVenueById(box.venueId);
-    const slot = await getSlotById(box.slotId);
-    const hostMember = box.members.find(member => member.role === "host");
+async function toPartyView(party: Party, lat: number, lng: number): Promise<PartyView | null> {
+    const venue = await getVenueById(party.venueId);
+    const slot = await getSlotById(party.slotId);
+    const hostMember = party.members.find(member => member.role === "host");
     const host = hostMember ? await getUserById(hostMember.userId) : null;
     if (!venue || !slot || !host) {
         return null;
     }
-    const room = venue.rooms.find(room => room.id === box.roomId);
+    const room = venue.rooms.find(room => room.id === party.roomId);
     return {
-        id: box.id,
-        title: box.title,
-        genre: box.genre,
+        id: party.id,
+        title: party.title,
+        genre: party.genre,
         venue: {
             id: venue.id,
             name: venue.name,
@@ -487,32 +487,32 @@ async function toBoxView(box: Box, lat: number, lng: number): Promise<BoxView | 
         start: slot.start,
         end: slot.end,
         host: toPublicUser(host),
-        membersCount: box.members.length,
-        capacity: box.capacity,
-        spotsOpen: box.capacity - box.members.length,
-        share: shareFor(box),
-        status: box.status
+        membersCount: party.members.length,
+        capacity: party.capacity,
+        spotsOpen: party.capacity - party.members.length,
+        share: shareFor(party),
+        status: party.status
     };
 }
 
-// A box is over once its slot's end time has passed. Nothing schedules that
-// transition — it happens lazily, the first time anyone reads the box, so it
+// A party is over once its slot's end time has passed. Nothing schedules that
+// transition — it happens lazily, the first time anyone reads the party, so it
 // survives restarts and needs no timer. ISO-8601 strings sort chronologically,
 // so "end < now" is a plain $lt on the stored string.
 //
-// A box that was booked but never paid for is a different story: that night
+// A party that was booked but never paid for is a different story: that night
 // never happened, so it is cancelled instead of ended and the room goes back
 // to the venue.
-export async function closeFinishedBoxes() {
-    // Only boxes that are still open can need closing, and every sweep shrinks
+export async function closeFinishedParties() {
+    // Only parties that are still open can need closing, and every sweep shrinks
     // that set — so this never walks the whole history.
-    const open = await boxesCollection.find({ status: { $in: ["upcoming", "pending_payment"] } }).toArray();
+    const open = await partiesCollection.find({ status: { $in: ["upcoming", "pending_payment"] } }).toArray();
     if (open.length === 0) {
         return;
     }
     const now = new Date().toISOString();
     const finished = await slotsCollection.find({
-        id: { $in: open.map(box => box.slotId) },
+        id: { $in: open.map(party => party.slotId) },
         end: { $lt: now }
     }).toArray();
     if (finished.length === 0) {
@@ -520,64 +520,64 @@ export async function closeFinishedBoxes() {
     }
 
     const slotIds = finished.map(slot => slot.id);
-    await boxesCollection.updateMany(
+    await partiesCollection.updateMany(
         { slotId: { $in: slotIds }, status: "upcoming" },
         { $set: { status: "ended" } }
     );
 
-    const abandoned = open.filter(box => box.status === "pending_payment" && slotIds.includes(box.slotId));
+    const abandoned = open.filter(party => party.status === "pending_payment" && slotIds.includes(party.slotId));
     if (abandoned.length > 0) {
-        await boxesCollection.updateMany(
-            { id: { $in: abandoned.map(box => box.id) } },
+        await partiesCollection.updateMany(
+            { id: { $in: abandoned.map(party => party.id) } },
             { $set: { status: "cancelled" } }
         );
         await slotsCollection.updateMany(
-            { id: { $in: abandoned.map(box => box.slotId) } },
+            { id: { $in: abandoned.map(party => party.slotId) } },
             { $set: { status: "available" } }
         );
     }
 }
 
-// Same rule as closeFinishedBoxes, for a single box: cheaper than sweeping
+// Same rule as closeFinishedParties, for a single party: cheaper than sweeping
 // everything on reads that only touch one room.
-async function closeIfFinished(box: Box): Promise<Box> {
-    if (box.status !== "upcoming" && box.status !== "pending_payment") {
-        return box;
+async function closeIfFinished(party: Party): Promise<Party> {
+    if (party.status !== "upcoming" && party.status !== "pending_payment") {
+        return party;
     }
-    const slot = await getSlotById(box.slotId);
+    const slot = await getSlotById(party.slotId);
     if (!slot || slot.end >= new Date().toISOString()) {
-        return box;
+        return party;
     }
-    if (box.status === "upcoming") {
-        await boxesCollection.updateOne({ id: box.id }, { $set: { status: "ended" } });
-        return { ...box, status: "ended" };
+    if (party.status === "upcoming") {
+        await partiesCollection.updateOne({ id: party.id }, { $set: { status: "ended" } });
+        return { ...party, status: "ended" };
     }
-    await boxesCollection.updateOne({ id: box.id }, { $set: { status: "cancelled" } });
-    await slotsCollection.updateOne({ id: box.slotId }, { $set: { status: "available" } });
-    return { ...box, status: "cancelled" };
+    await partiesCollection.updateOne({ id: party.id }, { $set: { status: "cancelled" } });
+    await slotsCollection.updateOne({ id: party.slotId }, { $set: { status: "available" } });
+    return { ...party, status: "cancelled" };
 }
 
-export async function getBoxById(id: string): Promise<Box | null> {
-    const box = await boxesCollection.findOne({ id: id });
-    if (!box) {
+export async function getPartyById(id: string): Promise<Party | null> {
+    const party = await partiesCollection.findOne({ id: id });
+    if (!party) {
         return null;
     }
-    return await closeIfFinished(box);
+    return await closeIfFinished(party);
 }
 
-async function findJoinableBoxes(user: User, lat: number, lng: number, distanceKm: number, from: Date, to: Date) {
+async function findJoinableParties(user: User, lat: number, lng: number, distanceKm: number, from: Date, to: Date) {
     // Never offer a night that is already over.
-    await closeFinishedBoxes();
-    const candidates = await boxesCollection.find({ openToPublic: true, status: "upcoming" }).toArray();
-    const joinable: { box: Box; view: BoxView }[] = [];
-    for (const box of candidates) {
-        if (box.members.some(member => member.userId === user.id)) {
+    await closeFinishedParties();
+    const candidates = await partiesCollection.find({ openToPublic: true, status: "upcoming" }).toArray();
+    const joinable: { party: Party; view: PartyView }[] = [];
+    for (const party of candidates) {
+        if (party.members.some(member => member.userId === user.id)) {
             continue;
         }
-        if (box.members.length >= box.capacity) {
+        if (party.members.length >= party.capacity) {
             continue;
         }
-        const view = await toBoxView(box, lat, lng);
+        const view = await toPartyView(party, lat, lng);
         if (!view || view.venue.distanceKm > distanceKm) {
             continue;
         }
@@ -585,12 +585,12 @@ async function findJoinableBoxes(user: User, lat: number, lng: number, distanceK
         if (start < from || start > to) {
             continue;
         }
-        joinable.push({ box: box, view: view });
+        joinable.push({ party: party, view: view });
     }
     return joinable;
 }
 
-async function generateNpcBox(user: User, venues: VenueNearby[], from: Date, to: Date): Promise<Box | null> {
+async function generateNpcParty(user: User, venues: VenueNearby[], from: Date, to: Date): Promise<Party | null> {
     const venue = pick(venues);
     const roomSlots = (await ensureSlots(venue, from, to)).filter(entry => entry.slots.length > 0);
     if (roomSlots.length === 0) {
@@ -602,16 +602,16 @@ async function generateNpcBox(user: User, venues: VenueNearby[], from: Date, to:
     const host = await createNpcUser(venue.lat, venue.lng, genre);
 
     // Host + 1..capacity-2 NPC members, so there are always spots open.
-    const members: BoxMember[] = [{ userId: host.id, role: "host", paid: true }];
+    const members: PartyMember[] = [{ userId: host.id, role: "host", paid: true }];
     const extraMembers = randomInt(1, Math.max(1, chosen.room.seats - 2));
     for (let i = 0; i < extraMembers; i++) {
         const npc = await createNpcUser(venue.lat, venue.lng, genre);
         members.push({ userId: npc.id, role: "member", paid: true });
     }
 
-    const box: Box = {
+    const party: Party = {
         id: newId("b"),
-        title: randomBoxTitle(genre),
+        title: randomPartyTitle(genre),
         genre: genre,
         venueId: venue.id,
         roomId: chosen.room.id,
@@ -624,25 +624,25 @@ async function generateNpcBox(user: User, venues: VenueNearby[], from: Date, to:
         members: members,
         invitedUsernames: []
     };
-    await boxesCollection.insertOne(box);
+    await partiesCollection.insertOne(party);
     await slotsCollection.updateOne({ id: slot.id }, { $set: { status: "booked" } });
 
     // Now and then the NPC host also invites the real user — feeds notifications.
     if (!user.isNpc && Math.random() < 0.25) {
-        await createInvite(box, host, user);
+        await createInvite(party, host, user);
     }
-    return box;
+    return party;
 }
 
-export async function ensureOpenBoxesNear(user: User, lat: number, lng: number, distanceKm: number, from: Date, to: Date): Promise<BoxView[]> {
-    let joinable = await findJoinableBoxes(user, lat, lng, distanceKm, from, to);
+export async function ensureOpenPartiesNear(user: User, lat: number, lng: number, distanceKm: number, from: Date, to: Date): Promise<PartyView[]> {
+    let joinable = await findJoinableParties(user, lat, lng, distanceKm, from, to);
     if (joinable.length < 3) {
         const venues = await ensureVenuesNear(lat, lng, distanceKm);
         const missing = 3 - joinable.length;
         for (let i = 0; i < missing; i++) {
-            await generateNpcBox(user, venues, from, to);
+            await generateNpcParty(user, venues, from, to);
         }
-        joinable = await findJoinableBoxes(user, lat, lng, distanceKm, from, to);
+        joinable = await findJoinableParties(user, lat, lng, distanceKm, from, to);
     }
     return joinable
         .map(entry => entry.view)
@@ -653,20 +653,20 @@ export async function ensureOpenBoxesNear(user: User, lat: number, lng: number, 
 // Notifications — invites, with a guaranteed first invite (§2.3)
 // ---------------------------------------------------------------------------
 
-export async function createInvite(box: Box, fromUser: User, toUser: User) {
+export async function createInvite(party: Party, fromUser: User, toUser: User) {
     const notification: Notification = {
         id: newId("n"),
         toUserId: toUser.id,
         fromUserId: fromUser.id,
-        boxId: box.id,
+        partyId: party.id,
         status: "pending"
     };
     await notificationsCollection.insertOne(notification);
-    // Re-read the box so inviting several users in a row doesn't lose names.
-    const current = await getBoxById(box.id);
+    // Re-read the party so inviting several users in a row doesn't lose names.
+    const current = await getPartyById(party.id);
     if (current && !current.invitedUsernames.includes(toUser.username)) {
-        await boxesCollection.updateOne(
-            { id: box.id },
+        await partiesCollection.updateOne(
+            { id: party.id },
             { $set: { invitedUsernames: [...current.invitedUsernames, toUser.username] } }
         );
     }
@@ -680,14 +680,14 @@ export async function ensureNotificationsFor(user: User) {
     if (everReceived.length === 0 && user.location) {
         const from = new Date();
         const to = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        const boxes = await ensureOpenBoxesNear(user, user.location.lat, user.location.lng, 3, from, to);
-        if (boxes.length > 0) {
-            const box = await getBoxById(pick(boxes).id);
-            if (box) {
-                const hostMember = box.members.find(member => member.role === "host");
+        const parties = await ensureOpenPartiesNear(user, user.location.lat, user.location.lng, 3, from, to);
+        if (parties.length > 0) {
+            const party = await getPartyById(pick(parties).id);
+            if (party) {
+                const hostMember = party.members.find(member => member.role === "host");
                 const host = hostMember ? await getUserById(hostMember.userId) : null;
                 if (host) {
-                    await createInvite(box, host, user);
+                    await createInvite(party, host, user);
                 }
             }
         }
@@ -697,15 +697,15 @@ export async function ensureNotificationsFor(user: User) {
     const result = [];
     for (const notification of pending) {
         const sender = await getUserById(notification.fromUserId);
-        const box = await getBoxById(notification.boxId);
-        if (!sender || !box) {
+        const party = await getPartyById(notification.partyId);
+        if (!sender || !party) {
             continue;
         }
-        const venue = await getVenueById(box.venueId);
-        const slot = await getSlotById(box.slotId);
-        // Expired invites: the box already ended or was cancelled, or its slot
+        const venue = await getVenueById(party.venueId);
+        const slot = await getSlotById(party.slotId);
+        // Expired invites: the party already ended or was cancelled, or its slot
         // has started. Accepting these fails anyway, so don't list them.
-        if (box.status === "ended" || box.status === "cancelled") {
+        if (party.status === "ended" || party.status === "cancelled") {
             continue;
         }
         if (slot && new Date(slot.start) <= new Date()) {
@@ -715,13 +715,13 @@ export async function ensureNotificationsFor(user: User) {
             id: notification.id,
             status: notification.status,
             from: toPublicUser(sender),
-            box: {
-                id: box.id,
-                title: box.title,
-                genre: box.genre,
+            party: {
+                id: party.id,
+                title: party.title,
+                genre: party.genre,
                 venueName: venue ? venue.name : "",
                 start: slot ? slot.start : "",
-                share: shareFor(box)
+                share: shareFor(party)
             }
         });
     }
@@ -801,9 +801,9 @@ export async function matchScorerFor(viewer: User) {
 }
 
 export async function ensureMatchesNear(user: User, lat: number, lng: number, distanceKm: number, from: Date, to: Date, minOverlap: number) {
-    const boxes = await ensureOpenBoxesNear(user, lat, lng, distanceKm, from, to);
+    const parties = await ensureOpenPartiesNear(user, lat, lng, distanceKm, from, to);
     const matches = [];
-    for (const view of boxes) {
+    for (const view of parties) {
         const host = await getUserById(view.host.id);
         if (!host) {
             continue;
@@ -830,14 +830,14 @@ export function splitPrice(total: number, seats: number) {
 // Split over the room's seats, never over the (possibly smaller) capacity: a
 // host who keeps seats free for their own guests carries that cost themselves
 // and settles up with those guests outside the app. Everyone joining through
-// the app pays the same per-seat price they would in a wide-open box.
-export function shareFor(box: Box) {
-    return splitPrice(box.totalPrice, box.seats);
+// the app pays the same per-seat price they would in a wide-open party.
+export function shareFor(party: Party) {
+    return splitPrice(party.totalPrice, party.seats);
 }
 
 // The genre a user sings most, from their favourite songs. Used as the genre
-// of boxes they host; new users without favourites default to "Pop".
-// Arrangement/audience tags (NON_TASTE_GENRES) are skipped so a box is always
+// of parties they host; new users without favourites default to "Pop".
+// Arrangement/audience tags (NON_TASTE_GENRES) are skipped so a party is always
 // themed on an actual musical style — "Duet" is a common tag but a meaningless
 // party theme.
 export async function dominantGenreFor(user: User) {
@@ -862,15 +862,15 @@ export async function dominantGenreFor(user: User) {
     return best;
 }
 
-// Host books a room slot: the box starts pending_payment; the slot is only
+// Host books a room slot: the party starts pending_payment; the slot is only
 // marked booked once the host pays. openSpots is how many seats the host offers
 // to other singers — fewer than the room holds leaves seats for people the host
 // brings along outside the app.
-export async function createBox(host: User, venue: Venue, room: Room, slot: Slot, title: string, openSpots: number): Promise<Box> {
+export async function createParty(host: User, venue: Venue, room: Room, slot: Slot, title: string, openSpots: number): Promise<Party> {
     const genre = await dominantGenreFor(host);
-    const box: Box = {
+    const party: Party = {
         id: newId("b"),
-        title: title !== "" ? title : randomBoxTitle(genre),
+        title: title !== "" ? title : randomPartyTitle(genre),
         genre: genre,
         venueId: venue.id,
         roomId: room.id,
@@ -884,28 +884,28 @@ export async function createBox(host: User, venue: Venue, room: Room, slot: Slot
         members: [{ userId: host.id, role: "host", paid: false }],
         invitedUsernames: []
     };
-    await boxesCollection.insertOne(box);
-    return box;
+    await partiesCollection.insertOne(party);
+    return party;
 }
 
-export async function addBoxMember(box: Box, user: User) {
-    const members: BoxMember[] = [...box.members, { userId: user.id, role: "member", paid: false }];
-    await boxesCollection.updateOne({ id: box.id }, { $set: { members: members } });
-    return { ...box, members: members };
+export async function addPartyMember(party: Party, user: User) {
+    const members: PartyMember[] = [...party.members, { userId: user.id, role: "member", paid: false }];
+    await partiesCollection.updateOne({ id: party.id }, { $set: { members: members } });
+    return { ...party, members: members };
 }
 
-// Simulated payment. Host paying confirms the booking (box upcoming, slot
+// Simulated payment. Host paying confirms the booking (party upcoming, slot
 // booked); a joiner paying just becomes a paid member.
-export async function payForBox(box: Box, user: User): Promise<Box> {
-    const member = box.members.find(member => member.userId === user.id);
-    const members = box.members.map(m => m.userId === user.id ? { ...m, paid: true } : m);
-    if (member && member.role === "host" && box.status === "pending_payment") {
-        await boxesCollection.updateOne({ id: box.id }, { $set: { members: members, status: "upcoming" } });
-        await slotsCollection.updateOne({ id: box.slotId }, { $set: { status: "booked" } });
-        return { ...box, members: members, status: "upcoming" };
+export async function payForParty(party: Party, user: User): Promise<Party> {
+    const member = party.members.find(member => member.userId === user.id);
+    const members = party.members.map(m => m.userId === user.id ? { ...m, paid: true } : m);
+    if (member && member.role === "host" && party.status === "pending_payment") {
+        await partiesCollection.updateOne({ id: party.id }, { $set: { members: members, status: "upcoming" } });
+        await slotsCollection.updateOne({ id: party.slotId }, { $set: { status: "booked" } });
+        return { ...party, members: members, status: "upcoming" };
     }
-    await boxesCollection.updateOne({ id: box.id }, { $set: { members: members } });
-    return { ...box, members: members };
+    await partiesCollection.updateOne({ id: party.id }, { $set: { members: members } });
+    return { ...party, members: members };
 }
 
 export async function getNotificationById(id: string): Promise<Notification | null> {
@@ -917,18 +917,18 @@ export async function setNotificationStatus(id: string, status: "accepted" | "de
 }
 
 // ---------------------------------------------------------------------------
-// Box room, crew & ratings (§6)
+// Party room, crew & ratings (§6)
 // ---------------------------------------------------------------------------
 
 // The full room view for a member: venue/room/start, members with their
 // host/paid tags, invited usernames and spots left.
-export async function getBoxRoom(box: Box, viewer: User) {
-    const venue = await getVenueById(box.venueId);
-    const slot = await getSlotById(box.slotId);
-    const room = venue ? venue.rooms.find(room => room.id === box.roomId) : undefined;
+export async function getPartyRoom(party: Party, viewer: User) {
+    const venue = await getVenueById(party.venueId);
+    const slot = await getSlotById(party.slotId);
+    const room = venue ? venue.rooms.find(room => room.id === party.roomId) : undefined;
     const matchPctFor = await matchScorerFor(viewer);
     const members = [];
-    for (const member of box.members) {
+    for (const member of party.members) {
         const user = await getUserById(member.userId);
         if (user) {
             members.push({
@@ -940,37 +940,37 @@ export async function getBoxRoom(box: Box, viewer: User) {
         }
     }
     return {
-        id: box.id,
-        title: box.title,
-        genre: box.genre,
-        status: box.status,
-        openToPublic: box.openToPublic,
+        id: party.id,
+        title: party.title,
+        genre: party.genre,
+        status: party.status,
+        openToPublic: party.openToPublic,
         venue: venue ? { id: venue.id, name: venue.name, lat: venue.lat, lng: venue.lng } : null,
         roomName: room ? room.name : "",
         start: slot ? slot.start : "",
         end: slot ? slot.end : "",
-        seats: box.seats,
-        capacity: box.capacity,
-        totalPrice: box.totalPrice,
-        share: shareFor(box),
-        spotsLeft: box.capacity - box.members.length,
+        seats: party.seats,
+        capacity: party.capacity,
+        totalPrice: party.totalPrice,
+        share: shareFor(party),
+        spotsLeft: party.capacity - party.members.length,
         members: members,
-        invitedUsernames: box.invitedUsernames,
+        invitedUsernames: party.invitedUsernames,
         // Lets an ended room show "rate your crew" or "already rated" without
         // a second round trip.
-        rated: await hasRatedBox(viewer, box.id)
+        rated: await hasRatedParty(viewer, party.id)
     };
 }
 
-export async function setBoxOpenToPublic(box: Box, openToPublic: boolean) {
-    await boxesCollection.updateOne({ id: box.id }, { $set: { openToPublic: openToPublic } });
+export async function setPartyOpenToPublic(party: Party, openToPublic: boolean) {
+    await partiesCollection.updateOne({ id: party.id }, { $set: { openToPublic: openToPublic } });
 }
 
-// Fellow members of an ended box — the people you can rate.
-export async function getCrew(box: Box, user: User) {
+// Fellow members of an ended party — the people you can rate.
+export async function getCrew(party: Party, user: User) {
     const matchPctFor = await matchScorerFor(user);
     const crew = [];
-    for (const member of box.members) {
+    for (const member of party.members) {
         if (member.userId === user.id) {
             continue;
         }
@@ -982,8 +982,8 @@ export async function getCrew(box: Box, user: User) {
     return crew;
 }
 
-export async function hasRatedBox(user: User, boxId: string) {
-    const ratings = await ratingsCollection.find({ boxId: boxId, fromUserId: user.id }).toArray();
+export async function hasRatedParty(user: User, partyId: string) {
+    const ratings = await ratingsCollection.find({ partyId: partyId, fromUserId: user.id }).toArray();
     return ratings.length > 0;
 }
 
@@ -999,10 +999,10 @@ async function recomputeSingerRating(userId: number) {
     await usersCollection.updateOne({ id: userId }, { $set: { singerRating: average } });
 }
 
-export async function createRatings(box: Box, fromUser: User, entries: { toUserId: number; stars: number; text: string }[]) {
+export async function createRatings(party: Party, fromUser: User, entries: { toUserId: number; stars: number; text: string }[]) {
     const ratings: Rating[] = entries.map(entry => ({
         id: newId("rt"),
-        boxId: box.id,
+        partyId: party.id,
         fromUserId: fromUser.id,
         toUserId: entry.toUserId,
         stars: entry.stars,
@@ -1015,18 +1015,18 @@ export async function createRatings(box: Box, fromUser: User, entries: { toUserI
 }
 
 // ---------------------------------------------------------------------------
-// Chat — polled messages per box; NPC members reply now and then
+// Chat — polled messages per party; NPC members reply now and then
 // ---------------------------------------------------------------------------
 
-export async function getMessagesForBox(boxId: string) {
-    const messages: Message[] = await messagesCollection.find({ boxId: boxId }).toArray();
+export async function getMessagesForParty(partyId: string) {
+    const messages: Message[] = await messagesCollection.find({ partyId: partyId }).toArray();
     messages.sort((a, b) => a.sentAt.localeCompare(b.sentAt));
     const result = [];
     for (const message of messages) {
         const sender = await getUserById(message.userId);
         result.push({
             id: message.id,
-            boxId: message.boxId,
+            partyId: message.partyId,
             userId: message.userId,
             from: sender ? toPublicUser(sender) : null,
             text: message.text,
@@ -1036,10 +1036,10 @@ export async function getMessagesForBox(boxId: string) {
     return result;
 }
 
-export async function createMessage(box: Box, userId: number, text: string): Promise<Message> {
+export async function createMessage(party: Party, userId: number, text: string): Promise<Message> {
     const message: Message = {
         id: newId("m"),
-        boxId: box.id,
+        partyId: party.id,
         userId: userId,
         text: text,
         sentAt: new Date().toISOString()
@@ -1051,11 +1051,11 @@ export async function createMessage(box: Box, userId: number, text: string): Pro
 // Now and then an NPC member answers a real user's message with a canned
 // reply, so the chat feels alive. Clients poll, so the reply simply shows up
 // on the next GET.
-export async function maybeNpcReply(box: Box, afterUserId: number) {
+export async function maybeNpcReply(party: Party, afterUserId: number) {
     if (Math.random() >= 0.6) {
         return null;
     }
-    const otherIds = box.members
+    const otherIds = party.members
         .filter(member => member.userId !== afterUserId)
         .map(member => member.userId);
     const others = await usersCollection.find({ id: { $in: otherIds } }).toArray();
@@ -1063,17 +1063,17 @@ export async function maybeNpcReply(box: Box, afterUserId: number) {
     if (npcs.length === 0) {
         return null;
     }
-    return await createMessage(box, pick(npcs).id, randomNpcReply());
+    return await createMessage(party, pick(npcs).id, randomNpcReply());
 }
 
 // ---------------------------------------------------------------------------
-// Mine — upcoming + past, with a backfilled past box (§2.5)
+// Mine — upcoming + past, with a backfilled past party (§2.5)
 // ---------------------------------------------------------------------------
 
 // Demo affordance: the first time a user looks at their history and has none,
-// one ended, unrated box from last week materializes so the rating flow is
+// one ended, unrated party from last week materializes so the rating flow is
 // testable without waiting for a real booking to pass.
-async function createPastBox(user: User): Promise<Box | null> {
+async function createPastParty(user: User): Promise<Party | null> {
     if (!user.location) {
         return null;
     }
@@ -1098,7 +1098,7 @@ async function createPastBox(user: User): Promise<Box | null> {
 
     const genre = pick(NPC_GENRES);
     const host = await createNpcUser(venue.lat, venue.lng, genre);
-    const members: BoxMember[] = [
+    const members: PartyMember[] = [
         { userId: host.id, role: "host", paid: true },
         { userId: user.id, role: "member", paid: true }
     ];
@@ -1108,9 +1108,9 @@ async function createPastBox(user: User): Promise<Box | null> {
         members.push({ userId: npc.id, role: "member", paid: true });
     }
 
-    const box: Box = {
+    const party: Party = {
         id: newId("b"),
-        title: randomBoxTitle(genre),
+        title: randomPartyTitle(genre),
         genre: genre,
         venueId: venue.id,
         roomId: room.id,
@@ -1123,17 +1123,17 @@ async function createPastBox(user: User): Promise<Box | null> {
         members: members,
         invitedUsernames: []
     };
-    await boxesCollection.insertOne(box);
-    return box;
+    await partiesCollection.insertOne(party);
+    return party;
 }
 
-export async function getMyBoxes(user: User) {
+export async function getMyParties(user: User) {
     // Sweep first, so a night that just finished lands under "past" here.
-    await closeFinishedBoxes();
-    const all: Box[] = await boxesCollection.find({}).toArray();
-    const mine = all.filter(box => box.members.some(member => member.userId === user.id));
-    if (!mine.some(box => box.status === "ended")) {
-        const past = await createPastBox(user);
+    await closeFinishedParties();
+    const all: Party[] = await partiesCollection.find({}).toArray();
+    const mine = all.filter(party => party.members.some(member => member.userId === user.id));
+    if (!mine.some(party => party.status === "ended")) {
+        const past = await createPastParty(user);
         if (past) {
             mine.push(past);
         }
@@ -1143,17 +1143,17 @@ export async function getMyBoxes(user: User) {
     const lng = user.location ? user.location.lng : 0;
     const upcoming = [];
     const past = [];
-    for (const box of mine) {
-        // A cancelled box never happened — it belongs in neither list.
-        if (box.status === "cancelled") {
+    for (const party of mine) {
+        // A cancelled party never happened — it belongs in neither list.
+        if (party.status === "cancelled") {
             continue;
         }
-        const view = await toBoxView(box, lat, lng);
+        const view = await toPartyView(party, lat, lng);
         if (!view) {
             continue;
         }
-        if (box.status === "ended") {
-            const myRatings = await ratingsCollection.find({ boxId: box.id, fromUserId: user.id }).toArray();
+        if (party.status === "ended") {
+            const myRatings = await ratingsCollection.find({ partyId: party.id, fromUserId: user.id }).toArray();
             past.push({ ...view, rated: myRatings.length > 0 });
         } else {
             upcoming.push(view);
@@ -1165,7 +1165,7 @@ export async function getMyBoxes(user: User) {
 }
 
 // ---------------------------------------------------------------------------
-// Seed — deliberately tiny. Everything else (venues, slots, NPCs, boxes)
+// Seed — deliberately tiny. Everything else (venues, slots, NPCs, parties)
 // is generated on demand once the sparse-generation layer is implemented.
 // ---------------------------------------------------------------------------
 
@@ -1287,7 +1287,7 @@ const SEED_LAT = 51.231;
 const SEED_LNG = 4.418;
 const SEED_RADIUS_KM = 3;
 const SEED_DAYS_AHEAD = 7;
-const SEED_BOX_COUNT = 8;
+const SEED_PARTY_COUNT = 8;
 
 // Slots only ever exist in the future: ensureSlots skips any hour before `from`,
 // and `to` caps the calendar at a week out.
@@ -1303,9 +1303,9 @@ async function seedHomeArea(user: User) {
     for (const venue of venues) {
         await ensureSlots(venue, from, to);
     }
-    // NPC hosts, members and their open boxes (some of which invite the user).
-    for (let i = 0; i < SEED_BOX_COUNT; i++) {
-        await generateNpcBox(user, venues, from, to);
+    // NPC hosts, members and their open parties (some of which invite the user).
+    for (let i = 0; i < SEED_PARTY_COUNT; i++) {
+        await generateNpcParty(user, venues, from, to);
     }
     console.log("[seed] " + venues.length + " venues around " + SEED_LAT + ", " + SEED_LNG);
 }
@@ -1345,7 +1345,7 @@ export async function resetDatabase() {
     await venuesCollection.deleteMany({});
     await cellsCollection.deleteMany({});
     await slotsCollection.deleteMany({});
-    await boxesCollection.deleteMany({});
+    await partiesCollection.deleteMany({});
     await messagesCollection.deleteMany({});
     await notificationsCollection.deleteMany({});
     await ratingsCollection.deleteMany({});

@@ -72,7 +72,7 @@ export default function SignIn() {
                     ♪
                 </div>
                 <div style={{ fontFamily: "Unbounded, sans-serif", fontWeight: 700, fontSize: 24 }}>Welcome back</div>
-                <div style={{ color: C.textDim, fontSize: 14, textAlign: "center" }}>Sign in to find your next box.</div>
+                <div style={{ color: C.textDim, fontSize: 14, textAlign: "center" }}>Sign in to find your next party.</div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>

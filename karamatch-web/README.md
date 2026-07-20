@@ -30,13 +30,13 @@ new one; registration walks through the pin drop and song picker.
 | `screens/SongPicker.tsx` | Song taste — step 3 of 3 |
 | `screens/MainTabs.tsx` | Header, bell badge and the 5-tab bar |
 | `screens/tabs/VenuesTab.tsx` | Venues |
-| `screens/tabs/OpenBoxesTab.tsx` | Open boxes |
+| `screens/tabs/OpenPartiesTab.tsx` | Open parties |
 | `screens/tabs/MatchTab.tsx` | Find a match |
 | `screens/tabs/FriendsTab.tsx` | Friends |
-| `screens/tabs/MineTab.tsx` | My boxes |
+| `screens/tabs/MineTab.tsx` | My parties |
 | `screens/VenueDetail.tsx` | Venue detail / booking |
 | `screens/Pay.tsx` | Payment (idle → processing → done) |
-| `screens/BoxRoom.tsx` | Box room: members, host controls, polled chat |
+| `screens/PartyRoom.tsx` | Party room: members, host controls, polled chat |
 | `screens/Notifications.tsx` | Invites: accept / decline |
 | `screens/InviteFriends.tsx` | Invite from friends list |
 | `screens/Rate.tsx` | Rate & review your crew |
@@ -49,7 +49,7 @@ new one; registration walks through the pin drop and song picker.
   `GET /venues` carries `distanceKm`/`fromPrice` while `GET /venues/:id` does not.
   The bearer token lives in `localStorage` under `km_token`.
 - `AppContext.ts` / `App.tsx` — screen state, the current tab, screen parameters
-  (which venue, which box, what is being paid) and the toast. On boot a stored
+  (which venue, which party, what is being paid) and the toast. On boot a stored
   token is resolved via `GET /me`, which also decides where you land: no location
   → pin drop, fewer than 3 songs → picker, otherwise the Venues tab.
 - `theme.ts` — colours, fonts and the button/input/card recipes taken from the

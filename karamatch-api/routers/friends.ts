@@ -25,7 +25,7 @@ router.get("/users", verifyAuthToken, async (req, res) => {
 });
 
 // One singer's profile page — tapping anyone in a list (friends, search
-// results, box members, a host) lands here. The username may be written with
+// results, party members, a host) lands here. The username may be written with
 // or without a leading "@".
 router.get("/users/:username", verifyAuthToken, async (req, res) => {
     const other = await getUserByUsername(req.params.username.replace(/^@/, ""));

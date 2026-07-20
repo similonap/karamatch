@@ -14,7 +14,7 @@ export default function Notifications() {
         try {
             const result = await api.acceptInvite(id);
             app.refreshNotifCount();
-            app.startPay({ kind: "join", boxId: result.boxId, amount: result.share, hostUsername });
+            app.startPay({ kind: "join", partyId: result.partyId, amount: result.share, hostUsername });
         } catch (err) {
             app.toast((err as Error).message);
         } finally {
@@ -62,7 +62,7 @@ export default function Notifications() {
                 <EmptyCard>
                     No new notifications.
                     <br />
-                    Invites to karaoke boxes show up here.
+                    Invites to karaoke parties show up here.
                 </EmptyCard>
             ) : null}
 
@@ -94,10 +94,10 @@ export default function Notifications() {
                         <div style={{ minWidth: 0 }}>
                             <div style={{ fontSize: 14, lineHeight: 1.45 }}>
                                 <span style={{ fontWeight: 700 }}>@{notification.from.username}</span> invited you to{" "}
-                                <span style={{ fontWeight: 700, color: C.pinkSoft }}>{notification.box.title}</span>
+                                <span style={{ fontWeight: 700, color: C.pinkSoft }}>{notification.party.title}</span>
                             </div>
                             <div style={{ color: C.textMuted, fontSize: 12, marginTop: 2 }}>
-                                {notification.box.venueName} · {formatWhen(notification.box.start)}
+                                {notification.party.venueName} · {formatWhen(notification.party.start)}
                             </div>
                         </div>
                     </div>
@@ -119,7 +119,7 @@ export default function Notifications() {
                                 opacity: busy === notification.id ? 0.6 : 1
                             }}
                         >
-                            Accept · pay {money(notification.box.share)}
+                            Accept · pay {money(notification.party.share)}
                         </button>
                         <button
                             onClick={() => decline(notification.id)}

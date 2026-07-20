@@ -297,7 +297,7 @@ export default function Profile() {
                             <span style={{ color: C.textMuted, fontSize: 18, flexShrink: 0 }}>›</span>
                         </button>
                         <div style={{ fontSize: 11, color: C.textFaint }}>
-                            This decides which venues and boxes you see.
+                            This decides which venues and parties you see.
                         </div>
                     </label>
                 </div>

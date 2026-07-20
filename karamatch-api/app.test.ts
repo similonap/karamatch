@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "./app";
-import { boxesCollection, client, slotsCollection } from "./database";
+import { partiesCollection, client, slotsCollection } from "./database";
 
 afterAll(async () => {
     await client.close();
@@ -97,24 +97,24 @@ describe("auth", () => {
     });
 });
 
-describe("box chat", () => {
+describe("party chat", () => {
     let token: string;
     let outsiderToken: string;
-    let boxId: string;
+    let partyId: string;
 
     beforeAll(async () => {
         token = await registerWithLocation("chata");
         outsiderToken = await registerWithLocation("chatb");
-        // /boxes/mine backfills one past box the user is a member of — use it as the chat room
+        // /parties/mine backfills one past party the user is a member of — use it as the chat room
         const mine = await request(app)
-            .get("/api/boxes/mine")
+            .get("/api/parties/mine")
             .set("Authorization", "Bearer " + token);
-        boxId = mine.body.past[0].id;
+        partyId = mine.body.past[0].id;
     });
 
     it("starts with an empty message list for members", async () => {
         const response = await request(app)
-            .get("/api/boxes/" + boxId + "/messages")
+            .get("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(200);
         expect(Array.isArray(response.body)).toBe(true);
@@ -122,7 +122,7 @@ describe("box chat", () => {
 
     it("posts a message and reads it back", async () => {
         const post = await request(app)
-            .post("/api/boxes/" + boxId + "/messages")
+            .post("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + token)
             .send({ text: "That last chorus was legendary" });
         expect(post.status).toBe(201);
@@ -130,7 +130,7 @@ describe("box chat", () => {
         expect(post.body.from.username).toContain("chata");
 
         const list = await request(app)
-            .get("/api/boxes/" + boxId + "/messages")
+            .get("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + token);
         expect(list.status).toBe(200);
         const mine = list.body.filter((message: any) => message.id === post.body.id);
@@ -139,7 +139,7 @@ describe("box chat", () => {
 
     it("rejects empty messages", async () => {
         const response = await request(app)
-            .post("/api/boxes/" + boxId + "/messages")
+            .post("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + token)
             .send({ text: "   " });
         expect(response.status).toBe(400);
@@ -147,14 +147,14 @@ describe("box chat", () => {
 
     it("rejects non-members", async () => {
         const response = await request(app)
-            .get("/api/boxes/" + boxId + "/messages")
+            .get("/api/parties/" + partyId + "/messages")
             .set("Authorization", "Bearer " + outsiderToken);
         expect(response.status).toBe(403);
     });
 
-    it("returns 404 for an unknown box", async () => {
+    it("returns 404 for an unknown party", async () => {
         const response = await request(app)
-            .get("/api/boxes/b_nope/messages")
+            .get("/api/parties/b_nope/messages")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(404);
     });
@@ -168,7 +168,7 @@ describe("booking & payment", () => {
     let slotId: string;
     let otherSlotId: string;
     let roomSeats: number;
-    let boxId: string;
+    let partyId: string;
 
     beforeAll(async () => {
         hostToken = await registerWithLocation("bookh");
@@ -189,7 +189,7 @@ describe("booking & payment", () => {
 
     it("books a free slot as pending_payment, filling the room by default", async () => {
         const response = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + hostToken)
             .send({ venueId, roomId, slotId, title: "Test Night" });
         expect(response.status).toBe(201);
@@ -197,12 +197,12 @@ describe("booking & payment", () => {
         expect(response.body.title).toBe("Test Night");
         expect(response.body.share).toBeGreaterThan(0);
         expect(response.body.capacity).toBe(roomSeats);
-        boxId = response.body.id;
+        partyId = response.body.id;
     });
 
     it("lets the host open fewer spots than the room holds", async () => {
         const full = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + hostToken)
             .send({ venueId, roomId, slotId: otherSlotId, spots: 2 });
         expect(full.status).toBe(201);
@@ -213,7 +213,7 @@ describe("booking & payment", () => {
         expect(full.body.share).toBe(Math.round(full.body.totalPrice / roomSeats));
     });
 
-    it("quotes the same per-seat price on the room as the box charges", async () => {
+    it("quotes the same per-seat price on the room as the party charges", async () => {
         const slots = await request(app)
             .get("/api/venues/" + venueId + "/slots")
             .set("Authorization", "Bearer " + hostToken);
@@ -226,12 +226,12 @@ describe("booking & payment", () => {
         const sameRoom = detail.body.rooms.find((entry: any) => entry.id === roomId);
         expect(sameRoom.pricePerSeat).toBe(room.pricePerSeat);
 
-        // The booking screen shows room.pricePerSeat before the box exists; it
-        // has to match the share the box hands out afterwards.
-        const box = await request(app)
-            .get("/api/boxes/" + boxId)
+        // The booking screen shows room.pricePerSeat before the party exists; it
+        // has to match the share the party hands out afterwards.
+        const party = await request(app)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + hostToken);
-        expect(box.body.share).toBe(room.pricePerSeat);
+        expect(party.body.share).toBe(room.pricePerSeat);
     });
 
     it("prices every spots choice on the room up front", async () => {
@@ -253,58 +253,58 @@ describe("booking & payment", () => {
 
     it("rejects more spots than the room has seats for", async () => {
         const response = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + hostToken)
             .send({ venueId, roomId, slotId: otherSlotId, spots: roomSeats });
         expect(response.status).toBe(400);
     });
 
-    it("host payment confirms the box and books the slot", async () => {
+    it("host payment confirms the party and books the slot", async () => {
         const response = await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + hostToken);
         expect(response.status).toBe(200);
         expect(response.body.status).toBe("upcoming");
 
         const again = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + joinerToken)
             .send({ venueId, roomId, slotId });
         expect(again.status).toBe(400);
         expect(again.body.error).toBe("Slot already taken");
     });
 
-    it("rejects joining your own box", async () => {
+    it("rejects joining your own party", async () => {
         const response = await request(app)
-            .post("/api/boxes/" + boxId + "/join")
+            .post("/api/parties/" + partyId + "/join")
             .set("Authorization", "Bearer " + hostToken);
         expect(response.status).toBe(400);
     });
 
     it("lets another user join and pay their share", async () => {
         const join = await request(app)
-            .post("/api/boxes/" + boxId + "/join")
+            .post("/api/parties/" + partyId + "/join")
             .set("Authorization", "Bearer " + joinerToken);
         expect(join.status).toBe(200);
-        expect(join.body.boxId).toBe(boxId);
+        expect(join.body.partyId).toBe(partyId);
         expect(join.body.share).toBeGreaterThan(0);
 
         const doubleJoin = await request(app)
-            .post("/api/boxes/" + boxId + "/join")
+            .post("/api/parties/" + partyId + "/join")
             .set("Authorization", "Bearer " + joinerToken);
         expect(doubleJoin.status).toBe(400);
 
         const pay = await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + joinerToken);
         expect(pay.status).toBe(200);
         expect(pay.body.status).toBe("upcoming");
     });
 
-    it("rejects paying for a box you are not in", async () => {
+    it("rejects paying for a party you are not in", async () => {
         const outsiderToken = await registerWithLocation("o");
         const response = await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + outsiderToken);
         expect(response.status).toBe(403);
     }, 20000);
@@ -321,10 +321,10 @@ describe("booking & payment", () => {
             .post("/api/notifications/" + invite.id + "/accept")
             .set("Authorization", "Bearer " + joinerToken);
         expect(accept.status).toBe(200);
-        expect(accept.body.boxId).toBe(invite.box.id);
+        expect(accept.body.partyId).toBe(invite.party.id);
 
         const pay = await request(app)
-            .post("/api/boxes/" + accept.body.boxId + "/pay")
+            .post("/api/parties/" + accept.body.partyId + "/pay")
             .set("Authorization", "Bearer " + joinerToken);
         expect(pay.status).toBe(200);
 
@@ -334,7 +334,7 @@ describe("booking & payment", () => {
         expect(acceptAgain.status).toBe(400);
     }, 20000);
 
-    it("scores nearby boxes by taste and sorts by matchPct", async () => {
+    it("scores nearby parties by taste and sorts by matchPct", async () => {
         // Rock favourites from the seeded catalog → a real genre profile
         await request(app)
             .put("/api/me")
@@ -342,7 +342,7 @@ describe("booking & payment", () => {
             .send({ favoriteSongIds: ["12617", "12543", "11335"] });
 
         const response = await request(app)
-            .get("/api/boxes/matches")
+            .get("/api/parties/matches")
             .set("Authorization", "Bearer " + joinerToken);
         expect(response.status).toBe(200);
         expect(response.body.length).toBeGreaterThanOrEqual(1);
@@ -359,7 +359,7 @@ describe("booking & payment", () => {
 
     it("filters matches below minOverlap", async () => {
         const response = await request(app)
-            .get("/api/boxes/matches?minOverlap=101")
+            .get("/api/parties/matches?minOverlap=101")
             .set("Authorization", "Bearer " + joinerToken);
         expect(response.status).toBe(200);
         expect(response.body.length).toBe(0);
@@ -386,11 +386,11 @@ describe("booking & payment", () => {
     }, 20000);
 });
 
-describe("box room, host controls & invites", () => {
+describe("party room, host controls & invites", () => {
     let hostToken: string;
     let memberToken: string;
     let memberUsername: string;
-    let boxId: string;
+    let partyId: string;
 
     beforeAll(async () => {
         hostToken = await registerWithLocation("roomh");
@@ -407,16 +407,16 @@ describe("box room, host controls & invites", () => {
             .set("Authorization", "Bearer " + hostToken);
         const roomWithSlots = slots.body.find((entry: any) => entry.slots.length > 0);
         const booking = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + hostToken)
             .send({ venueId, roomId: roomWithSlots.room.id, slotId: roomWithSlots.slots[0].id });
-        boxId = booking.body.id;
-        await request(app).post("/api/boxes/" + boxId + "/pay").set("Authorization", "Bearer " + hostToken);
+        partyId = booking.body.id;
+        await request(app).post("/api/parties/" + partyId + "/pay").set("Authorization", "Bearer " + hostToken);
     }, 20000);
 
     it("shows the room view to members only", async () => {
         const response = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + hostToken);
         expect(response.status).toBe(200);
         expect(response.body.venue.name).toBeTruthy();
@@ -426,26 +426,26 @@ describe("box room, host controls & invites", () => {
         expect(response.body.spotsLeft).toBe(response.body.capacity - 1);
 
         const outsider = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + memberToken);
         expect(outsider.status).toBe(403);
     });
 
     it("lets only the host toggle openToPublic", async () => {
         const forbidden = await request(app)
-            .patch("/api/boxes/" + boxId)
+            .patch("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + memberToken)
             .send({ openToPublic: false });
         expect(forbidden.status).toBe(403);
 
         const bad = await request(app)
-            .patch("/api/boxes/" + boxId)
+            .patch("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + hostToken)
             .send({ openToPublic: "yes" });
         expect(bad.status).toBe(400);
 
         const ok = await request(app)
-            .patch("/api/boxes/" + boxId)
+            .patch("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + hostToken)
             .send({ openToPublic: false });
         expect(ok.status).toBe(200);
@@ -454,7 +454,7 @@ describe("box room, host controls & invites", () => {
 
     it("host invites by @username and the invitee gets a notification", async () => {
         const invite = await request(app)
-            .post("/api/boxes/" + boxId + "/invites")
+            .post("/api/parties/" + partyId + "/invites")
             .set("Authorization", "Bearer " + hostToken)
             .send({ target: "@" + memberUsername });
         expect(invite.status).toBe(201);
@@ -463,24 +463,24 @@ describe("box room, host controls & invites", () => {
         const notifications = await request(app)
             .get("/api/notifications")
             .set("Authorization", "Bearer " + memberToken);
-        const fromBox = notifications.body.find((n: any) => n.box.id === boxId);
-        expect(fromBox).toBeTruthy();
+        const fromParty = notifications.body.find((n: any) => n.party.id === partyId);
+        expect(fromParty).toBeTruthy();
 
         const room = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + hostToken);
         expect(room.body.invitedUsernames).toContain(memberUsername);
     }, 20000);
 
     it("rejects duplicate or unknown invites", async () => {
         const duplicate = await request(app)
-            .post("/api/boxes/" + boxId + "/invites")
+            .post("/api/parties/" + partyId + "/invites")
             .set("Authorization", "Bearer " + hostToken)
             .send({ usernames: [memberUsername] });
         expect(duplicate.status).toBe(400);
 
         const unknown = await request(app)
-            .post("/api/boxes/" + boxId + "/invites")
+            .post("/api/parties/" + partyId + "/invites")
             .set("Authorization", "Bearer " + hostToken)
             .send({ target: "@nobody_here_" + Date.now() });
         expect(unknown.status).toBe(400);
@@ -489,18 +489,18 @@ describe("box room, host controls & invites", () => {
 
 describe("crew & ratings", () => {
     let token: string;
-    let boxId: string;
+    let partyId: string;
     let crew: any[];
 
     beforeAll(async () => {
         token = await registerWithLocation("rate");
-        const mine = await request(app).get("/api/boxes/mine").set("Authorization", "Bearer " + token);
-        boxId = mine.body.past[0].id;
+        const mine = await request(app).get("/api/parties/mine").set("Authorization", "Bearer " + token);
+        partyId = mine.body.past[0].id;
     }, 20000);
 
-    it("lists the crew of an ended box", async () => {
+    it("lists the crew of an ended party", async () => {
         const response = await request(app)
-            .get("/api/boxes/" + boxId + "/crew")
+            .get("/api/parties/" + partyId + "/crew")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(200);
         expect(response.body.length).toBeGreaterThan(0);
@@ -511,20 +511,20 @@ describe("crew & ratings", () => {
 
     it("rejects invalid stars", async () => {
         const response = await request(app)
-            .post("/api/boxes/" + boxId + "/ratings")
+            .post("/api/parties/" + partyId + "/ratings")
             .set("Authorization", "Bearer " + token)
             .send({ ratings: [{ username: crew[0].username, stars: 7, text: "" }] });
         expect(response.status).toBe(400);
     });
 
-    it("stores ratings, recomputes singer ratings and flags the box rated", async () => {
+    it("stores ratings, recomputes singer ratings and flags the party rated", async () => {
         const ratings = crew.map((member: any) => ({
             username: member.username,
             stars: 5,
             text: "Great night!"
         }));
         const response = await request(app)
-            .post("/api/boxes/" + boxId + "/ratings")
+            .post("/api/parties/" + partyId + "/ratings")
             .set("Authorization", "Bearer " + token)
             .send({ ratings });
         expect(response.status).toBe(201);
@@ -538,27 +538,27 @@ describe("crew & ratings", () => {
         const rated = search.body.find((user: any) => user.username === crew[0].username);
         expect(rated.singerRating).toBe(5);
 
-        const mine = await request(app).get("/api/boxes/mine").set("Authorization", "Bearer " + token);
-        const past = mine.body.past.find((box: any) => box.id === boxId);
+        const mine = await request(app).get("/api/parties/mine").set("Authorization", "Bearer " + token);
+        const past = mine.body.past.find((party: any) => party.id === partyId);
         expect(past.rated).toBe(true);
 
         const again = await request(app)
-            .post("/api/boxes/" + boxId + "/ratings")
+            .post("/api/parties/" + partyId + "/ratings")
             .set("Authorization", "Bearer " + token)
             .send({ ratings });
         expect(again.status).toBe(400);
     }, 20000);
 
-    it("refuses rating a box that has not ended", async () => {
+    it("refuses rating a party that has not ended", async () => {
         const open = await request(app)
-            .get("/api/boxes/open")
+            .get("/api/parties/open")
             .set("Authorization", "Bearer " + token);
         const join = await request(app)
-            .post("/api/boxes/" + open.body[0].id + "/join")
+            .post("/api/parties/" + open.body[0].id + "/join")
             .set("Authorization", "Bearer " + token);
         expect(join.status).toBe(200);
         const response = await request(app)
-            .post("/api/boxes/" + open.body[0].id + "/ratings")
+            .post("/api/parties/" + open.body[0].id + "/ratings")
             .set("Authorization", "Bearer " + token)
             .send({ ratings: [{ username: "whoever", stars: 5, text: "" }] });
         expect(response.status).toBe(400);
@@ -858,12 +858,12 @@ describe("singer profile", () => {
     });
 });
 
-describe("closing finished boxes", () => {
+describe("closing finished parties", () => {
     let token: string;
     let venueId: string;
     let roomId: string;
 
-    // Books a box on the first free slot and returns its id.
+    // Books a party on the first free slot and returns its id.
     async function book() {
         const slots = await request(app)
             .get("/api/venues/" + venueId + "/slots")
@@ -871,17 +871,17 @@ describe("closing finished boxes", () => {
         const roomWithSlots = slots.body.find((entry: any) => entry.slots.length > 0);
         roomId = roomWithSlots.room.id;
         const booking = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + token)
             .send({ venueId, roomId, slotId: roomWithSlots.slots[0].id });
         return booking.body.id;
     }
 
-    // Drags a box's slot into the past, so the next read has to close it.
-    async function rewindSlot(boxId: string) {
-        const box = await boxesCollection.findOne({ id: boxId });
+    // Drags a party's slot into the past, so the next read has to close it.
+    async function rewindSlot(partyId: string) {
+        const party = await partiesCollection.findOne({ id: partyId });
         await slotsCollection.updateOne(
-            { id: box!.slotId },
+            { id: party!.slotId },
             {
                 $set: {
                     start: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
@@ -889,7 +889,7 @@ describe("closing finished boxes", () => {
                 }
             }
         );
-        return box!.slotId;
+        return party!.slotId;
     }
 
     beforeAll(async () => {
@@ -900,73 +900,73 @@ describe("closing finished boxes", () => {
         venueId = venues.body[0].id;
     }, 20000);
 
-    it("ends a paid box once its slot is over", async () => {
-        const boxId = await book();
+    it("ends a paid party once its slot is over", async () => {
+        const partyId = await book();
         await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + token);
-        await rewindSlot(boxId);
+        await rewindSlot(partyId);
 
         const room = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + token);
         expect(room.status).toBe(200);
         expect(room.body.status).toBe("ended");
     });
 
-    it("moves the finished box to past and opens rating", async () => {
-        const boxId = await book();
+    it("moves the finished party to past and opens rating", async () => {
+        const partyId = await book();
         await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + token);
-        await rewindSlot(boxId);
+        await rewindSlot(partyId);
 
-        const mine = await request(app).get("/api/boxes/mine").set("Authorization", "Bearer " + token);
-        expect(mine.body.past.some((box: any) => box.id === boxId)).toBe(true);
-        expect(mine.body.upcoming.some((box: any) => box.id === boxId)).toBe(false);
+        const mine = await request(app).get("/api/parties/mine").set("Authorization", "Bearer " + token);
+        expect(mine.body.past.some((party: any) => party.id === partyId)).toBe(true);
+        expect(mine.body.upcoming.some((party: any) => party.id === partyId)).toBe(false);
 
-        // Rating is gated on "ended", so it only works once the box closed.
+        // Rating is gated on "ended", so it only works once the party closed.
         const crew = await request(app)
-            .get("/api/boxes/" + boxId + "/crew")
+            .get("/api/parties/" + partyId + "/crew")
             .set("Authorization", "Bearer " + token);
         expect(crew.status).toBe(200);
     });
 
-    it("cancels a box that was never paid for and frees the slot", async () => {
-        const boxId = await book();
-        const slotId = await rewindSlot(boxId);
+    it("cancels a party that was never paid for and frees the slot", async () => {
+        const partyId = await book();
+        const slotId = await rewindSlot(partyId);
 
         const room = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + token);
         expect(room.body.status).toBe("cancelled");
 
         const slot = await slotsCollection.findOne({ id: slotId });
         expect(slot!.status).toBe("available");
 
-        const mine = await request(app).get("/api/boxes/mine").set("Authorization", "Bearer " + token);
-        expect(mine.body.upcoming.some((box: any) => box.id === boxId)).toBe(false);
-        expect(mine.body.past.some((box: any) => box.id === boxId)).toBe(false);
+        const mine = await request(app).get("/api/parties/mine").set("Authorization", "Bearer " + token);
+        expect(mine.body.upcoming.some((party: any) => party.id === partyId)).toBe(false);
+        expect(mine.body.past.some((party: any) => party.id === partyId)).toBe(false);
     });
 
-    it("refuses to pay for a cancelled box", async () => {
-        const boxId = await book();
-        await rewindSlot(boxId);
+    it("refuses to pay for a cancelled party", async () => {
+        const partyId = await book();
+        await rewindSlot(partyId);
 
         const response = await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(400);
     });
 
-    it("keeps a box that has not started yet untouched", async () => {
-        const boxId = await book();
+    it("keeps a party that has not started yet untouched", async () => {
+        const partyId = await book();
         await request(app)
-            .post("/api/boxes/" + boxId + "/pay")
+            .post("/api/parties/" + partyId + "/pay")
             .set("Authorization", "Bearer " + token);
 
         const room = await request(app)
-            .get("/api/boxes/" + boxId)
+            .get("/api/parties/" + partyId)
             .set("Authorization", "Bearer " + token);
         expect(room.body.status).toBe("upcoming");
     });

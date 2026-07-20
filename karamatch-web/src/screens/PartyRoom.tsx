@@ -1,33 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
-import type { BoxRoom as BoxRoomView, ChatMessage } from "../api";
+import type { PartyRoom as PartyRoomView, ChatMessage } from "../api";
 import { useApp } from "../AppContext";
 import { C, GRAD, roundBack } from "../theme";
 import { Avatar, ErrorNote, Loading, formatWhen, plural, useAsync } from "../ui";
 
 const POLL_MS = 4000;
 
-export default function BoxRoom() {
+export default function PartyRoom() {
     const app = useApp();
-    const boxId = app.boxId;
-    const room = useAsync(() => api.box(boxId!), [boxId]);
+    const partyId = app.partyId;
+    const loaded = useAsync(() => api.party(partyId!), [partyId]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [draft, setDraft] = useState("");
     const [inviteInput, setInviteInput] = useState("");
     const chatEnd = useRef<HTMLDivElement | null>(null);
 
-    // A past box opens the same room, read-only: the chat is history and the
+    // A past party opens the same screen, read-only: the chat is history and the
     // crew can still be rated.
-    const ended = room.data?.status === "ended";
+    const ended = loaded.data?.status === "ended";
 
     // The chat is polled — the API has no websockets by design.
     useEffect(() => {
-        if (!boxId) {
+        if (!partyId) {
             return;
         }
         let live = true;
         const load = () => {
-            api.messages(boxId)
+            api.messages(partyId)
                 .then(list => {
                     if (live) {
                         setMessages(list);
@@ -47,38 +47,38 @@ export default function BoxRoom() {
             live = false;
             window.clearInterval(timer);
         };
-    }, [boxId, ended]);
+    }, [partyId, ended]);
 
     useEffect(() => {
         chatEnd.current?.scrollIntoView({ block: "end" });
     }, [messages.length]);
 
-    if (room.loading) {
-        return <Loading label="Opening the room…" />;
+    if (loaded.loading) {
+        return <Loading label="Opening the party…" />;
     }
-    if (room.error || !room.data) {
+    if (loaded.error || !loaded.data) {
         return (
             <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
                 <button onClick={() => app.go("app")} style={roundBack}>
                     ‹
                 </button>
-                <ErrorNote message={room.error ?? "Box not found"} />
+                <ErrorNote message={loaded.error ?? "Party not found"} />
             </div>
         );
     }
 
-    const box: BoxRoomView = room.data;
-    const myMember = box.members.find(member => member.id === app.me?.id);
+    const party: PartyRoomView = loaded.data;
+    const myMember = party.members.find(member => member.id === app.me?.id);
     const isHost = myMember?.role === "host";
 
     async function send() {
         const text = draft.trim();
-        if (!text || !boxId) {
+        if (!text || !partyId) {
             return;
         }
         setDraft("");
         try {
-            const message = await api.sendMessage(boxId, text);
+            const message = await api.sendMessage(partyId, text);
             setMessages(current => [...current, message]);
         } catch (err) {
             app.toast((err as Error).message);
@@ -87,13 +87,13 @@ export default function BoxRoom() {
 
     async function sendInvite() {
         const target = inviteInput.trim();
-        if (!target || !boxId) {
+        if (!target || !partyId) {
             return;
         }
         try {
-            const result = await api.invite(boxId, [target]);
+            const result = await api.invite(partyId, [target]);
             setInviteInput("");
-            room.reload();
+            loaded.reload();
             app.toast("Invite sent to @" + result.invited.join(", @"));
         } catch (err) {
             app.toast((err as Error).message);
@@ -101,12 +101,12 @@ export default function BoxRoom() {
     }
 
     async function togglePublic() {
-        if (!boxId) {
+        if (!partyId) {
             return;
         }
         try {
-            await api.setOpenToPublic(boxId, !box.openToPublic);
-            room.reload();
+            await api.setOpenToPublic(partyId, !party.openToPublic);
+            loaded.reload();
         } catch (err) {
             app.toast((err as Error).message);
         }
@@ -137,10 +137,10 @@ export default function BoxRoom() {
                             textOverflow: "ellipsis"
                         }}
                     >
-                        {box.title}
+                        {party.title}
                     </div>
                     <div style={{ color: C.textMuted, fontSize: 12 }}>
-                        {box.venue?.name} · {formatWhen(box.start)} · 1h
+                        {party.venue?.name} · {formatWhen(party.start)} · 1h
                     </div>
                 </div>
                 <div
@@ -180,7 +180,7 @@ export default function BoxRoom() {
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    {box.members.map(member => (
+                    {party.members.map(member => (
                         <div
                             key={member.id}
                             onClick={() => app.openProfile(member.username)}
@@ -227,7 +227,7 @@ export default function BoxRoom() {
                             ) : null}
                         </div>
                     ))}
-                    {box.invitedUsernames.map(username => (
+                    {party.invitedUsernames.map(username => (
                         <div
                             key={username}
                             style={{
@@ -246,17 +246,17 @@ export default function BoxRoom() {
                     ))}
                     {ended ? null : (
                         <div style={{ fontSize: 13, color: C.textMuted }}>
-                            {plural(box.spotsLeft, "spot left", "spots left")}
+                            {plural(party.spotsLeft, "spot left", "spots left")}
                         </div>
                     )}
                 </div>
 
                 {ended ? (
-                    box.rated ? (
+                    party.rated ? (
                         <div style={{ color: C.green, fontSize: 13, fontWeight: 600 }}>★ Crew rated — thanks!</div>
                     ) : (
                         <button
-                            onClick={() => app.openRate(box.id)}
+                            onClick={() => app.openRate(party.id)}
                             style={{
                                 height: 46,
                                 border: "1px solid rgba(255,193,69,.45)",
@@ -343,7 +343,7 @@ export default function BoxRoom() {
                             <div>
                                 <div style={{ fontSize: 14, fontWeight: 600 }}>Open to everyone</div>
                                 <div style={{ fontSize: 12, color: C.textMuted }}>
-                                    Show this box in Open boxes &amp; Match
+                                    Show this party in Open parties &amp; Match
                                 </div>
                             </div>
                             <div
@@ -351,7 +351,7 @@ export default function BoxRoom() {
                                     width: 48,
                                     height: 28,
                                     borderRadius: 999,
-                                    background: box.openToPublic ? C.green : "rgba(255,255,255,.15)",
+                                    background: party.openToPublic ? C.green : "rgba(255,255,255,.15)",
                                     position: "relative",
                                     transition: "background .2s",
                                     flexShrink: 0
@@ -365,7 +365,7 @@ export default function BoxRoom() {
                                         background: "#fff",
                                         position: "absolute",
                                         top: 3,
-                                        left: box.openToPublic ? 23 : 3,
+                                        left: party.openToPublic ? 23 : 3,
                                         transition: "left .2s"
                                     }}
                                 />
@@ -387,7 +387,7 @@ export default function BoxRoom() {
             >
                 {messages.length === 0 ? (
                     <div style={{ color: C.textMuted, fontSize: 13, textAlign: "center", marginTop: 20 }}>
-                        {ended ? "Nothing was said in this box." : "No messages yet — say hi to your crew."}
+                        {ended ? "Nothing was said in this party." : "No messages yet — say hi to your crew."}
                     </div>
                 ) : null}
                 {messages.map(message => {
@@ -456,7 +456,7 @@ export default function BoxRoom() {
                                 void send();
                             }
                         }}
-                        placeholder="Message the box…"
+                        placeholder="Message the party…"
                         style={{
                             flex: 1,
                             height: 46,

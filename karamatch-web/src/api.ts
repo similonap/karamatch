@@ -160,7 +160,7 @@ export interface RoomSlots {
     slots: { id: string; start: string; end: string }[];
 }
 
-export interface BoxView {
+export interface PartyView {
     id: string;
     title: string;
     genre: string;
@@ -176,21 +176,21 @@ export interface BoxView {
     status: string;
 }
 
-export interface MatchView extends BoxView {
+export interface MatchView extends PartyView {
     matchPct: number;
     commonSongs: string[];
 }
 
-export interface PastBoxView extends BoxView {
+export interface PastPartyView extends PartyView {
     rated: boolean;
 }
 
-export interface BoxRoomMember extends MatchedUser {
+export interface PartyRoomMember extends MatchedUser {
     role: "host" | "member";
     paid: boolean;
 }
 
-export interface BoxRoom {
+export interface PartyRoom {
     id: string;
     title: string;
     genre: string;
@@ -200,13 +200,13 @@ export interface BoxRoom {
     roomName: string;
     start: string;
     end: string;
-    // Seats in the room; capacity is how many of them this box offers.
+    // Seats in the room; capacity is how many of them this party offers.
     seats: number;
     capacity: number;
     totalPrice: number;
     share: number;
     spotsLeft: number;
-    members: BoxRoomMember[];
+    members: PartyRoomMember[];
     invitedUsernames: string[];
     // Only meaningful once status is "ended".
     rated: boolean;
@@ -214,7 +214,7 @@ export interface BoxRoom {
 
 export interface ChatMessage {
     id: string;
-    boxId: string;
+    partyId: string;
     userId: number;
     from: PublicUser | null;
     text: string;
@@ -225,7 +225,7 @@ export interface NotificationView {
     id: string;
     status: string;
     from: PublicUser;
-    box: {
+    party: {
         id: string;
         title: string;
         genre: string;
@@ -300,59 +300,59 @@ export const api = {
         return request<RoomSlots[]>("/venues/" + id + "/slots" + query({ from, to }));
     },
 
-    // Boxes
-    bookBox(body: { venueId: string; roomId: string; slotId: string; title?: string; spots?: number }) {
-        return request<{ id: string; totalPrice: number; capacity: number; share: number }>("/boxes", {
+    // Parties
+    bookParty(body: { venueId: string; roomId: string; slotId: string; title?: string; spots?: number }) {
+        return request<{ id: string; totalPrice: number; capacity: number; share: number }>("/parties", {
             method: "POST",
             body: JSON.stringify(body)
         });
     },
-    joinBox(id: string) {
-        return request<{ boxId: string; share: number }>("/boxes/" + id + "/join", { method: "POST" });
+    joinParty(id: string) {
+        return request<{ partyId: string; share: number }>("/parties/" + id + "/join", { method: "POST" });
     },
-    payBox(id: string) {
-        return request<{ boxId: string; status: string; share: number }>("/boxes/" + id + "/pay", {
+    payParty(id: string) {
+        return request<{ partyId: string; status: string; share: number }>("/parties/" + id + "/pay", {
             method: "POST"
         });
     },
-    openBoxes(distance = 3) {
-        return request<BoxView[]>("/boxes/open" + query({ distance }));
+    openParties(distance = 3) {
+        return request<PartyView[]>("/parties/open" + query({ distance }));
     },
     matches(distance = 3, minOverlap = 0) {
-        return request<MatchView[]>("/boxes/matches" + query({ distance, minOverlap }));
+        return request<MatchView[]>("/parties/matches" + query({ distance, minOverlap }));
     },
-    myBoxes() {
-        return request<{ upcoming: BoxView[]; past: PastBoxView[] }>("/boxes/mine");
+    myParties() {
+        return request<{ upcoming: PartyView[]; past: PastPartyView[] }>("/parties/mine");
     },
-    box(id: string) {
-        return request<BoxRoom>("/boxes/" + id);
+    party(id: string) {
+        return request<PartyRoom>("/parties/" + id);
     },
     setOpenToPublic(id: string, openToPublic: boolean) {
-        return request<{ id: string; openToPublic: boolean }>("/boxes/" + id, {
+        return request<{ id: string; openToPublic: boolean }>("/parties/" + id, {
             method: "PATCH",
             body: JSON.stringify({ openToPublic })
         });
     },
     messages(id: string) {
-        return request<ChatMessage[]>("/boxes/" + id + "/messages");
+        return request<ChatMessage[]>("/parties/" + id + "/messages");
     },
     sendMessage(id: string, text: string) {
-        return request<ChatMessage>("/boxes/" + id + "/messages", {
+        return request<ChatMessage>("/parties/" + id + "/messages", {
             method: "POST",
             body: JSON.stringify({ text })
         });
     },
     invite(id: string, usernames: string[]) {
-        return request<{ invited: string[] }>("/boxes/" + id + "/invites", {
+        return request<{ invited: string[] }>("/parties/" + id + "/invites", {
             method: "POST",
             body: JSON.stringify({ usernames })
         });
     },
     crew(id: string) {
-        return request<CrewMember[]>("/boxes/" + id + "/crew");
+        return request<CrewMember[]>("/parties/" + id + "/crew");
     },
     rate(id: string, ratings: { username: string; stars: number; text: string }[]) {
-        return request<{ message: string }>("/boxes/" + id + "/ratings", {
+        return request<{ message: string }>("/parties/" + id + "/ratings", {
             method: "POST",
             body: JSON.stringify({ ratings })
         });
@@ -363,7 +363,7 @@ export const api = {
         return request<NotificationView[]>("/notifications");
     },
     acceptInvite(id: string) {
-        return request<{ boxId: string; share: number }>("/notifications/" + id + "/accept", {
+        return request<{ partyId: string; share: number }>("/notifications/" + id + "/accept", {
             method: "POST"
         });
     },

@@ -33,7 +33,7 @@ Repo-specific gotchas for future syncs. Read this before re-running.
 - **Absolutely-positioned components need a positioned ancestor.** `Toast` (`position:absolute`,
   bottom 110) and `ConfirmDialog` (`position:absolute; inset:0`) dim/anchor to their nearest
   positioned ancestor — in the app that is the PhoneFrame screen. Their previews recreate a
-  `position:relative` screen box (360x420) with content behind. See `previews/ConfirmDialog.tsx`.
+  `position:relative` screen party (360x420) with content behind. See `previews/ConfirmDialog.tsx`.
 
 ## Preview wrapper taxonomy (use this when authoring a new preview)
 
@@ -47,7 +47,7 @@ wrapper only supplies colour. Pick the right shape up front and you skip a faile
    justification, so in an unsized wrapper it shrinks to just the spinner and the centring never
    shows. Add `display: flex; flexDirection: column; width: 320; height: 200`.
 3. **`Screen` helper** — `position: absolute` overlays: `Toast`, `ConfirmDialog`. A `position:
-   relative` box, 360x420, `overflow: hidden`, `borderRadius: 24`, gradient `#0D0718 → #0A0512`,
+   relative` party, 360x420, `overflow: hidden`, `borderRadius: 24`, gradient `#0D0718 → #0A0512`,
    with plausible screen content behind. Copy it from `previews/ConfirmDialog.tsx`.
 4. **No wrapper** — `PhoneFrame` carries its own dark background and is `minHeight: 100vh`.
 
@@ -82,8 +82,8 @@ Two further authoring conventions worth keeping:
 
 - **`GradientTile` has no usage anywhere in `src/`.** It is an exported component that nothing
   consumes. Its preview was composed by inferring intent from the implementation (square, `GRAD`
-  fill, glyph at 45% of size) as a box/venue row thumbnail. Either it is dead code and should be
-  dropped from `componentSrcMap`, or the box/venue rows should be adopting it. Worth a decision
+  fill, glyph at 45% of size) as a party/venue row thumbnail. Either it is dead code and should be
+  dropped from `componentSrcMap`, or the party/venue rows should be adopting it. Worth a decision
   before the next sync.
 
 ## Known render warns (expected — not new)

@@ -2,7 +2,7 @@ import express from "express";
 import { verifyAuthToken } from "../middleware/verifyAuthToken";
 import {
     ensureNotificationsFor, getNotificationById, setNotificationStatus,
-    getBoxById, addBoxMember, shareFor
+    getPartyById, addPartyMember, shareFor
 } from "../database";
 
 const router = express.Router();
@@ -14,7 +14,7 @@ router.get("/notifications", verifyAuthToken, async (req, res) => {
     res.json(notifications);
 });
 
-// Accepting reserves the spot; the client then pays via POST /boxes/:id/pay.
+// Accepting reserves the spot; the client then pays via POST /parties/:id/pay.
 router.post("/notifications/:id/accept", verifyAuthToken, async (req, res) => {
     const user = res.locals.user;
     const notification = await getNotificationById(req.params.id);
@@ -26,20 +26,20 @@ router.post("/notifications/:id/accept", verifyAuthToken, async (req, res) => {
         res.status(400).json({ error: "Invite already handled" });
         return;
     }
-    const box = await getBoxById(notification.boxId);
-    if (!box || box.status !== "upcoming") {
-        res.status(400).json({ error: "Box is no longer available" });
+    const party = await getPartyById(notification.partyId);
+    if (!party || party.status !== "upcoming") {
+        res.status(400).json({ error: "Party is no longer available" });
         return;
     }
-    if (!box.members.some(member => member.userId === user.id)) {
-        if (box.members.length >= box.capacity) {
-            res.status(400).json({ error: "Box is full" });
+    if (!party.members.some(member => member.userId === user.id)) {
+        if (party.members.length >= party.capacity) {
+            res.status(400).json({ error: "Party is full" });
             return;
         }
-        await addBoxMember(box, user);
+        await addPartyMember(party, user);
     }
     await setNotificationStatus(notification.id, "accepted");
-    res.json({ boxId: box.id, share: shareFor(box) });
+    res.json({ partyId: party.id, share: shareFor(party) });
 });
 
 router.post("/notifications/:id/decline", verifyAuthToken, async (req, res) => {

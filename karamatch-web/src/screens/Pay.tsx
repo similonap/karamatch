@@ -29,7 +29,7 @@ export default function Pay() {
         setPhase("processing");
         setError(null);
         try {
-            await api.payBox(pay.boxId);
+            await api.payParty(pay.partyId);
             await app.refreshMe();
             setPhase("done");
         } catch (err) {
@@ -61,7 +61,7 @@ export default function Pay() {
                 {phase === "idle" ? (
                     <>
                         <div style={{ color: C.textDim, fontSize: 14, fontWeight: 600, letterSpacing: 1 }}>
-                            {isJoin ? "YOUR SHARE" : "FULL BOX — YOU HOST"}
+                            {isJoin ? "YOUR SHARE" : "FULL PARTY — YOU HOST"}
                         </div>
                         <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 52, fontWeight: 900 }}>
                             {money(pay.amount)}
@@ -71,7 +71,7 @@ export default function Pay() {
                                 ? "Paid straight back to the host @" +
                                   (pay.hostUsername ?? "") +
                                   ". Your spot is locked once paid."
-                                : "You pay the box in full up front. Each person who joins pays their share back to you — so you're never left covering an empty room alone."}
+                                : "You pay the party in full up front. Each person who joins pays their share back to you — so you're never left covering an empty room alone."}
                         </div>
                         {error ? <ErrorNote message={error} /> : null}
                         <button
@@ -137,11 +137,11 @@ export default function Pay() {
                         </div>
                         <div style={{ color: C.textMuted, fontSize: 14, maxWidth: 260, lineHeight: 1.6 }}>
                             {isJoin
-                                ? "Your share went to the host. Say hi in the box chat!"
-                                : "Box booked. Invite friends or open it up for others to join."}
+                                ? "Your share went to the host. Say hi in the party chat!"
+                                : "Party booked. Invite friends or open it up for others to join."}
                         </div>
                         <button
-                            onClick={() => app.openRoom(pay.boxId)}
+                            onClick={() => app.openRoom(pay.partyId)}
                             style={{
                                 width: "100%",
                                 maxWidth: 300,
@@ -157,7 +157,7 @@ export default function Pay() {
                                 marginTop: 12
                             }}
                         >
-                            Open box room →
+                            Open party room →
                         </button>
                     </>
                 ) : null}

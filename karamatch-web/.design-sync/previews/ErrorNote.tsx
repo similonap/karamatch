@@ -16,12 +16,12 @@ export function Short() {
     );
 }
 
-// The "not found" fallbacks used by VenueDetail, BoxRoom and UserProfile.
+// The "not found" fallbacks used by VenueDetail, PartyRoom and UserProfile.
 export function NotFound() {
     return (
         <div style={{ ...surface, display: "flex", flexDirection: "column", gap: 10 }}>
             <ErrorNote message="Venue not found" />
-            <ErrorNote message="Box not found" />
+            <ErrorNote message="Party not found" />
             <ErrorNote message="Singer not found" />
         </div>
     );

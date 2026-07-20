@@ -11,9 +11,9 @@ interface Draft {
 
 export default function Rate() {
     const app = useApp();
-    const boxId = app.rateBoxId;
-    const crew = useAsync(() => api.crew(boxId!), [boxId]);
-    const box = useAsync(() => api.box(boxId!), [boxId]);
+    const partyId = app.ratePartyId;
+    const crew = useAsync(() => api.crew(partyId!), [partyId]);
+    const party = useAsync(() => api.party(partyId!), [partyId]);
     const [drafts, setDrafts] = useState<Record<string, Draft>>({});
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export default function Rate() {
     }
 
     async function submit() {
-        if (!boxId) {
+        if (!partyId) {
             return;
         }
         // Only people you actually gave stars to get submitted.
@@ -42,7 +42,7 @@ export default function Rate() {
         setBusy(true);
         setError(null);
         try {
-            await api.rate(boxId, ratings);
+            await api.rate(partyId, ratings);
             app.toast("Reviews posted — thanks!");
             app.goTab("mine");
         } catch (err) {
@@ -72,7 +72,7 @@ export default function Rate() {
                         Rate your crew
                     </div>
                     <div style={{ color: C.textMuted, fontSize: 13 }}>
-                        {box.data ? box.data.title + " · " + (box.data.venue?.name ?? "") : "…"}
+                        {party.data ? party.data.title + " · " + (party.data.venue?.name ?? "") : "…"}
                     </div>
                 </div>
             </div>

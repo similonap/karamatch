@@ -222,20 +222,20 @@ export function sampleFavoriteSongIds(songs: Song[], genre: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Boxes — genre-flavoured titles
+// Parties — genre-flavoured titles
 // ---------------------------------------------------------------------------
 
 // Karafun style tags that describe an arrangement, an audience or a context
 // rather than a musical taste. They stay in Song.genre (and so still count
-// towards matchmaking), but a box is never themed on one: "Duet Night" reads
+// towards matchmaking), but a party is never themed on one: "Duet Night" reads
 // as nonsense next to "Metal Mayhem". See dominantGenreFor in database.ts.
 export const NON_TASTE_GENRES = ["Duet", "Kids", "Traditional", "Spiritual Music"];
 
-// Keys are real karafun catalog style tags (see Song.genre). Every tag a box
+// Keys are real karafun catalog style tags (see Song.genre). Every tag a party
 // can actually be themed on — i.e. every tag except NON_TASTE_GENRES — has an
-// entry here, so randomBoxTitle only falls back to the generic title if the
+// entry here, so randomPartyTitle only falls back to the generic title if the
 // catalog ever grows a new tag.
-const BOX_TITLES: { [genre: string]: string[] } = {
+const PARTY_TITLES: { [genre: string]: string[] } = {
     "Rock": ["Rock Legends Only", "Arena Rock Night", "Riffs & Anthems"],
     "Pop": ["Pop Anthems Night", "Chart Toppers Party", "Pure Pop Energy"],
     "Country": ["Country Roads Night", "Boots & Ballads", "Nashville Vibes"],
@@ -276,7 +276,7 @@ const BOX_TITLES: { [genre: string]: string[] } = {
 };
 
 // Genres NPC hosts are generated for. Deliberately a hand-picked subset of
-// BOX_TITLES: broad, well-populated tags, so a generated crowd clusters into
+// PARTY_TITLES: broad, well-populated tags, so a generated crowd clusters into
 // meaningful taste groups instead of scattering across tags the catalog only
 // has a handful of songs for.
 export const NPC_GENRES = [
@@ -285,13 +285,13 @@ export const NPC_GENRES = [
     "Dance", "Schlager"
 ];
 
-export function randomBoxTitle(genre: string) {
-    const titles = BOX_TITLES[genre];
+export function randomPartyTitle(genre: string) {
+    const titles = PARTY_TITLES[genre];
     return titles ? pick(titles) : "Karaoke Night";
 }
 
 // ---------------------------------------------------------------------------
-// Chat — canned NPC replies, so the box chat feels alive
+// Chat — canned NPC replies, so the party chat feels alive
 // ---------------------------------------------------------------------------
 
 const NPC_CHAT_REPLIES = [

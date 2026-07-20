@@ -6,43 +6,43 @@ Express + TypeScript + MongoDB backend for the KaraMatch student project. See
 ## Status
 
 Working: **auth** and the **sparse, on-demand world generation** (proposal §2). Wherever
-a user drops their pin, the first `GET /venues`, `GET /venues/:id/slots`, `GET /boxes/open`,
-`GET /notifications` or `GET /boxes/mine` generates and persists venues, hourly slots,
-NPC singers, open boxes, a pending invite and one past box around that location — after
+a user drops their pin, the first `GET /venues`, `GET /venues/:id/slots`, `GET /parties/open`,
+`GET /notifications` or `GET /parties/mine` generates and persists venues, hourly slots,
+NPC singers, open parties, a pending invite and one past party around that location — after
 which the world is stable for everyone (delete the db and it regrows elsewhere).
 NPC singers also show up in the people search (`GET /users?q=`).
 
-Also working: the **box chat** (`GET`/`POST /boxes/:id/messages`, members only, polled by
+Also working: the **party chat** (`GET`/`POST /parties/:id/messages`, members only, polled by
 the client) — NPC members answer with a canned reply now and then, so the chat feels alive.
 
-And **booking & payment** (simulated — always succeeds): `POST /boxes` books a free slot
-as a `pending_payment` box (400 if the slot is taken); the host's `POST /boxes/:id/pay`
-confirms it (box `upcoming`, slot `booked`). `POST /boxes/:id/join` reserves a spot on a
-public box and returns your share, which you then pay on the same `/pay` endpoint.
+And **booking & payment** (simulated — always succeeds): `POST /parties` books a free slot
+as a `pending_payment` party (400 if the slot is taken); the host's `POST /parties/:id/pay`
+confirms it (party `upcoming`, slot `booked`). `POST /parties/:id/join` reserves a spot on a
+public party and returns your share, which you then pay on the same `/pay` endpoint.
 Invites work the same way: `POST /notifications/:id/accept` reserves the spot and hands
-back `{ boxId, share }` for `/pay`; `decline` returns 204.
+back `{ partyId, share }` for `/pay`; `decline` returns 204.
 
-And **matchmaking** (`GET /boxes/matches?distance=&minOverlap=`): the same nearby joinable
-boxes as `/boxes/open`, scored against your taste and sorted by `matchPct` —
+And **matchmaking** (`GET /parties/matches?distance=&minOverlap=`): the same nearby joinable
+parties as `/parties/open`, scored against your taste and sorted by `matchPct` —
 `round(100 * (0.6 * songOverlap + 0.4 * genreAffinity))`, where `songOverlap` is
 `|mine ∩ host| / min(|mine|, |host|)` and `genreAffinity` the cosine similarity of the two
-genre profiles. Each match carries up to 3 `commonSongs` titles and the box's genre;
+genre profiles. Each match carries up to 3 `commonSongs` titles and the party's genre;
 `minOverlap` drops matches below that percentage. Because the catalog is
 genre-discriminative, you can match with someone who sings *other* rock anthems.
 
-And the rest of the box lifecycle — the **full endpoint surface from the proposal is now
+And the rest of the party lifecycle — the **full endpoint surface from the proposal is now
 implemented**, nothing is stubbed:
 
-- **Box room** (`GET /boxes/:id`, members only): venue/room/start, members with their
+- **Party room** (`GET /parties/:id`, members only): venue/room/start, members with their
   host/paid tags, invited usernames, spots left and your share.
-- **Host controls** (`PATCH /boxes/:id`, host only): toggle `openToPublic`.
-- **Invites** (`POST /boxes/:id/invites`, host only): `{ usernames: [...] }` or
+- **Host controls** (`PATCH /parties/:id`, host only): toggle `openToPublic`.
+- **Invites** (`POST /parties/:id/invites`, host only): `{ usernames: [...] }` or
   `{ target: "@user" | "email" }` → pending notifications for the invitees; 400 when the
-  box is full or nobody matches.
-- **Crew & ratings** (`GET /boxes/:id/crew`, `POST /boxes/:id/ratings`, ended boxes
+  party is full or nobody matches.
+- **Crew & ratings** (`GET /parties/:id/crew`, `POST /parties/:id/ratings`, ended parties
   only): rate your fellow singers 1–5 stars; each rated user's `singerRating` is
-  recomputed as the average of all stars they ever received, and the box flips to
-  `rated: true` under `GET /boxes/mine`.
+  recomputed as the average of all stars they ever received, and the party flips to
+  `rated: true` under `GET /parties/mine`.
 - **Songs & profile**: `GET /songs` without a query returns a genre-interleaved
   discovery list (a spread across all 8 genres); `GET /me` expands your favourite songs
   and includes your genre profile.
@@ -56,15 +56,15 @@ implemented**, nothing is stubbed:
 - Slots are 1-hour evening sessions (18:00–02:00 local), always in the future — hours
   before "now" are skipped. Querying a range where a room has fewer than 4 free slots
   materializes the missing hours (some pre-booked). Default range is tonight → +7 days,
-  for both `GET /venues/:id/slots` and `GET /boxes/open`.
+  for both `GET /venues/:id/slots` and `GET /parties/open`.
 - On an empty database (first `connect()`, or after `POST /dev/reset`) the seed runs those
   generators once around **51.231° N, 4.418° E** (Antwerp, 3 km): venues with rooms, a
-  week of slots, NPC singers and 8 open boxes — so the app has a populated world before
+  week of slots, NPC singers and 8 open parties — so the app has a populated world before
   the first pin is dropped. Constants live at the top of the seed section in `database.ts`.
-- `GET /boxes/open` guarantees ≥ 3 joinable NPC-hosted boxes nearby; NPC hosts get
+- `GET /parties/open` guarantees ≥ 3 joinable NPC-hosted parties nearby; NPC hosts get
   genre-coherent favourite songs, and occasionally invite you (see `GET /notifications`,
   which guarantees at least one pending invite on first call).
-- `GET /boxes/mine` backfills one ended, unrated box from last week so the rating flow
+- `GET /parties/mine` backfills one ended, unrated party from last week so the rating flow
   is testable — a demo affordance, marked as such in `database.ts`.
 
 All generation lives in the `ensure…` functions in `database.ts`; the name/NPC/title

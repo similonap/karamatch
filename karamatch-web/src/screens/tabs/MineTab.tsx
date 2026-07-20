@@ -5,7 +5,7 @@ import { Avatar, EmptyCard, ErrorNote, Loading, formatWhen, plural, useAsync } f
 
 export default function MineTab() {
     const app = useApp();
-    const mine = useAsync(() => api.myBoxes(), []);
+    const mine = useAsync(() => api.myParties(), []);
 
     const upcoming = mine.data?.upcoming ?? [];
     const past = mine.data?.past ?? [];
@@ -21,7 +21,7 @@ export default function MineTab() {
                 gap: 14
             }}
         >
-            <div style={screenTitle}>My boxes</div>
+            <div style={screenTitle}>My parties</div>
 
             {mine.loading ? <Loading /> : null}
             {mine.error ? <ErrorNote message={mine.error} /> : null}
@@ -30,18 +30,18 @@ export default function MineTab() {
 
             {!mine.loading && upcoming.length === 0 ? (
                 <EmptyCard>
-                    No upcoming boxes yet.
+                    No upcoming parties yet.
                     <br />
                     Book a venue or join a match to get started.
                 </EmptyCard>
             ) : null}
 
-            {upcoming.map(box => {
-                const isHost = box.host.id === app.me?.id;
+            {upcoming.map(party => {
+                const isHost = party.host.id === app.me?.id;
                 return (
                     <div
-                        key={box.id}
-                        onClick={() => app.openRoom(box.id)}
+                        key={party.id}
+                        onClick={() => app.openRoom(party.id)}
                         style={{
                             borderRadius: 20,
                             border: "1px solid rgba(255,61,143,.4)",
@@ -56,19 +56,19 @@ export default function MineTab() {
                         }}
                     >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                            <div style={{ fontWeight: 700, fontSize: 16 }}>{box.title}</div>
+                            <div style={{ fontWeight: 700, fontSize: 16 }}>{party.title}</div>
                             <div style={{ fontSize: 12, fontWeight: 700, color: C.pinkSoft, flexShrink: 0 }}>
                                 {isHost ? "HOST" : "JOINED"}
                             </div>
                         </div>
                         <div style={{ color: C.textDim, fontSize: 13 }}>
-                            {box.venue.name} · {formatWhen(box.start)} · {box.membersCount}/{box.capacity} singers
+                            {party.venue.name} · {formatWhen(party.start)} · {party.membersCount}/{party.capacity} singers
                         </div>
                         {isHost ? null : (
                             <div
                                 onClick={event => {
                                     event.stopPropagation();
-                                    app.openProfile(box.host.username);
+                                    app.openProfile(party.host.username);
                                 }}
                                 style={{
                                     display: "flex",
@@ -79,14 +79,14 @@ export default function MineTab() {
                                 }}
                             >
                                 <Avatar
-                                    name={box.host.name}
-                                    photoUrl={box.host.photoUrl}
-                                    seed={box.host.id}
+                                    name={party.host.name}
+                                    photoUrl={party.host.photoUrl}
+                                    seed={party.host.id}
                                     size={26}
                                     fontSize={11}
                                 />
                                 <span style={{ color: C.textMuted, fontSize: 13 }}>
-                                    hosted by @{box.host.username}
+                                    hosted by @{party.host.username}
                                 </span>
                             </div>
                         )}
@@ -101,10 +101,10 @@ export default function MineTab() {
                 <EmptyCard>Nothing sung yet — your past nights will show up here.</EmptyCard>
             ) : null}
 
-            {past.map(box => (
+            {past.map(party => (
                 <div
-                    key={box.id}
-                    onClick={() => app.openRoom(box.id)}
+                    key={party.id}
+                    onClick={() => app.openRoom(party.id)}
                     style={{
                         borderRadius: 20,
                         border: "1px solid rgba(255,255,255,.1)",
@@ -118,22 +118,22 @@ export default function MineTab() {
                     }}
                 >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontWeight: 700, fontSize: 16 }}>{box.title}</div>
+                        <div style={{ fontWeight: 700, fontSize: 16 }}>{party.title}</div>
                         <div style={{ fontSize: 12, color: C.textMuted, flexShrink: 0 }}>
-                            ended · {formatWhen(box.start)}
+                            ended · {formatWhen(party.start)}
                         </div>
                     </div>
                     <div style={{ color: C.textMuted, fontSize: 13 }}>
-                        {box.venue.name} · {plural(box.membersCount, "singer", "singers")}
+                        {party.venue.name} · {plural(party.membersCount, "singer", "singers")}
                     </div>
                     <div style={{ color: C.cyan, fontSize: 13, fontWeight: 600 }}>Open room · chat &amp; crew →</div>
-                    {box.rated ? (
+                    {party.rated ? (
                         <div style={{ color: C.green, fontSize: 13, fontWeight: 600 }}>★ Crew rated — thanks!</div>
                     ) : (
                         <button
                             onClick={event => {
                                 event.stopPropagation();
-                                app.openRate(box.id);
+                                app.openRate(party.id);
                             }}
                             style={{
                                 height: 44,

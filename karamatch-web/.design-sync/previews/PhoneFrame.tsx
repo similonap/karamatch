@@ -33,9 +33,9 @@ export function Screen() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {matches.map(box => (
+                    {matches.map(party => (
                         <div
-                            key={box.title}
+                            key={party.title}
                             style={{
                                 display: "flex",
                                 alignItems: "center",
@@ -47,10 +47,10 @@ export function Screen() {
                             }}
                         >
                             <GradientTile size={48} radius={14}>
-                                {box.glyph}
+                                {party.glyph}
                             </GradientTile>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: 700, fontSize: 15 }}>{box.title}</div>
+                                <div style={{ fontWeight: 700, fontSize: 15 }}>{party.title}</div>
                                 <div
                                     style={{
                                         ...caption,
@@ -59,10 +59,10 @@ export function Screen() {
                                         textOverflow: "ellipsis"
                                     }}
                                 >
-                                    {box.meta}
+                                    {party.meta}
                                 </div>
                             </div>
-                            <MatchBadge pct={box.pct} />
+                            <MatchBadge pct={party.pct} />
                         </div>
                     ))}
                 </div>
@@ -72,12 +72,12 @@ export function Screen() {
                 </div>
 
                 <div style={{ display: "flex", gap: 14 }}>
-                    {matches.map(box => (
+                    {matches.map(party => (
                         <div
-                            key={box.seed}
+                            key={party.seed}
                             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, width: 72 }}
                         >
-                            <Avatar name={box.host} seed={box.seed} size={56} fontSize={21} />
+                            <Avatar name={party.host} seed={party.seed} size={56} fontSize={21} />
                             <div
                                 style={{
                                     fontSize: 12,
@@ -88,7 +88,7 @@ export function Screen() {
                                     maxWidth: "100%"
                                 }}
                             >
-                                {box.host.split(" ")[0]}
+                                {party.host.split(" ")[0]}
                             </div>
                         </div>
                     ))}
@@ -109,7 +109,7 @@ export function Screen() {
                         marginTop: 4
                     }}
                 >
-                    Host a box
+                    Host a party
                 </button>
             </div>
         </PhoneFrame>

@@ -4,7 +4,7 @@ import { cors } from "./middleware/cors";
 import authRouter from "./routers/auth";
 import songsRouter from "./routers/songs";
 import venuesRouter from "./routers/venues";
-import boxesRouter from "./routers/boxes";
+import partiesRouter from "./routers/parties";
 import friendsRouter from "./routers/friends";
 import notificationsRouter from "./routers/notifications";
 import devRouter from "./routers/dev";
@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
 app.use("/api", authRouter);
 app.use("/api", songsRouter);
 app.use("/api", venuesRouter);
-app.use("/api", boxesRouter);
+app.use("/api", partiesRouter);
 app.use("/api", friendsRouter);
 app.use("/api", notificationsRouter);
 app.use("/api", devRouter);

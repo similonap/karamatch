@@ -104,7 +104,7 @@ export default function VenuesTab() {
                         >
                             <span>{venue.distanceKm} km</span>
                             <span>·</span>
-                            <span>{venue.rooms.length} boxes</span>
+                            <span>{venue.rooms.length} parties</span>
                             <span>·</span>
                             <span style={{ color: C.cyan }}>from {money(venue.fromPrice)}/hr</span>
                         </div>

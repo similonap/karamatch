@@ -42,7 +42,7 @@ function venuesNear(token: string, lat: number, lng: number, distance?: number) 
 }
 
 // Spread deliberately over both hemispheres and both sides of the meridian:
-// the cell grid floors coordinates and the bounding box divides by cos(lat),
+// the cell grid floors coordinates and the bounding party divides by cos(lat),
 // so negative and high-latitude coordinates are the interesting cases.
 const PLACES = [
     { label: "Antwerp", lat: 51.2194, lng: 4.4025 },
@@ -201,7 +201,7 @@ describe("where the app looks when you do not say", () => {
 
     it("asks you to set a location when there is none", async () => {
         const token = await register("nowhere");
-        for (const path of ["/api/venues", "/api/boxes/open", "/api/boxes/matches"]) {
+        for (const path of ["/api/venues", "/api/parties/open", "/api/parties/matches"]) {
             const response = await request(app)
                 .get(path)
                 .set("Authorization", "Bearer " + token);
@@ -223,7 +223,7 @@ describe("where the app looks when you do not say", () => {
 describe("a full night in a city far from home", () => {
     // Everything the other suites do around Hasselt, done in Lisbon instead —
     // venues, slots, a booking, and the open/match lists that have to generate
-    // their own NPC boxes in a neighbourhood nobody has visited yet.
+    // their own NPC parties in a neighbourhood nobody has visited yet.
     let token: string;
     const lat = 38.7223;
     const lng = -9.1393;
@@ -253,7 +253,7 @@ describe("a full night in a city far from home", () => {
         expect(roomWithSlots).toBeTruthy();
 
         const booking = await request(app)
-            .post("/api/boxes")
+            .post("/api/parties")
             .set("Authorization", "Bearer " + token)
             .send({
                 venueId: venueId,
@@ -265,23 +265,23 @@ describe("a full night in a city far from home", () => {
         expect(booking.body.status).toBe("pending_payment");
 
         const pay = await request(app)
-            .post("/api/boxes/" + booking.body.id + "/pay")
+            .post("/api/parties/" + booking.body.id + "/pay")
             .set("Authorization", "Bearer " + token);
         expect(pay.status).toBe(200);
         expect(pay.body.status).toBe("upcoming");
     }, 60000);
 
-    it("populates the open list with boxes that are actually nearby", async () => {
+    it("populates the open list with parties that are actually nearby", async () => {
         const response = await request(app)
-            .get("/api/boxes/open?distance=3")
+            .get("/api/parties/open?distance=3")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(200);
         expect(response.body.length).toBeGreaterThanOrEqual(3);
-        for (const box of response.body) {
-            expect(box.venue.distanceKm).toBeLessThanOrEqual(3.05);
-            expect(box.status).toBe("upcoming");
-            expect(box.spotsOpen).toBeGreaterThan(0);
-            expect(box.host.username).toBeTruthy();
+        for (const party of response.body) {
+            expect(party.venue.distanceKm).toBeLessThanOrEqual(3.05);
+            expect(party.status).toBe("upcoming");
+            expect(party.spotsOpen).toBeGreaterThan(0);
+            expect(party.host.username).toBeTruthy();
         }
     }, 60000);
 
@@ -292,7 +292,7 @@ describe("a full night in a city far from home", () => {
             .send({ favoriteSongIds: ["12617", "12543", "11335"] });
 
         const response = await request(app)
-            .get("/api/boxes/matches?distance=3")
+            .get("/api/parties/matches?distance=3")
             .set("Authorization", "Bearer " + token);
         expect(response.status).toBe(200);
         expect(response.body.length).toBeGreaterThanOrEqual(1);
@@ -305,7 +305,7 @@ describe("a full night in a city far from home", () => {
 
     it("finds singers near the new city too", async () => {
         const open = await request(app)
-            .get("/api/boxes/open?distance=3")
+            .get("/api/parties/open?distance=3")
             .set("Authorization", "Bearer " + token);
         const host = open.body[0].host.username;
 

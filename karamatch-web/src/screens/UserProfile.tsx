@@ -6,7 +6,7 @@ import { C, roundBack, sectionLabel } from "../theme";
 import { Avatar, ConfirmDialog, ErrorNote, Loading, useAsync } from "../ui";
 
 // Add / remove / "already friends" all sit in the same slot at the bottom of
-// the profile, so they share one box model and line up at the same height.
+// the profile, so they share one party model and line up at the same height.
 const friendAction: CSSProperties = {
     height: 50,
     display: "flex",
@@ -19,7 +19,7 @@ const friendAction: CSSProperties = {
 };
 
 // Read-only profile of another singer, opened by tapping them anywhere they
-// are listed: friends, people search, box members, a box host. Your own
+// are listed: friends, people search, party members, a party host. Your own
 // profile stays editable on the "profile" screen.
 export default function UserProfile() {
     const app = useApp();

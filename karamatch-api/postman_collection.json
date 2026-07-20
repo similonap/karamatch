@@ -17,7 +17,7 @@
         { "key": "venueId", "value": "", "type": "string" },
         { "key": "roomId", "value": "", "type": "string" },
         { "key": "slotId", "value": "", "type": "string" },
-        { "key": "boxId", "value": "", "type": "string" },
+        { "key": "partyId", "value": "", "type": "string" },
         { "key": "notificationId", "value": "", "type": "string" }
     ],
     "item": [
@@ -252,10 +252,10 @@
             ]
         },
         {
-            "name": "Boxes",
+            "name": "Parties",
             "item": [
                 {
-                    "name": "Create box",
+                    "name": "Create party",
                     "event": [
                         {
                             "listen": "test",
@@ -264,7 +264,7 @@
                                 "exec": [
                                     "if (pm.response.code === 201) {",
                                     "    const data = pm.response.json();",
-                                    "    pm.collectionVariables.set(\"boxId\", data.id);",
+                                    "    pm.collectionVariables.set(\"partyId\", data.id);",
                                     "}"
                                 ]
                             }
@@ -277,20 +277,20 @@
                             "mode": "raw",
                             "raw": "{\n    \"venueId\": \"{{venueId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"slotId\": \"{{slotId}}\",\n    \"title\": \"Friday night karaoke\",\n    \"spots\": 3\n}"
                         },
-                        "url": { "raw": "{{baseUrl}}/api/boxes", "host": ["{{baseUrl}}"], "path": ["api", "boxes"] },
-                        "description": "Books a slot and creates a box owned (as host) by the caller. Optional `spots` is how many seats are offered to other singers (1 to room seats − 1, default: every seat but the host's) — lower it to keep room for guests you bring yourself. Sets the `boxId` collection variable on success."
+                        "url": { "raw": "{{baseUrl}}/api/parties", "host": ["{{baseUrl}}"], "path": ["api", "parties"] },
+                        "description": "Books a slot and creates a party owned (as host) by the caller. Optional `spots` is how many seats are offered to other singers (1 to room seats − 1, default: every seat but the host's) — lower it to keep room for guests you bring yourself. Sets the `partyId` collection variable on success."
                     },
                     "response": []
                 },
                 {
-                    "name": "Open boxes near me",
+                    "name": "Open parties near me",
                     "request": {
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/open?lat=&lng=&distance=3&from=&to=",
+                            "raw": "{{baseUrl}}/api/parties/open?lat=&lng=&distance=3&from=&to=",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", "open"],
+                            "path": ["api", "parties", "open"],
                             "query": [
                                 { "key": "lat", "value": "", "description": "Falls back to the user's stored location" },
                                 { "key": "lng", "value": "" },
@@ -308,9 +308,9 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/matches?lat=&lng=&distance=3&from=&to=&minOverlap=0",
+                            "raw": "{{baseUrl}}/api/parties/matches?lat=&lng=&distance=3&from=&to=&minOverlap=0",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", "matches"],
+                            "path": ["api", "parties", "matches"],
                             "query": [
                                 { "key": "lat", "value": "", "description": "Falls back to the user's stored location" },
                                 { "key": "lng", "value": "" },
@@ -324,31 +324,31 @@
                     "response": []
                 },
                 {
-                    "name": "My boxes",
+                    "name": "My parties",
                     "request": {
                         "method": "GET",
                         "header": [],
-                        "url": { "raw": "{{baseUrl}}/api/boxes/mine", "host": ["{{baseUrl}}"], "path": ["api", "boxes", "mine"] }
+                        "url": { "raw": "{{baseUrl}}/api/parties/mine", "host": ["{{baseUrl}}"], "path": ["api", "parties", "mine"] }
                     },
                     "response": []
                 },
                 {
-                    "name": "Get box by id",
+                    "name": "Get party by id",
                     "request": {
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id",
+                            "raw": "{{baseUrl}}/api/parties/:id",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
-                        "description": "Caller must be a member of the box."
+                        "description": "Caller must be a member of the party."
                     },
                     "response": []
                 },
                 {
-                    "name": "Update box visibility",
+                    "name": "Update party visibility",
                     "request": {
                         "method": "PATCH",
                         "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -357,42 +357,42 @@
                             "raw": "{\n    \"openToPublic\": true\n}"
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id",
+                            "raw": "{{baseUrl}}/api/parties/:id",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
                         "description": "Host only."
                     },
                     "response": []
                 },
                 {
-                    "name": "Join box",
+                    "name": "Join party",
                     "request": {
                         "method": "POST",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id/join",
+                            "raw": "{{baseUrl}}/api/parties/:id/join",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id", "join"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id", "join"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
-                        "description": "Box must be openToPublic, upcoming, and have free capacity."
+                        "description": "Party must be openToPublic, upcoming, and have free capacity."
                     },
                     "response": []
                 },
                 {
-                    "name": "Pay for box",
+                    "name": "Pay for party",
                     "request": {
                         "method": "POST",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id/pay",
+                            "raw": "{{baseUrl}}/api/parties/:id/pay",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id", "pay"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id", "pay"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
-                        "description": "Simulated payment — always succeeds for a member of the box."
+                        "description": "Simulated payment — always succeeds for a member of the party."
                     },
                     "response": []
                 },
@@ -402,10 +402,10 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id/messages",
+                            "raw": "{{baseUrl}}/api/parties/:id/messages",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id", "messages"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id", "messages"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         }
                     },
                     "response": []
@@ -420,17 +420,17 @@
                             "raw": "{\n    \"text\": \"On our way!\"\n}"
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id/messages",
+                            "raw": "{{baseUrl}}/api/parties/:id/messages",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id", "messages"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id", "messages"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
                         "description": "Occasionally triggers an NPC reply, visible on the next GET."
                     },
                     "response": []
                 },
                 {
-                    "name": "Invite to box",
+                    "name": "Invite to party",
                     "request": {
                         "method": "POST",
                         "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -439,10 +439,10 @@
                             "raw": "{\n    \"usernames\": [\"friend1\", \"friend2\"]\n}"
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id/invites",
+                            "raw": "{{baseUrl}}/api/parties/:id/invites",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id", "invites"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id", "invites"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
                         "description": "Host only. Accepts `usernames` (array) or `target` (single username/@handle/email)."
                     },
@@ -454,12 +454,12 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id/crew",
+                            "raw": "{{baseUrl}}/api/parties/:id/crew",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id", "crew"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id", "crew"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
-                        "description": "Only available once the box has ended."
+                        "description": "Only available once the party has ended."
                     },
                     "response": []
                 },
@@ -473,12 +473,12 @@
                             "raw": "{\n    \"ratings\": [\n        { \"username\": \"friend1\", \"stars\": 5, \"text\": \"Great singer!\" }\n    ]\n}"
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/api/boxes/:id/ratings",
+                            "raw": "{{baseUrl}}/api/parties/:id/ratings",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "boxes", ":id", "ratings"],
-                            "variable": [{ "key": "id", "value": "{{boxId}}" }]
+                            "path": ["api", "parties", ":id", "ratings"],
+                            "variable": [{ "key": "id", "value": "{{partyId}}" }]
                         },
-                        "description": "Only for ended boxes; each rating target must be a fellow member; stars is an integer 1-5."
+                        "description": "Only for ended parties; each rating target must be a fellow member; stars is an integer 1-5."
                     },
                     "response": []
                 }
@@ -577,7 +577,7 @@
                             "path": ["api", "notifications", ":id", "accept"],
                             "variable": [{ "key": "id", "value": "{{notificationId}}" }]
                         },
-                        "description": "Reserves the spot. Pay separately via POST /api/boxes/:id/pay."
+                        "description": "Reserves the spot. Pay separately via POST /api/parties/:id/pay."
                     },
                     "response": []
                 },

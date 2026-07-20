@@ -95,13 +95,13 @@ export default function VenueDetail() {
         }
         setBusy(true);
         try {
-            const created = await api.bookBox({
+            const created = await api.bookParty({
                 venueId: venue.data.id,
                 roomId: selectedRoom.id,
                 slotId: selectedSlot.id,
                 spots: openSpots
             });
-            app.startPay({ kind: "host", boxId: created.id, amount: created.totalPrice });
+            app.startPay({ kind: "host", partyId: created.id, amount: created.totalPrice });
         } catch (err) {
             app.toast((err as Error).message);
         } finally {
@@ -172,7 +172,7 @@ export default function VenueDetail() {
                 <div>
                     <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 22, fontWeight: 700 }}>{data.name}</div>
                     <div style={{ color: C.textMuted, fontSize: 14, marginTop: 4 }}>
-                        ★ {data.rating.toFixed(1)} · {data.rooms.length} boxes · open till {data.openUntil}
+                        ★ {data.rating.toFixed(1)} · {data.rooms.length} rooms · open till {data.openUntil}
                     </div>
                 </div>
 
@@ -230,7 +230,7 @@ export default function VenueDetail() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>Choose a box</div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Choose a room</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {data.rooms.map(room => {
                             const selected = roomId === room.id;
@@ -313,7 +313,7 @@ export default function VenueDetail() {
                             </button>
                         </div>
                         <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
-                            {selectedRoom.seats} seats in this box: you plus {openSpots} open
+                            {selectedRoom.seats} seats in this room: you plus {openSpots} open
                             {openSpots < maxSpots ? " · " + (maxSpots - openSpots) + " kept free for people you bring yourself" : ""}
                         </div>
                     </div>
@@ -333,7 +333,7 @@ export default function VenueDetail() {
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: C.textDim }}>
                         <span>
                             1h ·{" "}
-                            {selectedRoom ? selectedRoom.name + " · " + selectedRoom.seats + " seats" : "no box selected"}
+                            {selectedRoom ? selectedRoom.name + " · " + selectedRoom.seats + " seats" : "no room selected"}
                         </span>
                         <span style={{ color: C.text, fontWeight: 700 }}>{money(total)}</span>
                     </div>
@@ -373,7 +373,7 @@ export default function VenueDetail() {
                         boxShadow: canBook ? "0 8px 32px rgba(255,61,143,.35)" : "none"
                     }}
                 >
-                    {busy ? "Booking…" : canBook ? "Book & pay " + money(total) : "Select a box"}
+                    {busy ? "Booking…" : canBook ? "Book & pay " + money(total) : "Select a room"}
                 </button>
             </div>
         </div>

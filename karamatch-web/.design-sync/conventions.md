@@ -84,7 +84,7 @@ over guessing — the prop lists are short and exact.
       </div>
     ))}
 
-    <button style={primaryButton(true)}>Host a box</button>
+    <button style={primaryButton(true)}>Host a party</button>
   </div>
 </PhoneFrame>
 ```

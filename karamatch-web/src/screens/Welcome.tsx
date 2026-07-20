@@ -48,7 +48,7 @@ export default function Welcome() {
                     Kara<span style={{ color: C.pink }}>Match</span>
                 </div>
                 <div style={{ color: C.textDim, fontSize: 16, textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
-                    Find people who sing what you sing. Book a box. Split the bill.
+                    Find people who sing what you sing. Book a party. Split the bill.
                 </div>
             </div>
 

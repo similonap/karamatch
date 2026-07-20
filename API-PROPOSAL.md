@@ -7,7 +7,7 @@ server backed by **MongoDB**, following the course conventions (CLAUDE.md) exact
 The core idea of v2: **the world is generated sparsely, on demand, around each user's
 location and time**. There is no fixed city, no zones, no pre-seeded venues. Wherever a
 student drops their pin — Brussels, Hasselt, Tokyo — the API generates venues, singers,
-open boxes and bookable slots near them the first time they look, persists them to
+open parties and bookable slots near them the first time they look, persists them to
 MongoDB, and grows the world as they query further away or further into the future.
 
 ---
@@ -23,14 +23,14 @@ Every screen in `KaraMatch.dc.html` maps to endpoints:
 | Song taste (Step 3) | Search the curated song catalog, pick 3–10 favourites → genre profile |
 | Venues tab | Venues **around your location within a given distance**, sorted by real distance |
 | Venue detail / Booking | Rooms + prices, **bookable hourly slots in a time range**, total & per-person share |
-| Payment | Simulated: host pays the full box, joiner pays their share |
-| Open boxes tab | Nearby public boxes with free spots: host, members, spots open, your share, **Join** |
-| Match tab | Nearby boxes ranked by **song overlap + genre affinity** with your favourites |
-| Box room | Members with host/paid/invited tags, spots left, group **chat**, host controls |
+| Payment | Simulated: host pays the full party, joiner pays their share |
+| Open parties tab | Nearby public parties with free spots: host, members, spots open, your share, **Join** |
+| Match tab | Nearby parties ranked by **song overlap + genre affinity** with your favourites |
+| Party room | Members with host/paid/invited tags, spots left, group **chat**, host controls |
 | Invite | Host invites by @username/email or friends list → invitee gets a **notification** |
 | Notifications | List invites, **Accept (→ pay share)** / **Decline**, badge count |
 | Friends tab | Friends list (singer rating, nights sung), people search, add friend |
-| Mine tab | Upcoming boxes + past boxes |
+| Mine tab | Upcoming parties + past parties |
 | Rate & review | Rate past crew 1–5 stars + review → feeds each user's singer rating |
 | Profile | Edit name/bio, manage favourite songs, upload profile photo |
 
@@ -73,10 +73,10 @@ so every user sees the same stable world.
   randomly pre-marked "booked" so availability looks organic) and persists them.
 - Query next week, next month — the calendar simply materializes as students look at it.
 
-### 2.3 People & boxes — NPCs near you
+### 2.3 People & parties — NPCs near you
 
-- When `GET /boxes/open` or `GET /boxes/matches` finds fewer than **3 joinable public
-  boxes** near the caller in the requested time window (default: now → +7 days), it
+- When `GET /parties/open` or `GET /parties/matches` finds fewer than **3 joinable public
+  parties** near the caller in the requested time window (default: now → +7 days), it
   generates more:
   - an **NPC host** (generated user: name/username pools in the design's style —
     *yuki_sings*, *marco.b*, *tom_falsetto* — singer rating, nights count, location near
@@ -88,23 +88,23 @@ so every user sees the same stable world.
   **Match tab shows a natural spread** of high/medium/low percentages against any real
   user's taste.
 - NPCs also feed the **Friends search** (there are always people to find and add) and the
-  **crew of past boxes** (see 2.5).
-- Box generation occasionally creates an **invite notification** to nearby real users
-  whose taste overlaps the box — and `GET /notifications` guarantees at least one pending
+  **crew of past parties** (see 2.5).
+- Party generation occasionally creates an **invite notification** to nearby real users
+  whose taste overlaps the party — and `GET /notifications` guarantees at least one pending
   invite the first time it's called, so the notification flow is always demoable.
 
 ### 2.4 Idempotence & fairness
 
 - Generation happens **inside `database.ts`** (an `ensure…` layer: `ensureVenuesNear`,
-  `ensureSlots`, `ensureOpenBoxesNear`), never in routes. Reads that trigger generation
+  `ensureSlots`, `ensureOpenPartiesNear`), never in routes. Reads that trigger generation
   are still plain `GET`s from the client's point of view.
 - Everything generated is persisted immediately; two students querying the same street
-  see the same venues, boxes and hosts.
+  see the same venues, parties and hosts.
 
 ### 2.5 Past generation (for the rating flow)
 
-Time-sparseness works backwards too: the first time a user calls `GET /boxes/mine` with no
-history, the API backfills **one ended, unrated box from last week** (NPC crew, real
+Time-sparseness works backwards too: the first time a user calls `GET /parties/mine` with no
+history, the API backfills **one ended, unrated party from last week** (NPC crew, real
 venue nearby). This keeps the *Mine → PAST → Rate your crew* screen testable without
 waiting for a real booking to pass. Clearly marked in the code as a demo affordance.
 
@@ -168,7 +168,7 @@ karamatch-api/
 │   ├── auth.ts               # register / login / forgot / me / photo
 │   ├── songs.ts              # curated catalog + search + genres
 │   ├── venues.ts             # venues near you + detail + slots
-│   ├── boxes.ts              # book, open, matches, join, pay, room, chat, invites, ratings
+│   ├── parties.ts              # book, open, matches, join, pay, room, chat, invites, ratings
 │   ├── friends.ts            # friends, people search, add
 │   └── notifications.ts      # invites: list / accept / decline
 ├── middleware/
@@ -205,20 +205,20 @@ export interface Slot  {
     start: string; end: string;                  // ISO datetimes, 1h sessions
     status: "available" | "booked";
 }
-export interface BoxMember { userId: number; role: "host" | "member"; paid: boolean; }
-export interface Box {
+export interface PartyMember { userId: number; role: "host" | "member"; paid: boolean; }
+export interface Party {
     _id?: ObjectId; id: string;
     title: string; genre: string;
     venueId: string; roomId: string; slotId: string;
     seats: number;                               // seats in the room — the price is split over these
-    capacity: number;                            // spots this box offers, host included (≤ seats)
+    capacity: number;                            // spots this party offers, host included (≤ seats)
     totalPrice: number; openToPublic: boolean;
     status: "pending_payment" | "upcoming" | "ended";
-    members: BoxMember[]; invitedUsernames: string[];
+    members: PartyMember[]; invitedUsernames: string[];
 }
-export interface Message      { _id?: ObjectId; id: string; boxId: string; userId: number; text: string; sentAt: string; }
-export interface Notification { _id?: ObjectId; id: string; toUserId: number; fromUserId: number; boxId: string; status: "pending" | "accepted" | "declined"; }
-export interface Rating       { _id?: ObjectId; id: string; boxId: string; fromUserId: number; toUserId: number; stars: number; text: string; }
+export interface Message      { _id?: ObjectId; id: string; partyId: string; userId: number; text: string; sentAt: string; }
+export interface Notification { _id?: ObjectId; id: string; toUserId: number; fromUserId: number; partyId: string; status: "pending" | "accepted" | "declined"; }
+export interface Rating       { _id?: ObjectId; id: string; partyId: string; fromUserId: number; toUserId: number; stars: number; text: string; }
 ```
 
 Derived, never stored: `share = round(totalPrice / seats)` (same rule as a room's
@@ -233,7 +233,7 @@ each new rating.
 2. the demo account **`alexsings` / `karamatch`** (no location yet — first login walks
    through the pin-drop, and the world generates wherever the pin lands).
 
-Everything else — venues, slots, NPCs, boxes, notifications — comes from the sparse
+Everything else — venues, slots, NPCs, parties, notifications — comes from the sparse
 generators at request time.
 
 ---
@@ -250,8 +250,8 @@ matchPct      = round(100 * (0.6 * songOverlap + 0.4 * genreAffinity))
 
 Because the catalog is genre-discriminative (§3), `genreAffinity` is meaningful even when
 two singers share zero exact songs — you can match with someone who sings *other* rock
-anthems. `GET /boxes/matches` returns nearby joinable boxes sorted by `matchPct` desc,
-each with `commonSongs` (up to 3 titles) and the box's dominant genre; optional
+anthems. `GET /parties/matches` returns nearby joinable parties sorted by `matchPct` desc,
+each with `commonSongs` (up to 3 titles) and the party's dominant genre; optional
 `?minOverlap=60`. Deliberately simple enough for students to read and extend.
 
 ---
@@ -283,31 +283,31 @@ parameters override it. `distance` is in km (default 3, max 25).
 | | |
 |---|---|
 | 🔒 `GET /venues?distance=3` | **Search around your location.** Ensures venue density in the covered cells (generates + persists on first look), returns venues sorted by haversine distance with `distanceKm` and `fromPrice` |
-| 🔒 `GET /venues/:id` | Venue detail incl. rooms; every room carries `pricePerSeat` (= the `share` a box in it charges) and `spotOptions` — each spots choice priced as `{ spots, share, hostPays }` — so clients never compute a price; 404 if unknown |
+| 🔒 `GET /venues/:id` | Venue detail incl. rooms; every room carries `pricePerSeat` (= the `share` a party in it charges) and `spotOptions` — each spots choice priced as `{ spots, share, hostPays }` — so clients never compute a price; 404 if unknown |
 | 🔒 `GET /venues/:id/slots?from=&to=` | Free slots per room in the range (default: tonight → +3 days). **Generates more slots if a room has < 4 free in range** |
 
-### Boxes, booking & payment — `routers/boxes.ts`
+### Parties, booking & payment — `routers/parties.ts`
 | | |
 |---|---|
-| 🔒 `POST /boxes` | Host books: `{ venueId, roomId, slotId, title?, spots? }` → 201 `pending_payment` box with `totalPrice` + `share`; `spots` = seats offered to other singers (default `room.seats − 1`, so `capacity = spots + 1`), lower keeps seats free for guests the host brings and settles with themselves; 400 if slot taken or `spots` ∉ 1–(`seats`−1) |
-| 🔒 `POST /boxes/:id/join` | Reserve a spot on a public box → `{ boxId, share }`; 400 if full/own box |
-| 🔒 `POST /boxes/:id/pay` | Simulated payment, always succeeds. Host → box `upcoming` + slot `booked`; joiner → paid member. Invite-accepts land here too |
-| 🔒 `GET /boxes/open?distance=&from=&to=` | Nearby public boxes with spots. **Ensures ≥ 3 exist (generates NPC-hosted boxes)** |
-| 🔒 `GET /boxes/matches?distance=&minOverlap=` | Same set, scored & sorted by `matchPct` (§5) with `commonSongs` |
-| 🔒 `GET /boxes/mine` | `{ upcoming, past }`; past items flag `rated`. **Backfills one ended box if history is empty** (§2.5) |
-| 🔒 `GET /boxes/:id` | Room view: venue/room/start, members (`role`, `paid`), invited, `spotsLeft`; 403 if not a member |
-| 🔒 `PATCH /boxes/:id` | Host only: `{ openToPublic }`; 403 otherwise |
-| 🔒 `GET /boxes/:id/messages` | Chat history (members only) — clients poll |
-| 🔒 `POST /boxes/:id/messages` | `{ text }` → 201. NPC members answer with a canned reply now and then, so the chat feels alive |
-| 🔒 `POST /boxes/:id/invites` | Host only: `{ usernames: [...] }` or `{ target: "@user" \| "email" }` → notifications; 400 if no spots |
-| 🔒 `GET /boxes/:id/crew` | Fellow members of an **ended** box, for rating |
-| 🔒 `POST /boxes/:id/ratings` | `{ ratings: [{ username, stars, text }] }` → stores, recomputes singer ratings; 400 if stars ∉ 1–5 or box not ended |
+| 🔒 `POST /parties` | Host books: `{ venueId, roomId, slotId, title?, spots? }` → 201 `pending_payment` party with `totalPrice` + `share`; `spots` = seats offered to other singers (default `room.seats − 1`, so `capacity = spots + 1`), lower keeps seats free for guests the host brings and settles with themselves; 400 if slot taken or `spots` ∉ 1–(`seats`−1) |
+| 🔒 `POST /parties/:id/join` | Reserve a spot on a public party → `{ partyId, share }`; 400 if full/own party |
+| 🔒 `POST /parties/:id/pay` | Simulated payment, always succeeds. Host → party `upcoming` + slot `booked`; joiner → paid member. Invite-accepts land here too |
+| 🔒 `GET /parties/open?distance=&from=&to=` | Nearby public parties with spots. **Ensures ≥ 3 exist (generates NPC-hosted parties)** |
+| 🔒 `GET /parties/matches?distance=&minOverlap=` | Same set, scored & sorted by `matchPct` (§5) with `commonSongs` |
+| 🔒 `GET /parties/mine` | `{ upcoming, past }`; past items flag `rated`. **Backfills one ended party if history is empty** (§2.5) |
+| 🔒 `GET /parties/:id` | Room view: venue/room/start, members (`role`, `paid`), invited, `spotsLeft`; 403 if not a member |
+| 🔒 `PATCH /parties/:id` | Host only: `{ openToPublic }`; 403 otherwise |
+| 🔒 `GET /parties/:id/messages` | Chat history (members only) — clients poll |
+| 🔒 `POST /parties/:id/messages` | `{ text }` → 201. NPC members answer with a canned reply now and then, so the chat feels alive |
+| 🔒 `POST /parties/:id/invites` | Host only: `{ usernames: [...] }` or `{ target: "@user" \| "email" }` → notifications; 400 if no spots |
+| 🔒 `GET /parties/:id/crew` | Fellow members of an **ended** party, for rating |
+| 🔒 `POST /parties/:id/ratings` | `{ ratings: [{ username, stars, text }] }` → stores, recomputes singer ratings; 400 if stars ∉ 1–5 or party not ended |
 
 ### Notifications — `routers/notifications.ts`
 | | |
 |---|---|
-| 🔒 `GET /notifications` | Pending invites (sender, box, venue, start, `share`) — drives the bell badge; guarantees ≥ 1 on first call |
-| 🔒 `POST /notifications/:id/accept` | Reserves the spot → `{ boxId, share }` (client then pays) |
+| 🔒 `GET /notifications` | Pending invites (sender, party, venue, start, `share`) — drives the bell badge; guarantees ≥ 1 on first call |
+| 🔒 `POST /notifications/:id/accept` | Reserves the spot → `{ partyId, share }` (client then pays) |
 | 🔒 `POST /notifications/:id/decline` | 204 |
 
 ### Friends — `routers/friends.ts`
@@ -331,7 +331,7 @@ parameters override it. `distance` is in km (default 3, max 25).
 
 - `npm install && npm start` (MongoDB local or Atlas via `MONGODB_URI`) → running API.
 - Log in as `alexsings` / `karamatch` (or register), drop a pin **anywhere on Earth**, and
-  the world exists: venues within walking distance, open boxes tonight, matches with a
+  the world exists: venues within walking distance, open parties tonight, matches with a
   believable spread, people to befriend, an invite waiting in notifications, a past night
   to rate.
 - A `README.md` with setup, the demo account, endpoint reference, an explanation of the
