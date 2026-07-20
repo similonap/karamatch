@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { C, GRAD, avatarColor, initial, roundBack } from "./theme";
+
+// OpenStreetMap data through CARTO's dark basemap, so a map sits inside the
+// app's dark theme instead of glowing white. Shared with the Location picker.
+export const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+export const TILE_ATTRIBUTION =
+    "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>";
 
 // ---------------------------------------------------------------------------
 // Phone frame — mirrors ios-frame.jsx (402x874, r48, dynamic island, home bar)
@@ -384,6 +392,103 @@ export function CheckRing({ on, size = 24 }: { on: boolean; size?: number }) {
             }}
         >
             {on ? "✓" : ""}
+        </div>
+    );
+}
+
+// A read-only "here it is" map: every interaction is off, so it never traps a
+// scroll or wanders off the venue. Leaflet's default marker needs image assets
+// that a bundler has to be told about, so the pin is a plain styled div.
+const VENUE_ZOOM = 16;
+
+const VENUE_PIN = L.divIcon({
+    className: "",
+    html:
+        "<div style=\"width:14px;height:14px;border-radius:50%;background:" +
+        C.pink +
+        ";border:2px solid #fff;box-shadow:0 0 12px rgba(255,61,143,.9)\"></div>",
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
+});
+
+export function VenueMap({
+    lat,
+    lng,
+    height = 140,
+    active = true
+}: {
+    lat: number;
+    lng: number;
+    height?: number;
+    // False while the map sits in a hidden pane: Leaflet measures the container
+    // on creation and reads 0x0 when it is display:none, so it needs telling
+    // once it is on screen again.
+    active?: boolean;
+}) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<L.Map | null>(null);
+
+    useEffect(() => {
+        if (!containerRef.current) {
+            return;
+        }
+        const map = L.map(containerRef.current, {
+            center: [lat, lng],
+            zoom: VENUE_ZOOM,
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            touchZoom: false,
+            boxZoom: false,
+            keyboard: false
+        });
+        L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
+        L.marker([lat, lng], { icon: VENUE_PIN, interactive: false, keyboard: false }).addTo(map);
+        mapRef.current = map;
+
+        return () => {
+            map.remove();
+            mapRef.current = null;
+        };
+    }, [lat, lng]);
+
+    useEffect(() => {
+        if (active) {
+            mapRef.current?.invalidateSize();
+        }
+    }, [active]);
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <div
+                style={{
+                    height: height,
+                    borderRadius: 16,
+                    overflow: "hidden",
+                    border: "1px solid rgba(255,255,255,.12)",
+                    background: "#0B1220"
+                }}
+            >
+                <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+            </div>
+            {/* OpenStreetMap and CARTO both require visible credit. */}
+            <div style={{ fontSize: 10, color: C.textFaint }}>
+                ©{" "}
+                <a
+                    href="https://www.openstreetmap.org/copyright"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: C.textFaint }}
+                >
+                    OpenStreetMap
+                </a>{" "}
+                ·{" "}
+                <a href="https://carto.com/attributions" target="_blank" rel="noreferrer" style={{ color: C.textFaint }}>
+                    CARTO
+                </a>
+            </div>
         </div>
     );
 }

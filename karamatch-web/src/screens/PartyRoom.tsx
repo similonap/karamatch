@@ -3,7 +3,7 @@ import { api } from "../api";
 import type { PartyRoom as PartyRoomView, ChatMessage } from "../api";
 import { useApp } from "../AppContext";
 import { C, GRAD, roundBack } from "../theme";
-import { Avatar, ErrorNote, Loading, formatWhen, plural, useAsync } from "../ui";
+import { Avatar, ErrorNote, Loading, VenueMap, formatWhen, plural, useAsync } from "../ui";
 
 const POLL_MS = 4000;
 
@@ -12,8 +12,8 @@ const POLL_MS = 4000;
 type Pane = "chat" | "details";
 
 const PANES: { key: Pane; label: string }[] = [
-    { key: "chat", label: "Chat" },
-    { key: "details", label: "Details" }
+    { key: "details", label: "Details" },
+    { key: "chat", label: "Chat" }
 ];
 
 export default function PartyRoom() {
@@ -23,15 +23,21 @@ export default function PartyRoom() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [draft, setDraft] = useState("");
     const [inviteInput, setInviteInput] = useState("");
-    const [pane, setPane] = useState<Pane>("chat");
+    const [pane, setPane] = useState<Pane>("details");
     // How many messages had arrived last time the chat was on screen, so the
     // Chat tab can show that something was said while Details was open.
     const [seenCount, setSeenCount] = useState(0);
     const chatEnd = useRef<HTMLDivElement | null>(null);
+    const baselineSet = useRef(false);
 
     // A past party opens the same screen, read-only: the chat is history and the
     // crew can still be rated.
     const ended = loaded.data?.status === "ended";
+
+    // Opening a different party starts its own unread baseline.
+    useEffect(() => {
+        baselineSet.current = false;
+    }, [partyId]);
 
     // The chat is polled — the API has no websockets by design.
     useEffect(() => {
@@ -44,6 +50,12 @@ export default function PartyRoom() {
                 .then(list => {
                     if (live) {
                         setMessages(list);
+                        // History that was already there when the screen opened is
+                        // not "new" — the dot means said-while-you-were-looking-away.
+                        if (!baselineSet.current) {
+                            baselineSet.current = true;
+                            setSeenCount(list.length);
+                        }
                     }
                 })
                 .catch(() => undefined);
@@ -249,6 +261,10 @@ export default function PartyRoom() {
                     gap: 12
                 }}
             >
+                {party.venue === null ? null : (
+                    <VenueMap lat={party.venue.lat} lng={party.venue.lng} active={pane === "details"} />
+                )}
+
                 {party.roomName === "" ? null : (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 12, color: C.textMuted, flexShrink: 0 }}>Your room</span>

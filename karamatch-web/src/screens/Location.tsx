@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { api } from "../api";
 import { useApp } from "../AppContext";
 import { C, primaryButton, roundBack } from "../theme";
+import { TILE_ATTRIBUTION, TILE_URL } from "../ui";
 
 // The seeded world sits around Antwerp, so a fresh pin lands somewhere
 // already populated. Moving the map moves the pin for real: the API
@@ -11,12 +12,6 @@ import { C, primaryButton, roundBack } from "../theme";
 const DEFAULT_LAT = 51.231;
 const DEFAULT_LNG = 4.418;
 const DEFAULT_ZOOM = 14;
-
-// OpenStreetMap data, rendered through CARTO's dark basemap so the map sits
-// inside the app's dark theme instead of glowing white.
-const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const TILE_ATTRIBUTION =
-    "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>";
 
 const NOMINATIM = "https://nominatim.openstreetmap.org";
 
