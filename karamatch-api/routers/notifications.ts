@@ -22,6 +22,10 @@ router.post("/notifications/:id/accept", verifyAuthToken, async (req, res) => {
         res.status(404).json({ error: "Notification not found" });
         return;
     }
+    if (notification.kind === "review") {
+        res.status(400).json({ error: "Post the review through the party instead" });
+        return;
+    }
     if (notification.status !== "pending") {
         res.status(400).json({ error: "Invite already handled" });
         return;

@@ -16,6 +16,7 @@ import PartyRoom from "./screens/PartyRoom";
 import Notifications from "./screens/Notifications";
 import InviteFriends from "./screens/InviteFriends";
 import Rate from "./screens/Rate";
+import VenueReview from "./screens/VenueReview";
 import Profile from "./screens/Profile";
 import UserProfile from "./screens/UserProfile";
 
@@ -39,6 +40,8 @@ export default function App() {
     const [venueId, setVenueId] = useState<string | null>(null);
     const [partyId, setPartyId] = useState<string | null>(null);
     const [ratePartyId, setRatePartyId] = useState<string | null>(null);
+    const [reviewPartyId, setReviewPartyId] = useState<string | null>(null);
+    const [reviewBack, setReviewBack] = useState<Screen>("app");
     const [pay, setPay] = useState<PayContext | null>(null);
     const [profileUsername, setProfileUsername] = useState<string | null>(null);
     const [profileBack, setProfileBack] = useState<Screen>("app");
@@ -152,6 +155,13 @@ export default function App() {
             setRatePartyId(id);
             setScreen("rate");
         },
+        reviewPartyId,
+        openVenueReview: (id: string) => {
+            setReviewPartyId(id);
+            setReviewBack(screen);
+            setScreen("venuereview");
+        },
+        closeVenueReview: () => setScreen(reviewBack),
         profileUsername,
         openProfile: (username: string) => {
             setProfileUsername(username);
@@ -210,6 +220,7 @@ const DEPTH: Record<Screen, number> = {
     room: 1,
     notifs: 1,
     rate: 1,
+    venuereview: 2,
     profile: 1,
     pay: 2,
     invitefriends: 2,
@@ -257,6 +268,8 @@ function CurrentScreen({ screen }: { screen: Screen }) {
             return <InviteFriends />;
         case "rate":
             return <Rate />;
+        case "venuereview":
+            return <VenueReview />;
         case "profile":
             return <Profile />;
         case "user":

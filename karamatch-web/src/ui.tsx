@@ -1257,6 +1257,24 @@ export function Rating({ value, size = 13, showValue = true }: { value: number; 
     );
 }
 
+/**
+ * Five small stars filled to `value` — the read-only twin of StarInput, for
+ * places like a review list where a single averaged number says too little.
+ */
+export function StarRow({ value, size = 13 }: { value: number; size?: number }) {
+    return (
+        <div
+            style={{ display: "flex", gap: 1, flexShrink: 0 }}
+            role="img"
+            aria-label={value + " out of 5 stars"}
+        >
+            {[1, 2, 3, 4, 5].map(star => (
+                <StarIcon key={star} size={size} color={star <= value ? C.gold : C.surface3} />
+            ))}
+        </div>
+    );
+}
+
 /** Tappable 1–5 star input. Each star gets a full-size touch target. */
 export function StarInput({ value, onChange }: { value: number; onChange: (stars: number) => void }) {
     return (
@@ -1752,6 +1770,29 @@ export function formatDayLabel(iso: string) {
         return "Tomorrow";
     }
     return DAY_NAMES[date.getDay()];
+}
+
+/** Coarse "how long ago" for things that only need a rough age, like reviews. */
+export function formatAgo(iso: string) {
+    if (!iso) {
+        return "";
+    }
+    const days = Math.round((Date.now() - new Date(iso).getTime()) / 86400000);
+    if (days <= 0) {
+        return "today";
+    }
+    if (days === 1) {
+        return "yesterday";
+    }
+    if (days < 7) {
+        return days + " days ago";
+    }
+    if (days < 60) {
+        const weeks = Math.round(days / 7);
+        return weeks === 1 ? "a week ago" : weeks + " weeks ago";
+    }
+    const months = Math.round(days / 30);
+    return months + " months ago";
 }
 
 export function money(amount: number) {

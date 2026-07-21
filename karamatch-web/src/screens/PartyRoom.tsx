@@ -277,11 +277,23 @@ export default function PartyRoom() {
                 </Section>
 
                 {ended ? (
-                    party.rated ? (
-                        <Chip label="Crew rated — thanks!" icon="check" tone="green" />
-                    ) : (
-                        <Button label="Rate your crew" icon="star" variant="secondary" onClick={() => app.openRate(party.id)} />
-                    )
+                    <div style={{ display: "flex", flexDirection: "column", gap: S.sm, flexShrink: 0 }}>
+                        {party.rated ? (
+                            <Chip label="Crew rated — thanks!" icon="check" tone="green" />
+                        ) : (
+                            <Button label="Rate your crew" icon="star" variant="secondary" onClick={() => app.openRate(party.id)} />
+                        )}
+                        {party.venueReviewed ? (
+                            <Chip label="Venue reviewed — thanks!" icon="check" tone="green" />
+                        ) : (
+                            <Button
+                                label="Review the venue"
+                                icon="star"
+                                variant="secondary"
+                                onClick={() => app.openVenueReview(party.id)}
+                            />
+                        )}
+                    </div>
                 ) : isHost ? (
                     <Section title="Host controls" gap={S2.s12}>
                         <Button

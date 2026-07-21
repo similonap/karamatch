@@ -113,18 +113,34 @@ export default function MineTab() {
                               <div style={{ ...T.footnote, color: C.textFaint, flexShrink: 0 }}>{formatWhen(party.start)}</div>
                           </div>
 
-                          {party.rated ? (
-                              <Chip label="Crew rated" icon="check" tone="green" />
-                          ) : (
-                              <Button
-                                  label="Rate your crew"
-                                  icon="star"
-                                  variant="secondary"
-                                  size="md"
-                                  stopPropagation
-                                  onClick={() => app.openRate(party.id)}
-                              />
-                          )}
+                          {/* Stacked, not side by side: at half a card's width
+                              both labels wrapped onto two lines. */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: S2.s6 }}>
+                              {party.rated ? (
+                                  <Chip label="Crew rated" icon="check" tone="green" />
+                              ) : (
+                                  <Button
+                                      label="Rate your crew"
+                                      icon="star"
+                                      variant="secondary"
+                                      size="md"
+                                      stopPropagation
+                                      onClick={() => app.openRate(party.id)}
+                                  />
+                              )}
+                              {party.venueReviewed ? (
+                                  <Chip label="Venue reviewed" icon="check" tone="green" />
+                              ) : (
+                                  <Button
+                                      label="Review venue"
+                                      icon="star"
+                                      variant="secondary"
+                                      size="md"
+                                      stopPropagation
+                                      onClick={() => app.openVenueReview(party.id)}
+                                  />
+                              )}
+                          </div>
                       </Card>
                   ))}
         </ScrollBody>

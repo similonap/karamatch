@@ -37,6 +37,15 @@ async function registerWithFavourites(prefix: string, favoriteSongIds: string[])
     return response.body.user.username;
 }
 
+// A fresh singer plus the ended party the API backfills for them, and the venue
+// that night was at. A singer may review a night only once, so every test that
+// posts a review starts from its own singer.
+async function singerWithEndedParty(prefix: string) {
+    const token = await registerWithLocation(prefix);
+    const mine = await request(app).get("/api/parties/mine").set("Authorization", "Bearer " + token);
+    return { token: token, partyId: mine.body.past[0].id, venueId: mine.body.past[0].venue.id };
+}
+
 describe("GET /", () => {
     it("returns API info", async () => {
         const response = await request(app).get("/");
@@ -598,6 +607,434 @@ describe("crew & ratings", () => {
             .send({ ratings: [{ username: "whoever", stars: 5, text: "" }] });
         expect(response.status).toBe(400);
     }, 20000);
+});
+
+describe("venue reviews", () => {
+    let token: string;
+    let partyId: string;
+    let venueId: string;
+
+    beforeAll(async () => {
+        const singer = await singerWithEndedParty("venuereview");
+        token = singer.token;
+        partyId = singer.partyId;
+        venueId = singer.venueId;
+    }, 20000);
+
+    describe("a venue's rating and its reviews", () => {
+        it("gives every generated venue a rating averaged from seeded reviews", async () => {
+            const venue = await request(app).get("/api/venues/" + venueId).set("Authorization", "Bearer " + token);
+            expect(venue.status).toBe(200);
+            expect(venue.body.reviewsCount).toBeGreaterThan(0);
+            expect(venue.body.rating).toBeGreaterThan(0);
+
+            const reviews = await request(app)
+                .get("/api/venues/" + venueId + "/reviews")
+                .set("Authorization", "Bearer " + token);
+            expect(reviews.status).toBe(200);
+            expect(reviews.body.length).toBe(venue.body.reviewsCount);
+            expect(reviews.body[0].from.username).toBeTruthy();
+
+            const total = reviews.body.reduce((sum: number, review: any) => sum + review.stars, 0);
+            expect(venue.body.rating).toBe(Math.round((total / reviews.body.length) * 10) / 10);
+        }, 20000);
+
+        it("lists reviews newest first, each with its author", async () => {
+            const reviews = await request(app)
+                .get("/api/venues/" + venueId + "/reviews")
+                .set("Authorization", "Bearer " + token);
+            expect(reviews.status).toBe(200);
+
+            const dates = reviews.body.map((review: any) => review.createdAt);
+            const newestFirst = [...dates].sort().reverse();
+            expect(dates).toEqual(newestFirst);
+
+            for (const review of reviews.body) {
+                expect(typeof review.id).toBe("string");
+                expect(Number.isInteger(review.stars)).toBe(true);
+                expect(review.stars).toBeGreaterThanOrEqual(1);
+                expect(review.stars).toBeLessThanOrEqual(5);
+                expect(typeof review.text).toBe("string");
+                expect(isNaN(new Date(review.createdAt).getTime())).toBe(false);
+                expect(review.from.username).toBeTruthy();
+                // The author is a PublicUser — credentials never travel with it.
+                expect(review.from.password).toBeUndefined();
+                expect(review.from.token).toBeUndefined();
+            }
+        }, 20000);
+
+        it("shows the same rating in the venue list as on the venue itself", async () => {
+            // The list averages every venue's reviews in one query, the detail
+            // page averages one — they must not drift apart.
+            const list = await request(app)
+                .get("/api/venues?distance=3")
+                .set("Authorization", "Bearer " + token);
+            const listed = list.body.find((venue: any) => venue.id === venueId);
+            expect(listed).toBeTruthy();
+
+            const detail = await request(app).get("/api/venues/" + venueId).set("Authorization", "Bearer " + token);
+            expect(listed.rating).toBe(detail.body.rating);
+            expect(listed.reviewsCount).toBe(detail.body.reviewsCount);
+        }, 20000);
+
+        it("404s on the reviews of a venue that does not exist", async () => {
+            const response = await request(app)
+                .get("/api/venues/v-nope/reviews")
+                .set("Authorization", "Bearer " + token);
+            expect(response.status).toBe(404);
+        });
+
+        it("needs a token to read reviews", async () => {
+            const response = await request(app).get("/api/venues/" + venueId + "/reviews");
+            expect(response.status).toBe(401);
+        });
+    });
+
+    describe("being asked for a review", () => {
+        it("asks everyone who was there to review, once the party has ended", async () => {
+            const notifications = await request(app).get("/api/notifications").set("Authorization", "Bearer " + token);
+            const ask = notifications.body.find((entry: any) => entry.kind === "review" && entry.party.id === partyId);
+            expect(ask).toBeTruthy();
+            expect(ask.status).toBe("pending");
+            expect(ask.venue.id).toBe(venueId);
+            expect(ask.venue.name).toBeTruthy();
+            expect(ask.party.venueName).toBe(ask.venue.name);
+            // Nobody sent this one — it is the app asking, so there is no sender.
+            expect(ask.from).toBeUndefined();
+        }, 20000);
+
+        it("lets a review notification be dismissed instead", async () => {
+            const other = await singerWithEndedParty("venuedismiss");
+
+            const notifications = await request(app)
+                .get("/api/notifications")
+                .set("Authorization", "Bearer " + other.token);
+            const ask = notifications.body.find(
+                (entry: any) => entry.kind === "review" && entry.party.id === other.partyId
+            );
+            expect(ask).toBeTruthy();
+
+            // Accepting is for invites — a review is posted through the party.
+            const accept = await request(app)
+                .post("/api/notifications/" + ask.id + "/accept")
+                .set("Authorization", "Bearer " + other.token);
+            expect(accept.status).toBe(400);
+
+            const dismiss = await request(app)
+                .post("/api/notifications/" + ask.id + "/decline")
+                .set("Authorization", "Bearer " + other.token);
+            expect(dismiss.status).toBe(204);
+
+            const after = await request(app)
+                .get("/api/notifications")
+                .set("Authorization", "Bearer " + other.token);
+            expect(after.body.some((entry: any) => entry.id === ask.id)).toBe(false);
+        }, 20000);
+
+        it("keeps another singer's review ask out of your list", async () => {
+            const other = await singerWithEndedParty("venuenosy");
+            const notifications = await request(app).get("/api/notifications").set("Authorization", "Bearer " + token);
+            expect(notifications.body.some((entry: any) => entry.party.id === other.partyId)).toBe(false);
+        }, 20000);
+    });
+
+    describe("posting a review", () => {
+        // Its own night, so the rejections below can never be the "you already
+        // reviewed this night" 400 in disguise.
+        let rejectToken: string;
+        let rejectPartyId: string;
+
+        beforeAll(async () => {
+            const singer = await singerWithEndedParty("venuereject");
+            rejectToken = singer.token;
+            rejectPartyId = singer.partyId;
+        }, 20000);
+
+        it("rejects stars that are not a whole number between 1 and 5", async () => {
+            const badStars = [0, 6, 9, -1, 4.5, "5", null, undefined];
+            for (const stars of badStars) {
+                const response = await request(app)
+                    .post("/api/parties/" + rejectPartyId + "/venue-review")
+                    .set("Authorization", "Bearer " + rejectToken)
+                    .send({ stars: stars, text: "" });
+                expect(response.status).toBe(400);
+                expect(response.body.error).toContain("stars");
+            }
+        }, 20000);
+
+        it("rejects a text longer than 280 characters", async () => {
+            const response = await request(app)
+                .post("/api/parties/" + rejectPartyId + "/venue-review")
+                .set("Authorization", "Bearer " + rejectToken)
+                .send({ stars: 4, text: "a".repeat(281) });
+            expect(response.status).toBe(400);
+            expect(response.body.error).toContain("280");
+        });
+
+        it("refuses reviewing a venue for a party that has not ended", async () => {
+            const open = await request(app)
+                .get("/api/parties/open")
+                .set("Authorization", "Bearer " + rejectToken);
+            const join = await request(app)
+                .post("/api/parties/" + open.body[0].id + "/join")
+                .set("Authorization", "Bearer " + rejectToken);
+            expect(join.status).toBe(200);
+
+            const response = await request(app)
+                .post("/api/parties/" + open.body[0].id + "/venue-review")
+                .set("Authorization", "Bearer " + rejectToken)
+                .send({ stars: 5, text: "" });
+            expect(response.status).toBe(400);
+            expect(response.body.error).toContain("ended");
+        }, 20000);
+
+        it("refuses reviewing a night the singer was not part of", async () => {
+            const response = await request(app)
+                .post("/api/parties/" + partyId + "/venue-review")
+                .set("Authorization", "Bearer " + rejectToken)
+                .send({ stars: 5, text: "Was not even there." });
+            expect(response.status).toBe(403);
+        });
+
+        it("404s for a party that does not exist", async () => {
+            const response = await request(app)
+                .post("/api/parties/b-nope/venue-review")
+                .set("Authorization", "Bearer " + rejectToken)
+                .send({ stars: 5, text: "" });
+            expect(response.status).toBe(404);
+        });
+
+        it("needs a token", async () => {
+            const response = await request(app)
+                .post("/api/parties/" + rejectPartyId + "/venue-review")
+                .send({ stars: 5, text: "" });
+            expect(response.status).toBe(401);
+        });
+
+        it("stores the review, moves the venue rating and clears the notification", async () => {
+            const before = await request(app).get("/api/venues/" + venueId).set("Authorization", "Bearer " + token);
+
+            const response = await request(app)
+                .post("/api/parties/" + partyId + "/venue-review")
+                .set("Authorization", "Bearer " + token)
+                .send({ stars: 5, text: "Sound was immaculate." });
+            expect(response.status).toBe(201);
+            expect(response.body.venueId).toBe(venueId);
+            expect(response.body.stars).toBe(5);
+            expect(response.body.text).toBe("Sound was immaculate.");
+            expect(response.body.id).toBeTruthy();
+
+            const after = await request(app).get("/api/venues/" + venueId).set("Authorization", "Bearer " + token);
+            expect(after.body.reviewsCount).toBe(before.body.reviewsCount + 1);
+
+            const total = before.body.rating * before.body.reviewsCount + 5;
+            expect(after.body.rating).toBe(Math.round((total / after.body.reviewsCount) * 10) / 10);
+
+            const room = await request(app).get("/api/parties/" + partyId).set("Authorization", "Bearer " + token);
+            expect(room.body.venueReviewed).toBe(true);
+
+            const mine = await request(app).get("/api/parties/mine").set("Authorization", "Bearer " + token);
+            expect(mine.body.past.find((party: any) => party.id === partyId).venueReviewed).toBe(true);
+
+            const notifications = await request(app).get("/api/notifications").set("Authorization", "Bearer " + token);
+            expect(notifications.body.some((entry: any) => entry.kind === "review" && entry.party.id === partyId)).toBe(false);
+
+            const again = await request(app)
+                .post("/api/parties/" + partyId + "/venue-review")
+                .set("Authorization", "Bearer " + token)
+                .send({ stars: 4, text: "" });
+            expect(again.status).toBe(400);
+        }, 20000);
+
+        it("puts the fresh review at the top of the venue's list, signed by its author", async () => {
+            const singer = await singerWithEndedParty("venuetop");
+            const me = await request(app).get("/api/me").set("Authorization", "Bearer " + singer.token);
+
+            const posted = await request(app)
+                .post("/api/parties/" + singer.partyId + "/venue-review")
+                .set("Authorization", "Bearer " + singer.token)
+                .send({ stars: 3, text: "Fine mics, warm room." });
+            expect(posted.status).toBe(201);
+
+            const reviews = await request(app)
+                .get("/api/venues/" + singer.venueId + "/reviews")
+                .set("Authorization", "Bearer " + singer.token);
+            // Seeded reviews are all backdated, so the one just written is newest.
+            expect(reviews.body[0].id).toBe(posted.body.id);
+            expect(reviews.body[0].stars).toBe(3);
+            expect(reviews.body[0].text).toBe("Fine mics, warm room.");
+            expect(reviews.body[0].from.username).toBe(me.body.username);
+        }, 20000);
+
+        it("accepts a text of exactly 280 characters and trims the ends", async () => {
+            const singer = await singerWithEndedParty("venuelong");
+            const text = "a".repeat(280);
+
+            const response = await request(app)
+                .post("/api/parties/" + singer.partyId + "/venue-review")
+                .set("Authorization", "Bearer " + singer.token)
+                .send({ stars: 4, text: "  " + text + "  " });
+            expect(response.status).toBe(201);
+            expect(response.body.text).toBe(text);
+        }, 20000);
+
+        it("stores an empty text when none is given", async () => {
+            const singer = await singerWithEndedParty("venuenotext");
+
+            const response = await request(app)
+                .post("/api/parties/" + singer.partyId + "/venue-review")
+                .set("Authorization", "Bearer " + singer.token)
+                .send({ stars: 2 });
+            expect(response.status).toBe(201);
+            expect(response.body.text).toBe("");
+
+            const reviews = await request(app)
+                .get("/api/venues/" + singer.venueId + "/reviews")
+                .set("Authorization", "Bearer " + singer.token);
+            expect(reviews.body[0].text).toBe("");
+        }, 20000);
+    });
+
+    describe("one review per night", () => {
+        // Books and pays a night at a venue. Still upcoming, so the host can
+        // invite before it is over.
+        async function bookNightAt(singerToken: string, at: string) {
+            const slots = await request(app)
+                .get("/api/venues/" + at + "/slots")
+                .set("Authorization", "Bearer " + singerToken);
+            const roomWithSlots = slots.body.find((entry: any) => entry.slots.length > 0);
+            const booking = await request(app)
+                .post("/api/parties")
+                .set("Authorization", "Bearer " + singerToken)
+                .send({
+                    venueId: at,
+                    roomId: roomWithSlots.room.id,
+                    slotId: roomWithSlots.slots[0].id,
+                    title: "Encore Night"
+                });
+            await request(app)
+                .post("/api/parties/" + booking.body.id + "/pay")
+                .set("Authorization", "Bearer " + singerToken);
+            return booking.body.id;
+        }
+
+        // Drags the party's slot into the past, so the next read has to close
+        // it — and asks everyone who was there for a review.
+        async function finishNight(singerToken: string, nightId: string) {
+            const party = await partiesCollection.findOne({ id: nightId });
+            await slotsCollection.updateOne(
+                { id: party!.slotId },
+                {
+                    $set: {
+                        start: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+                        end: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+                    }
+                }
+            );
+            const room = await request(app)
+                .get("/api/parties/" + nightId)
+                .set("Authorization", "Bearer " + singerToken);
+            expect(room.body.status).toBe("ended");
+        }
+
+        async function endedNightAt(singerToken: string, at: string) {
+            const nightId = await bookNightAt(singerToken, at);
+            await finishNight(singerToken, nightId);
+            return nightId;
+        }
+
+        it("takes a second review from the same singer for a different night", async () => {
+            const singer = await singerWithEndedParty("venueregular");
+            const first = await request(app)
+                .post("/api/parties/" + singer.partyId + "/venue-review")
+                .set("Authorization", "Bearer " + singer.token)
+                .send({ stars: 5, text: "Best night out this year." });
+            expect(first.status).toBe(201);
+
+            const before = await request(app)
+                .get("/api/venues/" + singer.venueId)
+                .set("Authorization", "Bearer " + singer.token);
+
+            // Same venue, another night — the one-per-night rule must not block it.
+            const encoreId = await endedNightAt(singer.token, singer.venueId);
+            const second = await request(app)
+                .post("/api/parties/" + encoreId + "/venue-review")
+                .set("Authorization", "Bearer " + singer.token)
+                .send({ stars: 1, text: "Off night, broken mic." });
+            expect(second.status).toBe(201);
+            expect(second.body.venueId).toBe(singer.venueId);
+
+            const after = await request(app)
+                .get("/api/venues/" + singer.venueId)
+                .set("Authorization", "Bearer " + singer.token);
+            expect(after.body.reviewsCount).toBe(before.body.reviewsCount + 1);
+            // Both reviews count towards the average, so 1 star pulls it down.
+            expect(after.body.rating).toBeLessThan(before.body.rating);
+        }, 30000);
+
+        it("counts a review from every singer who was there, and clears only their own ask", async () => {
+            const hostToken = await registerWithLocation("venuecrewh");
+            const guestToken = await registerWithLocation("venuecrewg");
+            const guest = await request(app).get("/api/me").set("Authorization", "Bearer " + guestToken);
+
+            const venues = await request(app)
+                .get("/api/venues?distance=2")
+                .set("Authorization", "Bearer " + hostToken);
+            const sharedVenueId = venues.body[0].id;
+            const nightId = await bookNightAt(hostToken, sharedVenueId);
+
+            // The guest has to be in the room before the night is over.
+            const invite = await request(app)
+                .post("/api/parties/" + nightId + "/invites")
+                .set("Authorization", "Bearer " + hostToken)
+                .send({ target: "@" + guest.body.username });
+            expect(invite.status).toBe(201);
+            const notifications = await request(app)
+                .get("/api/notifications")
+                .set("Authorization", "Bearer " + guestToken);
+            const ask = notifications.body.find((entry: any) => entry.party.id === nightId);
+            expect(ask).toBeTruthy();
+            const accept = await request(app)
+                .post("/api/notifications/" + ask.id + "/accept")
+                .set("Authorization", "Bearer " + guestToken);
+            expect(accept.status).toBe(200);
+
+            await finishNight(hostToken, nightId);
+
+            const before = await request(app)
+                .get("/api/venues/" + sharedVenueId)
+                .set("Authorization", "Bearer " + hostToken);
+
+            const hostReview = await request(app)
+                .post("/api/parties/" + nightId + "/venue-review")
+                .set("Authorization", "Bearer " + hostToken)
+                .send({ stars: 5, text: "Ran like clockwork." });
+            expect(hostReview.status).toBe(201);
+
+            // The host reviewing must not answer the ask sitting in the guest's list.
+            const guestAsks = await request(app)
+                .get("/api/notifications")
+                .set("Authorization", "Bearer " + guestToken);
+            const guestAsk = guestAsks.body.find(
+                (entry: any) => entry.kind === "review" && entry.party.id === nightId
+            );
+            expect(guestAsk).toBeTruthy();
+
+            const guestReview = await request(app)
+                .post("/api/parties/" + nightId + "/venue-review")
+                .set("Authorization", "Bearer " + guestToken)
+                .send({ stars: 3, text: "Good, a bit loud." });
+            expect(guestReview.status).toBe(201);
+
+            const after = await request(app)
+                .get("/api/venues/" + sharedVenueId)
+                .set("Authorization", "Bearer " + hostToken);
+            expect(after.body.reviewsCount).toBe(before.body.reviewsCount + 2);
+
+            const total = before.body.rating * before.body.reviewsCount + 5 + 3;
+            expect(after.body.rating).toBe(Math.round((total / after.body.reviewsCount) * 10) / 10);
+        }, 30000);
+    });
 });
 
 describe("songs & profile", () => {

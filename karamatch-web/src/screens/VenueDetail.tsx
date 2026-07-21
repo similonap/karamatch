@@ -6,6 +6,7 @@ import { C, LAYOUT, R, S, S2, T } from "../design/tokens";
 import { Icon } from "../design/icons";
 import {
     AppBar,
+    Avatar,
     BottomBar,
     Button,
     Card,
@@ -16,16 +17,23 @@ import {
     Rating,
     ScrollBody,
     Section,
+    StarRow,
     Stepper,
     TextField,
+    formatAgo,
     formatDayLabel,
     formatTime,
     money,
+    plural,
     useAsync
 } from "../ui";
 
 // Kept in step with TITLE_MAX_LENGTH in routers/parties.ts.
 const TITLE_MAX_LENGTH = 60;
+
+// The booking flow is the point of this screen, so reviews start folded to a
+// taste of them.
+const REVIEW_PREVIEW = 3;
 
 function dayKey(iso: string) {
     const date = new Date(iso);
@@ -38,6 +46,7 @@ export default function VenueDetail() {
 
     const venue = useAsync(() => api.venue(venueId!), [venueId]);
     const slots = useAsync(() => api.slots(venueId!), [venueId]);
+    const reviews = useAsync(() => api.venueReviews(venueId!), [venueId]);
 
     const [roomId, setRoomId] = useState<string | null>(null);
     const [day, setDay] = useState<string | null>(null);
@@ -49,6 +58,10 @@ export default function VenueDetail() {
     // Drives the collapsing header: 0 while the hero is fully visible, 1 once it
     // has scrolled away and the solid nav bar has taken over.
     const [scrollY, setScrollY] = useState(0);
+    const [showAllReviews, setShowAllReviews] = useState(false);
+
+    const allReviews = reviews.data ?? [];
+    const reviewList = showAllReviews ? allReviews : allReviews.slice(0, REVIEW_PREVIEW);
 
     const roomSlots: RoomSlots[] = useMemo(() => slots.data ?? [], [slots.data]);
 
@@ -205,7 +218,14 @@ export default function VenueDetail() {
                 <div style={{ flexShrink: 0 }}>
                     <h1 style={{ ...T.title, color: C.text, margin: 0 }}>{data.name}</h1>
                     <div style={{ display: "flex", alignItems: "center", gap: S.sm, marginTop: S2.s6, ...T.caption, color: C.textMuted }}>
-                        <Rating value={data.rating} />
+                        {data.reviewsCount > 0 ? (
+                            <>
+                                <Rating value={data.rating} />
+                                <span>({data.reviewsCount})</span>
+                            </>
+                        ) : (
+                            <span>Not reviewed yet</span>
+                        )}
                         <span style={{ width: 3, height: 3, borderRadius: 2, background: C.textFaint }} />
                         <span>{data.rooms.length} rooms</span>
                         <span style={{ width: 3, height: 3, borderRadius: 2, background: C.textFaint }} />
@@ -327,6 +347,43 @@ export default function VenueDetail() {
                         with the guests you bring.
                     </div>
                 </Card>
+
+                {/* What the rating up top is actually made of. */}
+                {reviewList.length > 0 ? (
+                    <Section
+                        title="Reviews"
+                        hint={plural(allReviews.length, "singer has been here", "singers have been here")}
+                    >
+                        {reviewList.map(review => (
+                            <Card key={review.id} style={{ gap: S2.s6 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: S2.s10 }}>
+                                    <Avatar
+                                        name={review.from?.name ?? "Someone"}
+                                        photoUrl={review.from?.photoUrl ?? null}
+                                        seed={review.from?.id ?? 0}
+                                        size={28}
+                                    />
+                                    <div style={{ flex: 1, minWidth: 0, ...T.captionStrong, color: C.text }}>
+                                        {review.from?.name ?? "A singer"}
+                                    </div>
+                                    <StarRow value={review.stars} />
+                                    <span style={{ ...T.footnote, color: C.textFaint }}>{formatAgo(review.createdAt)}</span>
+                                </div>
+                                {review.text ? (
+                                    <div style={{ ...T.caption, color: C.textDim }}>{review.text}</div>
+                                ) : null}
+                            </Card>
+                        ))}
+                        {showAllReviews || allReviews.length <= REVIEW_PREVIEW ? null : (
+                            <Button
+                                label={"Show all " + allReviews.length + " reviews"}
+                                variant="secondary"
+                                size="md"
+                                onClick={() => setShowAllReviews(true)}
+                            />
+                        )}
+                    </Section>
+                ) : null}
                     </div>
                 </ScrollBody>
 

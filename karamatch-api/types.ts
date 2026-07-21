@@ -39,13 +39,14 @@ export interface Room {
     pricePerHour: number;
 }
 
+// No rating field: a venue's rating is the average of its reviews, computed on
+// read (see toVenueView) so posting a review moves it straight away.
 export interface Venue {
     _id?: ObjectId;
     id: string;
     name: string;
     lat: number;
     lng: number;
-    rating: number;
     openUntil: string;
     rooms: Room[];
     imageUrl: string;
@@ -105,9 +106,13 @@ export interface Message {
     sentAt: string;
 }
 
+// Two kinds share one collection: an "invite" comes from another singer and is
+// accepted or declined, a "review" is the app asking how the venue was once the
+// night is over. A review notification has no sender, so fromUserId is 0.
 export interface Notification {
     _id?: ObjectId;
     id: string;
+    kind: "invite" | "review";
     toUserId: number;
     fromUserId: number;
     partyId: string;
@@ -122,6 +127,20 @@ export interface Rating {
     toUserId: number;
     stars: number;
     text: string;
+}
+
+// A review of a venue, written after a night there. partyId is null for the
+// made-up reviews a freshly generated venue is seeded with — those have no
+// party behind them.
+export interface VenueReview {
+    _id?: ObjectId;
+    id: string;
+    venueId: string;
+    partyId: string | null;
+    userId: number;
+    stars: number;
+    text: string;
+    createdAt: string;
 }
 
 // Shape returned to clients — never leaks password/token.

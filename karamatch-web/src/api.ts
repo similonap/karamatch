@@ -143,10 +143,21 @@ export interface Venue {
     name: string;
     lat: number;
     lng: number;
+    // Averaged from the venue's reviews on every read; 0 until it has any,
+    // which reviewsCount is what tells you apart.
     rating: number;
+    reviewsCount: number;
     openUntil: string;
     rooms: Room[];
     imageUrl: string;
+}
+
+export interface VenueReview {
+    id: string;
+    stars: number;
+    text: string;
+    createdAt: string;
+    from: PublicUser | null;
 }
 
 // GET /venues adds the two derived fields; GET /venues/:id does not.
@@ -183,6 +194,7 @@ export interface MatchView extends PartyView {
 
 export interface PastPartyView extends PartyView {
     rated: boolean;
+    venueReviewed: boolean;
 }
 
 export interface PartyRoomMember extends MatchedUser {
@@ -210,6 +222,7 @@ export interface PartyRoom {
     invitedUsernames: string[];
     // Only meaningful once status is "ended".
     rated: boolean;
+    venueReviewed: boolean;
 }
 
 export interface ChatMessage {
@@ -221,8 +234,10 @@ export interface ChatMessage {
     sentAt: string;
 }
 
-export interface NotificationView {
+// An invite from another singer: accept it and you pay your share.
+export interface InviteNotification {
     id: string;
+    kind: "invite";
     status: string;
     from: PublicUser;
     party: {
@@ -234,6 +249,23 @@ export interface NotificationView {
         share: number;
     };
 }
+
+// The app asking how the venue was, once a night you were part of is over.
+export interface ReviewNotification {
+    id: string;
+    kind: "review";
+    status: string;
+    venue: { id: string; name: string; imageUrl: string };
+    party: {
+        id: string;
+        title: string;
+        genre: string;
+        venueName: string;
+        start: string;
+    };
+}
+
+export type NotificationView = InviteNotification | ReviewNotification;
 
 export interface CrewMember extends MatchedUser {
     role: "host" | "member";
@@ -299,6 +331,9 @@ export const api = {
     slots(id: string, from?: string, to?: string) {
         return request<RoomSlots[]>("/venues/" + id + "/slots" + query({ from, to }));
     },
+    venueReviews(id: string) {
+        return request<VenueReview[]>("/venues/" + id + "/reviews");
+    },
 
     // Parties
     bookParty(body: { venueId: string; roomId: string; slotId: string; title?: string; spots?: number }) {
@@ -356,6 +391,14 @@ export const api = {
             method: "POST",
             body: JSON.stringify({ ratings })
         });
+    },
+    // The venue review is posted through the party you sang there with, so the
+    // server can check you were actually in the room.
+    reviewVenue(id: string, stars: number, text: string) {
+        return request<{ id: string; venueId: string; stars: number; text: string }>(
+            "/parties/" + id + "/venue-review",
+            { method: "POST", body: JSON.stringify({ stars, text }) }
+        );
     },
 
     // Notifications

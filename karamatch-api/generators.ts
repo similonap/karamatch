@@ -161,11 +161,57 @@ export function randomVenue(lat: number, lng: number): Venue {
         name: randomVenueName(),
         lat: lat,
         lng: lng,
-        rating: Math.round((4 + Math.random() * 0.9) * 10) / 10,
         openUntil: pick(["01:00", "02:00", "03:00"]),
         rooms: rooms,
         imageUrl: randomVenueImageUrl()
     };
+}
+
+// ---------------------------------------------------------------------------
+// Venue reviews — the made-up history a new venue arrives with
+// ---------------------------------------------------------------------------
+
+// Skewed high: a karaoke bar that stays open has mostly happy nights, and this
+// keeps generated venues in the same 3.5–5 band the app was designed around.
+const SEED_STAR_WEIGHTS = [2, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5];
+
+export function randomVenueStars() {
+    return pick(SEED_STAR_WEIGHTS);
+}
+
+// One pool per star tier, so the words and the stars never contradict.
+const REVIEW_LINES: { [stars: number]: string[] } = {
+    1: [
+        "Two mics, one of them dead. Never again.",
+        "Booked a room, got a broom closet with a screen.",
+        "The song list stopped somewhere around 2004."
+    ],
+    2: [
+        "Sound was muddy and the tablet kept freezing.",
+        "Fine if you only came for the drinks, not the singing.",
+        "Cramped room, and they rushed us out on the hour."
+    ],
+    3: [
+        "Does the job. Nothing here you would write home about.",
+        "Decent catalogue, tired speakers.",
+        "Good night out, but the room could use a clean."
+    ],
+    4: [
+        "Great sound and the staff actually cared. Bit pricey.",
+        "Solid rooms, huge song list, we stayed way too long.",
+        "Really good — only knocking one off for the queue at the bar.",
+        "Comfy booth, sharp screens, no complaints worth listing."
+    ],
+    5: [
+        "Best room in town. The reverb makes everyone sound good.",
+        "Immaculate sound, endless catalogue, we closed the place.",
+        "Staff swapped our mic within a minute. Proper service.",
+        "We booked again before we even left. That good."
+    ]
+};
+
+export function randomVenueReviewText(stars: number) {
+    return pick(REVIEW_LINES[stars]);
 }
 
 // ---------------------------------------------------------------------------

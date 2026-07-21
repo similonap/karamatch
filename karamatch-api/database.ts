@@ -1,10 +1,11 @@
 import { Collection, MongoClient } from "mongodb";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import { User, Song, Venue, Room, Party, PartyMember, Notification, Cell, Slot, Message, Rating, toPublicUser } from "./types";
+import { User, Song, Venue, Room, Party, PartyMember, Notification, Cell, Slot, Message, Rating, VenueReview, toPublicUser } from "./types";
 import {
-    randomInt, pick, newId, randomVenue, randomNpcIdentity,
-    sampleFavoriteSongIds, randomPartyTitle, randomNpcReply, NPC_GENRES, NON_TASTE_GENRES
+    randomInt, pick, pickMany, newId, randomVenue, randomNpcIdentity,
+    sampleFavoriteSongIds, randomPartyTitle, randomNpcReply, randomVenueStars,
+    randomVenueReviewText, NPC_GENRES, NON_TASTE_GENRES
 } from "./generators";
 dotenv.config();
 
@@ -20,6 +21,7 @@ export const partiesCollection: Collection<Party> = db.collection<Party>("partie
 export const messagesCollection: Collection<Message> = db.collection<Message>("messages");
 export const notificationsCollection: Collection<Notification> = db.collection<Notification>("notifications");
 export const ratingsCollection: Collection<Rating> = db.collection<Rating>("ratings");
+export const venueReviewsCollection: Collection<VenueReview> = db.collection<VenueReview>("venueReviews");
 
 // ---------------------------------------------------------------------------
 // Users / auth
@@ -185,12 +187,48 @@ export function toRoomView(room: Room): RoomView {
     return { ...room, pricePerSeat: pricePerSeat, spotOptions: spotOptions };
 }
 
+// The stored venue plus the two fields that are derived from its reviews.
+// rating is 0 when nobody has reviewed yet — clients read reviewsCount to tell
+// "unrated" apart from "rated zero".
 export interface VenueView extends Venue {
     rooms: RoomView[];
+    rating: number;
+    reviewsCount: number;
 }
 
-export function toVenueView(venue: Venue): VenueView {
-    return { ...venue, rooms: venue.rooms.map(toRoomView) };
+// Averages the reviews of many venues in one query, so a list of venues costs
+// the same as a single one.
+async function ratingsByVenue(venueIds: string[]) {
+    const reviews = await venueReviewsCollection.find({ venueId: { $in: venueIds } }).toArray();
+    const totals = new Map<string, { sum: number; count: number }>();
+    for (const review of reviews) {
+        const total = totals.get(review.venueId) || { sum: 0, count: 0 };
+        total.sum += review.stars;
+        total.count++;
+        totals.set(review.venueId, total);
+    }
+    const result = new Map<string, { rating: number; reviewsCount: number }>();
+    for (const [venueId, total] of totals) {
+        result.set(venueId, {
+            rating: Math.round((total.sum / total.count) * 10) / 10,
+            reviewsCount: total.count
+        });
+    }
+    return result;
+}
+
+function withRating(venue: Venue, ratings: Map<string, { rating: number; reviewsCount: number }>): VenueView {
+    const rating = ratings.get(venue.id) || { rating: 0, reviewsCount: 0 };
+    return { ...venue, rooms: venue.rooms.map(toRoomView), rating: rating.rating, reviewsCount: rating.reviewsCount };
+}
+
+export async function toVenueView(venue: Venue): Promise<VenueView> {
+    return withRating(venue, await ratingsByVenue([venue.id]));
+}
+
+export async function toVenueViews(venues: Venue[]): Promise<VenueView[]> {
+    const ratings = await ratingsByVenue(venues.map(venue => venue.id));
+    return venues.map(venue => withRating(venue, ratings));
 }
 
 export interface VenueNearby extends VenueView {
@@ -262,17 +300,115 @@ export async function ensureVenuesNear(lat: number, lng: number, distanceKm: num
         venues.push(venue);
     }
 
-    return venues
-        .map(venue => ({
-            ...toVenueView(venue),
-            distanceKm: Math.round(haversineKm(lat, lng, venue.lat, venue.lng) * 10) / 10,
-            fromPrice: Math.min(...venue.rooms.map(room => room.pricePerHour))
+    // A venue with no reviews has no rating to show, so any venue seen here
+    // without a history gets one invented. Doing it on sight rather than at
+    // creation also fills in venues that predate the review system.
+    const reviewed = await ratingsByVenue(venues.map(venue => venue.id));
+    for (const venue of venues) {
+        if (!reviewed.has(venue.id)) {
+            await seedVenueReviews(venue);
+        }
+    }
+
+    return (await toVenueViews(venues))
+        .map(view => ({
+            ...view,
+            distanceKm: Math.round(haversineKm(lat, lng, view.lat, view.lng) * 10) / 10,
+            fromPrice: Math.min(...view.rooms.map(room => room.pricePerHour))
         }))
         .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
 export async function getVenueById(id: string): Promise<Venue | null> {
     return await venuesCollection.findOne({ id: id });
+}
+
+// ---------------------------------------------------------------------------
+// Venue reviews — the stars a venue's rating is averaged from
+// ---------------------------------------------------------------------------
+
+const SEED_REVIEW_MIN = 3;
+const SEED_REVIEW_MAX = 8;
+const SEED_REVIEW_MAX_AGE_DAYS = 300;
+
+// Reviewers for a generated venue's back catalogue. Existing NPCs are reused
+// before new ones are invented, so the singer table does not grow by a handful
+// of names for every venue the map rolls.
+async function npcReviewers(venue: Venue, count: number): Promise<User[]> {
+    const existing: User[] = await usersCollection.find({ isNpc: true }).limit(50).toArray();
+    const reviewers = pickMany(existing, count);
+    while (reviewers.length < count) {
+        reviewers.push(await createNpcUser(venue.lat, venue.lng, pick(NPC_GENRES)));
+    }
+    return reviewers;
+}
+
+// A venue is generated with a history behind it. Without one, every venue on
+// the map would show no rating at all until a real party happened to end there.
+async function seedVenueReviews(venue: Venue) {
+    const reviewers = await npcReviewers(venue, randomInt(SEED_REVIEW_MIN, SEED_REVIEW_MAX));
+    const reviews: VenueReview[] = reviewers.map(reviewer => {
+        const stars = randomVenueStars();
+        return {
+            id: newId("vr"),
+            venueId: venue.id,
+            partyId: null,
+            userId: reviewer.id,
+            stars: stars,
+            text: randomVenueReviewText(stars),
+            createdAt: new Date(
+                Date.now() - randomInt(1, SEED_REVIEW_MAX_AGE_DAYS) * 24 * 60 * 60 * 1000
+            ).toISOString()
+        };
+    });
+    if (reviews.length > 0) {
+        await venueReviewsCollection.insertMany(reviews);
+    }
+}
+
+// Newest first, each with the singer who wrote it.
+export async function getVenueReviews(venueId: string) {
+    const reviews: VenueReview[] = await venueReviewsCollection.find({ venueId: venueId }).toArray();
+    reviews.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const result = [];
+    for (const review of reviews) {
+        const author = await getUserById(review.userId);
+        result.push({
+            id: review.id,
+            stars: review.stars,
+            text: review.text,
+            createdAt: review.createdAt,
+            from: author ? toPublicUser(author) : null
+        });
+    }
+    return result;
+}
+
+// One review per singer per night — the same rule the crew ratings follow.
+export async function hasReviewedVenue(user: User, partyId: string) {
+    const reviews = await venueReviewsCollection
+        .find({ partyId: partyId, userId: user.id })
+        .toArray();
+    return reviews.length > 0;
+}
+
+export async function createVenueReview(party: Party, user: User, stars: number, text: string) {
+    const review: VenueReview = {
+        id: newId("vr"),
+        venueId: party.venueId,
+        partyId: party.id,
+        userId: user.id,
+        stars: stars,
+        text: text,
+        createdAt: new Date().toISOString()
+    };
+    await venueReviewsCollection.insertOne(review);
+    // The ask has been answered — the notification should stop nagging.
+    await notificationsCollection.updateMany(
+        { toUserId: user.id, partyId: party.id, kind: "review", status: "pending" },
+        { $set: { status: "accepted" } }
+    );
+    return review;
 }
 
 // ---------------------------------------------------------------------------
@@ -520,10 +656,14 @@ export async function closeFinishedParties() {
     }
 
     const slotIds = finished.map(slot => slot.id);
+    const ended = open.filter(party => party.status === "upcoming" && slotIds.includes(party.slotId));
     await partiesCollection.updateMany(
         { slotId: { $in: slotIds }, status: "upcoming" },
         { $set: { status: "ended" } }
     );
+    for (const party of ended) {
+        await ensureReviewNotifications(party);
+    }
 
     const abandoned = open.filter(party => party.status === "pending_payment" && slotIds.includes(party.slotId));
     if (abandoned.length > 0) {
@@ -550,6 +690,7 @@ async function closeIfFinished(party: Party): Promise<Party> {
     }
     if (party.status === "upcoming") {
         await partiesCollection.updateOne({ id: party.id }, { $set: { status: "ended" } });
+        await ensureReviewNotifications(party);
         return { ...party, status: "ended" };
     }
     await partiesCollection.updateOne({ id: party.id }, { $set: { status: "cancelled" } });
@@ -656,6 +797,7 @@ export async function ensureOpenPartiesNear(user: User, lat: number, lng: number
 export async function createInvite(party: Party, fromUser: User, toUser: User) {
     const notification: Notification = {
         id: newId("n"),
+        kind: "invite",
         toUserId: toUser.id,
         fromUserId: fromUser.id,
         partyId: party.id,
@@ -671,6 +813,39 @@ export async function createInvite(party: Party, fromUser: User, toUser: User) {
         );
     }
     return notification;
+}
+
+// Once a night is over, everyone who was there is asked how the venue was.
+// Called on every transition into "ended", so it has to be idempotent: real
+// singers who already reviewed, and NPCs who never will, are skipped.
+export async function ensureReviewNotifications(party: Party) {
+    const existing = await notificationsCollection.find({ partyId: party.id, kind: "review" }).toArray();
+    const asked = existing.map(notification => notification.toUserId);
+    const notifications: Notification[] = [];
+    for (const member of party.members) {
+        if (asked.includes(member.userId)) {
+            continue;
+        }
+        const user = await getUserById(member.userId);
+        if (!user || user.isNpc) {
+            continue;
+        }
+        if (await hasReviewedVenue(user, party.id)) {
+            continue;
+        }
+        notifications.push({
+            id: newId("n"),
+            kind: "review",
+            toUserId: member.userId,
+            // Nobody sent this one — it is the app asking.
+            fromUserId: 0,
+            partyId: party.id,
+            status: "pending"
+        });
+    }
+    if (notifications.length > 0) {
+        await notificationsCollection.insertMany(notifications);
+    }
 }
 
 export async function ensureNotificationsFor(user: User) {
@@ -696,13 +871,39 @@ export async function ensureNotificationsFor(user: User) {
     const pending = await notificationsCollection.find({ toUserId: user.id, status: "pending" }).toArray();
     const result = [];
     for (const notification of pending) {
-        const sender = await getUserById(notification.fromUserId);
         const party = await getPartyById(notification.partyId);
-        if (!sender || !party) {
+        if (!party) {
             continue;
         }
         const venue = await getVenueById(party.venueId);
         const slot = await getSlotById(party.slotId);
+
+        // A review is only worth asking for while the night is genuinely over
+        // and the venue is still on the map.
+        if (notification.kind === "review") {
+            if (party.status !== "ended" || !venue) {
+                continue;
+            }
+            result.push({
+                id: notification.id,
+                kind: "review",
+                status: notification.status,
+                venue: { id: venue.id, name: venue.name, imageUrl: venue.imageUrl },
+                party: {
+                    id: party.id,
+                    title: party.title,
+                    genre: party.genre,
+                    venueName: venue.name,
+                    start: slot ? slot.start : ""
+                }
+            });
+            continue;
+        }
+
+        const sender = await getUserById(notification.fromUserId);
+        if (!sender) {
+            continue;
+        }
         // Expired invites: the party already ended or was cancelled, or its slot
         // has started. Accepting these fails anyway, so don't list them.
         if (party.status === "ended" || party.status === "cancelled") {
@@ -713,6 +914,7 @@ export async function ensureNotificationsFor(user: User) {
         }
         result.push({
             id: notification.id,
+            kind: "invite",
             status: notification.status,
             from: toPublicUser(sender),
             party: {
@@ -959,7 +1161,8 @@ export async function getPartyRoom(party: Party, viewer: User) {
         invitedUsernames: party.invitedUsernames,
         // Lets an ended room show "rate your crew" or "already rated" without
         // a second round trip.
-        rated: await hasRatedParty(viewer, party.id)
+        rated: await hasRatedParty(viewer, party.id),
+        venueReviewed: await hasReviewedVenue(viewer, party.id)
     };
 }
 
@@ -1125,6 +1328,8 @@ async function createPastParty(user: User): Promise<Party | null> {
         invitedUsernames: []
     };
     await partiesCollection.insertOne(party);
+    // It ended the moment it was invented, so the review ask comes with it.
+    await ensureReviewNotifications(party);
     return party;
 }
 
@@ -1155,7 +1360,11 @@ export async function getMyParties(user: User) {
         }
         if (party.status === "ended") {
             const myRatings = await ratingsCollection.find({ partyId: party.id, fromUserId: user.id }).toArray();
-            past.push({ ...view, rated: myRatings.length > 0 });
+            past.push({
+                ...view,
+                rated: myRatings.length > 0,
+                venueReviewed: await hasReviewedVenue(user, party.id)
+            });
         } else {
             upcoming.push(view);
         }
@@ -1350,6 +1559,7 @@ export async function resetDatabase() {
     await messagesCollection.deleteMany({});
     await notificationsCollection.deleteMany({});
     await ratingsCollection.deleteMany({});
+    await venueReviewsCollection.deleteMany({});
     await seed();
 }
 

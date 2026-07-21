@@ -14,6 +14,7 @@ export type Screen =
     | "notifs"
     | "invitefriends"
     | "rate"
+    | "venuereview"
     | "profile"
     | "user";
 
@@ -46,6 +47,12 @@ export interface AppApi {
     openRoom: (id: string) => void;
     ratePartyId: string | null;
     openRate: (id: string) => void;
+    // Reviewing the venue is its own screen, opened either from the party or
+    // straight from the notification that asks for it. It remembers where it
+    // was opened from so Back does not dump you on the tabs.
+    reviewPartyId: string | null;
+    openVenueReview: (id: string) => void;
+    closeVenueReview: () => void;
     // A singer's profile can be opened from any screen, so closeProfile goes
     // back to wherever you tapped instead of always to the tabs.
     profileUsername: string | null;

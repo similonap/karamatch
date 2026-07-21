@@ -4,7 +4,8 @@ import {
     ensureOpenPartiesNear, ensureMatchesNear, getMyParties, getPartyById, getMessagesForParty,
     createMessage, maybeNpcReply, getVenueById, getSlotById, createParty, addPartyMember,
     payForParty, shareFor, getPartyRoom, setPartyOpenToPublic, createInvite, getCrew,
-    createRatings, hasRatedParty, getUserByUsername, getUserByEmail
+    createRatings, hasRatedParty, getUserByUsername, getUserByEmail,
+    createVenueReview, hasReviewedVenue
 } from "../database";
 import { resolveLocation } from "./venues";
 import { Party, toPublicUser } from "../types";
@@ -356,6 +357,37 @@ router.post("/parties/:id/ratings", verifyAuthToken, async (req, res) => {
     }
     await createRatings(party, user, entries);
     res.status(201).json({ message: "Reviews posted — thanks!" });
+});
+
+// How was the place? Posted per night, so a regular can review the same venue
+// again the next time they sing there.
+const REVIEW_TEXT_MAX_LENGTH = 280;
+
+router.post("/parties/:id/venue-review", verifyAuthToken, async (req, res) => {
+    const user = res.locals.user;
+    const party = await loadMemberParty(req.params.id, res);
+    if (!party) {
+        return;
+    }
+    if (party.status !== "ended") {
+        res.status(400).json({ error: "You can only review the venue after the party has ended" });
+        return;
+    }
+    if (await hasReviewedVenue(user, party.id)) {
+        res.status(400).json({ error: "You already reviewed this night" });
+        return;
+    }
+    if (!Number.isInteger(req.body.stars) || req.body.stars < 1 || req.body.stars > 5) {
+        res.status(400).json({ error: "stars must be a whole number between 1 and 5" });
+        return;
+    }
+    const text: string = typeof req.body.text === "string" ? req.body.text.trim() : "";
+    if (text.length > REVIEW_TEXT_MAX_LENGTH) {
+        res.status(400).json({ error: "text must be " + REVIEW_TEXT_MAX_LENGTH + " characters or fewer" });
+        return;
+    }
+    const review = await createVenueReview(party, user, req.body.stars, text);
+    res.status(201).json({ id: review.id, venueId: review.venueId, stars: review.stars, text: review.text });
 });
 
 export default router;

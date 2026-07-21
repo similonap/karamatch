@@ -102,7 +102,8 @@ export default function VenuesTab() {
                             <div style={{ ...T.bodyStrong, fontSize: 16, color: C.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {venue.name}
                             </div>
-                            <Rating value={venue.rating} />
+                            {/* A venue with no reviews yet has no rating to show. */}
+                            {venue.reviewsCount > 0 ? <Rating value={venue.rating} /> : null}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: S.sm, ...T.caption, color: C.textMuted }}>
                             <span>{plural(venue.rooms.length, "room", "rooms")}</span>

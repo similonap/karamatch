@@ -1,6 +1,6 @@
 import express from "express";
 import { verifyAuthToken } from "../middleware/verifyAuthToken";
-import { ensureVenuesNear, ensureSlots, getVenueById, toVenueView } from "../database";
+import { ensureVenuesNear, ensureSlots, getVenueById, getVenueReviews, toVenueView } from "../database";
 import { User } from "../types";
 
 const router = express.Router();
@@ -38,7 +38,17 @@ router.get("/venues/:id", verifyAuthToken, async (req, res) => {
         res.status(404).json({ error: "Venue not found" });
         return;
     }
-    res.json(toVenueView(venue));
+    res.json(await toVenueView(venue));
+});
+
+// Everything the venue was ever rated on — the same reviews its rating averages.
+router.get("/venues/:id/reviews", verifyAuthToken, async (req, res) => {
+    const venue = await getVenueById(req.params.id);
+    if (!venue) {
+        res.status(404).json({ error: "Venue not found" });
+        return;
+    }
+    res.json(await getVenueReviews(venue.id));
 });
 
 router.get("/venues/:id/slots", verifyAuthToken, async (req, res) => {

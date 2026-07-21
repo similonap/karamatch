@@ -44,6 +44,10 @@ implemented**, nothing is stubbed:
   only): rate your fellow singers 1–5 stars; each rated user's `singerRating` is
   recomputed as the average of all stars they ever received, and the party flips to
   `rated: true` under `GET /parties/mine`.
+- **Venue reviews** (`GET /venues/:id/reviews`, `POST /parties/:id/venue-review`, ended
+  parties only): rate the place 1–5 stars with an optional line of text. A venue has no
+  stored rating — `rating` and `reviewsCount` on `GET /venues` and `GET /venues/:id` are
+  averaged from its reviews on every read, so a posted review moves it straight away.
 - **Songs & profile**: `GET /songs` without a query returns a genre-interleaved
   discovery list (a spread across all 8 genres); `GET /me` expands your favourite songs
   and includes your genre profile.
@@ -67,6 +71,10 @@ implemented**, nothing is stubbed:
   which guarantees at least one pending invite on first call).
 - `GET /parties/mine` backfills one ended, unrated party from last week so the rating flow
   is testable — a demo affordance, marked as such in `database.ts`.
+- A generated venue is seeded with 3–8 made-up reviews by NPC singers, skewed high, so it
+  arrives with a plausible rating instead of none. Every party that ends queues a review
+  notification (`kind: "review"`) for each real member, which they either answer through
+  `POST /parties/:id/venue-review` or dismiss with `POST /notifications/:id/decline`.
 
 All generation lives in the `ensure…` functions in `database.ts`; the name/NPC/title
 pools and random helpers are pure functions in `generators.ts`.
