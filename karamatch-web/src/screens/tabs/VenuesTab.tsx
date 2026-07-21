@@ -1,116 +1,117 @@
 import { api } from "../../api";
 import { useApp } from "../../AppContext";
-import { C, screenTitle } from "../../theme";
-import { EmptyCard, ErrorNote, Loading, money, plural, useAsync } from "../../ui";
+import { C, R, S, S2, T } from "../../design/tokens";
+import { Icon } from "../../design/icons";
+import { Card, EmptyState, ErrorNote, Pressable, Rating, ScrollBody, Skeleton, money, plural, useAsync } from "../../ui";
 
 export default function VenuesTab() {
     const app = useApp();
     const venues = useAsync(() => api.venues(3), []);
 
     return (
-        <div
-            style={{
-                flex: 1,
-                overflow: "auto",
-                padding: "4px 24px 110px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 14
-            }}
-        >
-            <div style={screenTitle}>
-                Karaoke near you
-                <div
+        <ScrollBody bottomPad={S.md}>
+            {/* Large title, then a tappable location chip — the location is the
+                one input that changes this whole list, so it belongs in reach. */}
+            <div style={{ paddingTop: S.xs, paddingBottom: S.sm, flexShrink: 0 }}>
+                <h1 style={{ ...T.title, color: C.text, margin: 0 }}>Karaoke near you</h1>
+                <Pressable
+                    onClick={app.openLocationEditor}
                     style={{
-                        display: "flex",
+                        display: "inline-flex",
                         alignItems: "center",
-                        gap: 8,
-                        fontSize: 13,
-                        color: C.textDim,
-                        fontFamily: "Outfit, sans-serif",
-                        fontWeight: 400
+                        gap: 5,
+                        marginTop: S2.s6,
+                        padding: "5px 10px 5px 8px",
+                        borderRadius: R.sm,
+                        background: C.surface2,
+                        border: "1px solid " + C.border,
+                        color: C.textDim
                     }}
                 >
-                    ◎ {app.me?.location?.label || "Set location"}
-                </div>
+                    <Icon name="pin" size={13} strokeWidth={2} />
+                    <span style={{ ...T.footnote, fontSize: 12, fontWeight: 600 }}>
+                        {app.me?.location?.label || "Set your location"}
+                    </span>
+                    <Icon name="chevronRight" size={12} strokeWidth={2} style={{ opacity: 0.6 }} />
+                </Pressable>
             </div>
 
-            {venues.loading ? <Loading label="Finding karaoke near you…" /> : null}
+            {venues.loading ? <Skeleton height={186} count={2} /> : null}
             {venues.error ? <ErrorNote message={venues.error} /> : null}
-            {!venues.loading && (venues.data ?? []).length === 0 ? (
-                <EmptyCard>
-                    No venues within 3 km.
-                    <br />
-                    Move your pin from the profile screen.
-                </EmptyCard>
+
+            {!venues.loading && !venues.error && (venues.data ?? []).length === 0 ? (
+                <EmptyState
+                    icon="pin"
+                    title="Nothing within 3 km"
+                    body="No karaoke venues near this pin yet. Try moving it somewhere busier."
+                />
             ) : null}
 
             {(venues.data ?? []).map(venue => (
-                <div
-                    key={venue.id}
-                    onClick={() => app.openVenue(venue.id)}
-                    style={{
-                        borderRadius: 20,
-                        border: "1px solid var(--km-veil-10)",
-                        background: "var(--km-veil-04)",
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        flexShrink: 0
-                    }}
-                >
+                <Card key={venue.id} onClick={() => app.openVenue(venue.id)} padded={false}>
                     <div
                         style={{
-                            height: 110,
-                            background: "repeating-linear-gradient(45deg,var(--km-stripe-a),var(--km-stripe-a) 10px,var(--km-stripe-b) 10px,var(--km-stripe-b) 20px)",
+                            height: 124,
+                            background: C.surface3,
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center"
+                            justifyContent: "center",
+                            color: C.textFaint,
+                            position: "relative"
                         }}
                     >
                         {venue.imageUrl ? (
                             <img
                                 src={venue.imageUrl}
-                                alt={venue.name}
+                                alt=""
                                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                 onError={event => {
                                     (event.currentTarget as HTMLImageElement).style.display = "none";
                                 }}
                             />
-                        ) : null}
-                    </div>
-                    <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                            <div style={{ fontWeight: 700, fontSize: 16 }}>{venue.name}</div>
-                            <div
-                                style={{
-                                    color: C.gold,
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    flexShrink: 0,
-                                    whiteSpace: "nowrap"
-                                }}
-                            >
-                                ★ {venue.rating.toFixed(1)}
-                            </div>
-                        </div>
+                        ) : (
+                            <Icon name="mic" size={28} />
+                        )}
+                        {/* Distance rides on the image so the row below stays a
+                            clean name/price line. */}
                         <div
                             style={{
-                                display: "flex",
-                                gap: 10,
-                                color: C.textMuted,
-                                fontSize: 13,
-                                flexWrap: "wrap"
+                                position: "absolute",
+                                top: S.sm,
+                                left: S.sm,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                height: 24,
+                                padding: "0 8px",
+                                borderRadius: R.sm,
+                                background: "rgba(7,4,13,.72)",
+                                color: "#fff",
+                                ...T.footnote,
+                                fontSize: 11,
+                                fontWeight: 700
                             }}
                         >
-                            <span>{venue.distanceKm} km</span>
-                            <span>·</span>
-                            <span>{plural(venue.rooms.length, "room", "rooms")}</span>
-                            <span>·</span>
-                            <span style={{ color: C.cyan }}>from {money(venue.fromPrice)}/hr</span>
+                            <Icon name="pin" size={12} strokeWidth={2} />
+                            {venue.distanceKm} km
                         </div>
                     </div>
-                </div>
+
+                    <div style={{ padding: S2.s12 + "px " + S.md + "px " + S.md + "px", display: "flex", flexDirection: "column", gap: S2.s6 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: S.sm }}>
+                            <div style={{ ...T.bodyStrong, fontSize: 16, color: C.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {venue.name}
+                            </div>
+                            <Rating value={venue.rating} />
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: S.sm, ...T.caption, color: C.textMuted }}>
+                            <span>{plural(venue.rooms.length, "room", "rooms")}</span>
+                            <span style={{ width: 3, height: 3, borderRadius: 2, background: C.textFaint }} />
+                            <span style={{ color: C.cyan, fontWeight: 600 }}>from {money(venue.fromPrice)}/hr</span>
+                        </div>
+                    </div>
+                </Card>
             ))}
-        </div>
+        </ScrollBody>
     );
 }

@@ -3,8 +3,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { api } from "../api";
 import { useApp } from "../AppContext";
-import { C, primaryButton, roundBack } from "../theme";
-import { TILE_ATTRIBUTION, tileFilter, tileUrl } from "../ui";
+import { C, LAYOUT, R, S, S2, SHADOW, T } from "../design/tokens";
+import { Icon } from "../design/icons";
+import { AppBar, BottomBar, Button, Pressable, SearchField, StepHeader, TILE_ATTRIBUTION, tileFilter, tileUrl } from "../ui";
 
 // The seeded world sits around Antwerp, so a fresh pin lands somewhere
 // already populated. Moving the map moves the pin for real: the API
@@ -52,6 +53,8 @@ export default function Location() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [searching, setSearching] = useState(false);
     const [busy, setBusy] = useState(false);
+    // True while the map is mid-pan, which lifts the pin off its shadow.
+    const [dragging, setDragging] = useState(false);
 
     // Build the map once. The pin itself is a fixed overlay at the centre of
     // the viewport, so panning the map is what picks the location.
@@ -66,7 +69,6 @@ export default function Location() {
             attributionControl: true
         });
         tileRef.current = L.tileLayer(tileUrl(app.theme), { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
-        L.control.zoom({ position: "topright" }).addTo(map);
         const tilePane = map.getPane("tilePane");
         if (tilePane) {
             tilePane.style.filter = tileFilter(app.theme);
@@ -77,11 +79,17 @@ export default function Location() {
             const centre = map.getCenter();
             setLat(centre.lat);
             setLng(centre.lng);
+            setDragging(false);
+        }
+        function onStart() {
+            setDragging(true);
         }
         map.on("moveend", onMove);
+        map.on("movestart", onStart);
 
         return () => {
             map.off("moveend", onMove);
+            map.off("movestart", onStart);
             map.remove();
             mapRef.current = null;
         };
@@ -134,17 +142,14 @@ export default function Location() {
         };
     }, [lat, lng]);
 
-    async function search(event: React.FormEvent) {
-        event.preventDefault();
+    async function search() {
         const term = query.trim();
         if (term === "") {
             return;
         }
         setSearching(true);
         try {
-            const response = await fetch(
-                NOMINATIM + "/search?format=jsonv2&limit=5&q=" + encodeURIComponent(term)
-            );
+            const response = await fetch(NOMINATIM + "/search?format=jsonv2&limit=5&q=" + encodeURIComponent(term));
             const data: { display_name: string; lat: string; lon: string }[] = await response.json();
             setResults(
                 data.map(item => ({
@@ -189,7 +194,7 @@ export default function Location() {
             await api.setLocation(lat, lng, label);
             await app.refreshMe();
             if (editing) {
-                app.toast("Location updated ✓");
+                app.toast("Location updated");
                 app.go("profile");
             } else {
                 app.go("songs");
@@ -202,149 +207,115 @@ export default function Location() {
     }
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 0 0", overflow: "hidden" }}>
-            <div style={{ padding: "0 24px", display: "flex", flexDirection: "column", gap: 8 }}>
-                {editing ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <button
-                            onClick={() => app.go("profile")}
-                            style={{ ...roundBack, width: 36, height: 36, fontSize: 16 }}
-                        >
-                            ‹
-                        </button>
-                        <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700 }}>
-                            Change location
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div style={{ color: C.pink, fontSize: 13, fontWeight: 700, letterSpacing: 2 }}>
-                            STEP 2 OF 3
-                        </div>
-                        <div
-                            style={{
-                                fontFamily: "Unbounded, sans-serif",
-                                fontSize: 26,
-                                fontWeight: 700,
-                                lineHeight: 1.2
-                            }}
-                        >
-                            Drop your pin
-                        </div>
-                    </>
-                )}
-                <div style={{ color: C.textDim, fontSize: 14, lineHeight: 1.5 }}>
-                    Move the map to place the pin where you sing. We'll show karaoke nearby.
+        <>
+            {editing ? (
+                <AppBar title="Change location" onBack={() => app.go("profile")} />
+            ) : (
+                <div style={{ padding: S.md + "px " + LAYOUT.gutter + "px " + S2.s12 + "px", flexShrink: 0 }}>
+                    <StepHeader
+                        step={2}
+                        total={3}
+                        title="Drop your pin"
+                        subtitle="Move the map to where you sing. We'll show karaoke nearby."
+                    />
                 </div>
-            </div>
+            )}
 
-            <div style={{ position: "relative", flex: 1, margin: "16px 0 0", overflow: "hidden" }}>
+            <div style={{ position: "relative", flex: 1, overflow: "hidden", minHeight: 0 }}>
                 <div ref={containerRef} style={{ position: "absolute", inset: 0, background: "var(--km-map-bg)" }} />
 
-                <form
-                    onSubmit={search}
+                {/* Map chrome floats over the tiles on an opaque surface — a
+                    translucent blur panel renders differently per platform. */}
+                <div
                     style={{
                         position: "absolute",
-                        top: 12,
-                        left: 12,
-                        right: 70,
+                        top: S2.s12,
+                        left: S2.s12,
+                        right: S2.s12,
                         zIndex: 500,
                         display: "flex",
                         flexDirection: "column",
-                        gap: 6
+                        gap: S2.s6
                     }}
                 >
-                    <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                            value={query}
-                            onChange={event => setQuery(event.target.value)}
-                            placeholder="Search a city or address"
-                            style={{
-                                flex: 1,
-                                height: 44,
-                                borderRadius: 14,
-                                border: "1px solid var(--km-veil-14)",
-                                background: "var(--km-map-chrome)",
-                                color: C.text,
-                                padding: "0 14px",
-                                fontSize: 15,
-                                fontFamily: "Outfit, sans-serif",
-                                boxSizing: "border-box",
-                                backdropFilter: "blur(8px)"
-                            }}
-                        />
-                        <button
-                            type="submit"
+                    <div style={{ display: "flex", gap: S.sm }}>
+                        <div style={{ flex: 1, boxShadow: SHADOW.e2, borderRadius: R.md }}>
+                            <SearchField value={query} onChange={setQuery} placeholder="Search a city or address" />
+                        </div>
+                        <Pressable
+                            onClick={search}
+                            ariaLabel="Search"
                             style={{
                                 width: 44,
                                 height: 44,
-                                borderRadius: 14,
-                                border: "1px solid rgba(41,224,255,.4)",
-                                background: "var(--km-map-chrome)",
-                                color: C.cyan,
-                                fontSize: 17,
-                                cursor: "pointer",
+                                borderRadius: R.md,
+                                background: C.surface1,
+                                border: "1px solid " + C.border,
+                                color: C.tintSoft,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
                                 flexShrink: 0,
-                                backdropFilter: "blur(8px)"
+                                boxShadow: SHADOW.e2
                             }}
                         >
-                            {searching ? "…" : "⌕"}
-                        </button>
+                            <Icon name={searching ? "clock" : "search"} size={19} strokeWidth={2} />
+                        </Pressable>
                     </div>
 
-                    {results.length > 0 && (
+                    {results.length > 0 ? (
                         <div
                             style={{
-                                borderRadius: 14,
-                                border: "1px solid var(--km-veil-12)",
-                                background: "var(--km-map-chrome)",
+                                borderRadius: R.md,
+                                border: "1px solid " + C.border,
+                                background: C.surface1,
                                 overflow: "hidden",
-                                backdropFilter: "blur(8px)"
+                                boxShadow: SHADOW.e2
                             }}
                         >
-                            {results.map(result => (
-                                <button
+                            {results.map((result, index) => (
+                                <Pressable
                                     key={result.lat + ":" + result.lng}
-                                    type="button"
                                     onClick={() => pick(result)}
+                                    scaleTo={1}
+                                    opacityTo={0.6}
                                     style={{
-                                        display: "block",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: S.sm,
                                         width: "100%",
-                                        textAlign: "left",
-                                        border: "none",
-                                        borderBottom: "1px solid var(--km-veil-07)",
-                                        background: "transparent",
+                                        padding: "11px 14px",
+                                        borderBottom: index === results.length - 1 ? "none" : "1px solid " + C.border,
                                         color: C.text,
-                                        padding: "10px 14px",
-                                        fontSize: 14,
-                                        fontFamily: "Outfit, sans-serif",
-                                        cursor: "pointer"
+                                        ...T.caption,
+                                        boxSizing: "border-box"
                                     }}
                                 >
-                                    {result.label}
-                                </button>
+                                    <Icon name="pin" size={15} style={{ color: C.textFaint }} />
+                                    <span style={{ flex: 1, minWidth: 0 }}>{result.label}</span>
+                                </Pressable>
                             ))}
                         </div>
-                    )}
-                </form>
+                    ) : null}
+                </div>
 
+                {/* The centre pin. It lifts while you drag, which is the cue that
+                    the map moves under a fixed pin rather than the other way. */}
                 <div
                     style={{
                         position: "absolute",
                         top: "50%",
                         left: "50%",
                         zIndex: 450,
-                        transform: "translate(-50%,-100%)",
-                        pointerEvents: "none",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center"
+                        transform: "translate(-50%,-100%) translateY(" + (dragging ? -6 : 0) + "px)",
+                        transition: "transform 180ms cubic-bezier(.22,.61,.36,1)",
+                        pointerEvents: "none"
                     }}
                 >
                     <div
                         style={{
-                            width: 34,
-                            height: 34,
+                            width: 32,
+                            height: 32,
                             borderRadius: "50% 50% 50% 0",
                             transform: "rotate(-45deg)",
                             background: "linear-gradient(135deg,#FF3D8F,#B23DFF)",
@@ -354,15 +325,7 @@ export default function Location() {
                             justifyContent: "center"
                         }}
                     >
-                        <div
-                            style={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: "50%",
-                                background: C.bg,
-                                transform: "rotate(45deg)"
-                            }}
-                        />
+                        <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#fff", transform: "rotate(45deg)" }} />
                     </div>
                 </div>
                 <div
@@ -370,80 +333,65 @@ export default function Location() {
                         position: "absolute",
                         top: "50%",
                         left: "50%",
-                        zIndex: 450,
+                        zIndex: 440,
                         transform: "translate(-50%,-2px)",
-                        width: 14,
-                        height: 5,
+                        width: dragging ? 16 : 12,
+                        height: 4,
                         borderRadius: "50%",
-                        background: "var(--km-shadow)",
-                        filter: "blur(1px)",
+                        background: "rgba(0,0,0,.4)",
+                        filter: "blur(2px)",
+                        transition: "width 180ms ease",
                         pointerEvents: "none"
                     }}
                 />
 
-                <button
+                <Pressable
                     onClick={useCurrentLocation}
+                    ariaLabel="Use my current location"
                     style={{
                         position: "absolute",
-                        bottom: 26,
-                        right: 16,
+                        bottom: S.md,
+                        right: S2.s12,
                         zIndex: 500,
                         width: 46,
                         height: 46,
-                        borderRadius: 14,
-                        border: "1px solid rgba(41,224,255,.4)",
-                        background: "var(--km-map-chrome)",
-                        color: C.cyan,
-                        fontSize: 20,
-                        cursor: "pointer",
-                        backdropFilter: "blur(8px)"
-                    }}
-                >
-                    ◎
-                </button>
-            </div>
-
-            <div
-                style={{
-                    padding: "16px 24px 36px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 12,
-                    background: "linear-gradient(180deg,transparent,var(--km-bg) 30%)"
-                }}
-            >
-                <div
-                    style={{
+                        borderRadius: R.md,
+                        border: "1px solid " + C.border,
+                        background: C.surface1,
+                        color: C.tintSoft,
                         display: "flex",
                         alignItems: "center",
-                        gap: 12,
-                        borderRadius: 16,
-                        border: "1px solid var(--km-veil-12)",
-                        background: "var(--km-veil-05)",
-                        padding: "12px 16px"
+                        justifyContent: "center",
+                        boxShadow: SHADOW.e2
                     }}
                 >
+                    <Icon name="locate" size={21} strokeWidth={2} />
+                </Pressable>
+            </div>
+
+            <BottomBar>
+                <div style={{ display: "flex", alignItems: "center", gap: S2.s12, minWidth: 0 }}>
                     <div
                         style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 12,
-                            background: "rgba(255,61,143,.14)",
+                            width: 36,
+                            height: 36,
+                            borderRadius: R.sm,
+                            background: C.tintBg,
+                            color: C.tintSoft,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 17,
                             flexShrink: 0
                         }}
                     >
-                        📍
+                        <Icon name="pin" size={18} />
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 12, color: C.textMuted }}>Selected location</div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ ...T.footnote, color: C.textMuted }}>Selected location</div>
                         <div
                             style={{
-                                fontWeight: 700,
-                                fontSize: 16,
+                                ...T.bodyStrong,
+                                color: C.text,
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis"
@@ -451,13 +399,10 @@ export default function Location() {
                         >
                             {label}
                         </div>
-                        <div style={{ fontSize: 12, color: C.textFaint }}>{coordLabel(lat, lng)}</div>
                     </div>
                 </div>
-                <button onClick={submit} style={primaryButton(!busy)}>
-                    {busy ? "Saving…" : editing ? "Save location" : "Continue"}
-                </button>
-            </div>
-        </div>
+                <Button label={busy ? "Saving" : editing ? "Save location" : "Continue"} onClick={submit} busy={busy} />
+            </BottomBar>
+        </>
     );
 }

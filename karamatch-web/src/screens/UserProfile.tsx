@@ -1,22 +1,23 @@
 import { useState } from "react";
-import type { CSSProperties } from "react";
 import { api } from "../api";
 import { useApp } from "../AppContext";
-import { C, roundBack, sectionLabel } from "../theme";
-import { Avatar, ConfirmDialog, ErrorNote, Loading, useAsync } from "../ui";
-
-// Add / remove / "already friends" all sit in the same slot at the bottom of
-// the profile, so they share one party model and line up at the same height.
-const friendAction: CSSProperties = {
-    height: 50,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 14,
-    fontWeight: 700,
-    fontSize: 15,
-    flexShrink: 0
-};
+import { C, R, S, S2, T } from "../design/tokens";
+import { Icon, StarIcon } from "../design/icons";
+import {
+    AppBar,
+    Avatar,
+    BottomBar,
+    Button,
+    Chip,
+    ConfirmDialog,
+    ErrorNote,
+    Group,
+    ListRow,
+    Loading,
+    ScrollBody,
+    Section
+} from "../ui";
+import { useAsync } from "../ui";
 
 // Read-only profile of another singer, opened by tapping them anywhere they
 // are listed: friends, people search, party members, a party host. Your own
@@ -64,16 +65,22 @@ export default function UserProfile() {
     }
 
     if (profile.loading) {
-        return <Loading label="Opening profile…" />;
+        return (
+            <>
+                <AppBar onBack={app.closeProfile} />
+                <Loading label="Opening profile…" />
+            </>
+        );
     }
+
     if (profile.error || !profile.data) {
         return (
-            <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-                <button onClick={app.closeProfile} style={roundBack}>
-                    ‹
-                </button>
-                <ErrorNote message={profile.error ?? "Singer not found"} />
-            </div>
+            <>
+                <AppBar title="Profile" onBack={app.closeProfile} />
+                <ScrollBody style={{ paddingTop: S.md }}>
+                    <ErrorNote message={profile.error ?? "Singer not found"} />
+                </ScrollBody>
+            </>
         );
     }
 
@@ -83,189 +90,122 @@ export default function UserProfile() {
         .slice(0, 4);
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 24px 12px", flexShrink: 0 }}>
-                <button onClick={app.closeProfile} style={{ ...roundBack, width: 36, height: 36, fontSize: 16 }}>
-                    ‹
-                </button>
-                <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700, flex: 1 }}>
-                    Profile
-                </div>
-                {user.isSelf ? (
-                    <button
-                        onClick={() => app.go("profile")}
-                        style={{
-                            height: 32,
-                            padding: "0 12px",
-                            borderRadius: 10,
-                            border: "1px solid var(--km-veil-16)",
-                            background: "var(--km-veil-05)",
-                            color: C.textDim,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            fontFamily: "Outfit, sans-serif",
-                            cursor: "pointer"
-                        }}
-                    >
-                        Edit
-                    </button>
-                ) : null}
-            </div>
+        <>
+            <AppBar
+                title="Profile"
+                onBack={app.closeProfile}
+                right={
+                    user.isSelf ? (
+                        <Button label="Edit" variant="ghost" size="sm" onClick={() => app.go("profile")} />
+                    ) : null
+                }
+            />
 
-            <div
-                style={{
-                    flex: 1,
-                    overflow: "auto",
-                    padding: "8px 24px 40px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 22
-                }}
-            >
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-                    <Avatar name={user.name} photoUrl={user.photoUrl} seed={user.id} size={104} fontSize={38} />
-                    <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700 }}>
-                        {user.name}
+            <ScrollBody gap={S.lg} style={{ paddingTop: S.sm }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: S.sm, flexShrink: 0 }}>
+                    <Avatar name={user.name} photoUrl={user.photoUrl} seed={user.id} size={96} />
+                    <div style={{ textAlign: "center" }}>
+                        <div style={{ ...T.title, fontSize: 20, color: C.text }}>{user.name}</div>
+                        <div style={{ ...T.callout, color: C.textMuted, marginTop: 2 }}>@{user.username}</div>
                     </div>
-                    <div style={{ color: C.textMuted, fontSize: 14 }}>@{user.username}</div>
                     {user.bio ? (
-                        <div
-                            style={{
-                                color: C.textDim,
-                                fontSize: 14,
-                                lineHeight: 1.55,
-                                textAlign: "center",
-                                maxWidth: 280
-                            }}
-                        >
+                        <p style={{ ...T.callout, color: C.textDim, textAlign: "center", maxWidth: 280, margin: 0 }}>
                             {user.bio}
-                        </div>
+                        </p>
                     ) : null}
                 </div>
 
-                <div style={{ display: "flex", gap: 10 }}>
-                    <Stat label="singer rating" value={"★ " + user.singerRating.toFixed(1)} color={C.gold} />
-                    <Stat label={user.eventsCount === 1 ? "night out" : "nights out"} value={String(user.eventsCount)} />
+                {/* Stats read as one strip rather than three floating cards. */}
+                <div
+                    style={{
+                        display: "flex",
+                        background: C.surface1,
+                        border: "1px solid " + C.border,
+                        borderRadius: R.lg,
+                        overflow: "hidden",
+                        flexShrink: 0
+                    }}
+                >
+                    <Stat
+                        label="rating"
+                        value={user.singerRating.toFixed(1)}
+                        icon={<StarIcon size={13} color={C.gold} />}
+                        color={C.gold}
+                    />
+                    <Stat
+                        label={user.eventsCount === 1 ? "night out" : "nights out"}
+                        value={String(user.eventsCount)}
+                        last={user.matchPct === null}
+                    />
                     {user.matchPct !== null ? (
-                        <Stat label="taste match" value={user.matchPct + "%"} color={C.pinkSoft} />
+                        <Stat label="taste match" value={user.matchPct + "%"} color={C.tintSoft} last />
                     ) : null}
                 </div>
 
                 {user.commonSongs.length > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        <div style={sectionLabel}>YOU BOTH SING</div>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <Section title="You both sing">
+                        <div style={{ display: "flex", gap: S2.s6, flexWrap: "wrap" }}>
                             {user.commonSongs.map(title => (
-                                <span
-                                    key={title}
-                                    style={{
-                                        fontSize: 12,
-                                        color: C.cyan,
-                                        background: "rgba(41,224,255,.1)",
-                                        border: "1px solid rgba(41,224,255,.25)",
-                                        padding: "4px 10px",
-                                        borderRadius: 999
-                                    }}
-                                >
-                                    ♪ {title}
-                                </span>
+                                <Chip key={title} label={title} icon="music" tone="cyan" />
                             ))}
                         </div>
-                    </div>
+                    </Section>
                 ) : null}
 
                 {topGenres.length > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        <div style={sectionLabel}>GENRES</div>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <Section title="Genres">
+                        <div style={{ display: "flex", gap: S2.s6, flexWrap: "wrap" }}>
                             {topGenres.map(([genre, count]) => (
-                                <span
-                                    key={genre}
-                                    style={{
-                                        fontSize: 12,
-                                        color: C.pinkPale,
-                                        background: "rgba(255,61,143,.1)",
-                                        border: "1px solid rgba(255,61,143,.3)",
-                                        padding: "4px 10px",
-                                        borderRadius: 999
-                                    }}
-                                >
-                                    {genre} · {count}
-                                </span>
+                                <Chip key={genre} label={genre + " · " + count} tone="tint" />
                             ))}
                         </div>
-                    </div>
+                    </Section>
                 ) : null}
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={sectionLabel}>FAVOURITE SONGS · {user.favoriteSongs.length}</div>
+                <Section title={"Favourite songs · " + user.favoriteSongs.length}>
                     {user.favoriteSongs.length === 0 ? (
-                        <div style={{ color: C.textMuted, fontSize: 13 }}>No favourites picked yet.</div>
-                    ) : null}
-                    {user.favoriteSongs.map(song => (
-                        <div
-                            key={song.id}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                                padding: "10px 14px",
-                                borderRadius: 14,
-                                border: "1px solid var(--km-veil-09)",
-                                background: "var(--km-veil-04)"
-                            }}
-                        >
-                            <span style={{ color: C.pinkSoft, fontSize: 15 }}>♪</span>
-                            <div style={{ minWidth: 0 }}>
-                                <div
-                                    style={{
-                                        fontSize: 14,
-                                        fontWeight: 600,
-                                        whiteSpace: "nowrap",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis"
-                                    }}
-                                >
-                                    {song.title}
-                                </div>
-                                <div style={{ color: C.textMuted, fontSize: 12 }}>{song.artist}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                        <div style={{ ...T.caption, color: C.textMuted }}>No favourites picked yet.</div>
+                    ) : (
+                        <Group>
+                            {user.favoriteSongs.map((song, index) => (
+                                <ListRow
+                                    key={song.id}
+                                    last={index === user.favoriteSongs.length - 1}
+                                    leading={
+                                        <div
+                                            style={{
+                                                width: 34,
+                                                height: 34,
+                                                borderRadius: R.sm,
+                                                background: C.surface3,
+                                                color: C.tintSoft,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0
+                                            }}
+                                        >
+                                            <Icon name="music" size={16} />
+                                        </div>
+                                    }
+                                    title={song.title}
+                                    subtitle={song.artist}
+                                />
+                            ))}
+                        </Group>
+                    )}
+                </Section>
+            </ScrollBody>
 
-                {user.isSelf ? null : user.isFriend ? (
-                    <button
-                        onClick={() => setConfirmRemove(true)}
-                        style={{
-                            ...friendAction,
-                            color: C.pinkSoft,
-                            border: "1px solid rgba(255,61,143,.4)",
-                            background: "rgba(255,61,143,.1)",
-                            fontFamily: "Outfit, sans-serif",
-                            cursor: "pointer"
-                        }}
-                    >
-                        Remove from friends
-                    </button>
-                ) : (
-                    <button
-                        onClick={add}
-                        disabled={adding}
-                        style={{
-                            ...friendAction,
-                            color: C.cyan,
-                            border: "1px solid rgba(41,224,255,.4)",
-                            background: "rgba(41,224,255,.1)",
-                            fontFamily: "Outfit, sans-serif",
-                            cursor: "pointer",
-                            opacity: adding ? 0.6 : 1
-                        }}
-                    >
-                        {adding ? "Adding…" : "+ Add to friends"}
-                    </button>
-                )}
-            </div>
+            {user.isSelf ? null : (
+                <BottomBar>
+                    {user.isFriend ? (
+                        <Button label="Remove from friends" variant="danger" onClick={() => setConfirmRemove(true)} />
+                    ) : (
+                        <Button label="Add to friends" icon="userPlus" onClick={add} busy={adding} disabled={adding} />
+                    )}
+                </BottomBar>
+            )}
 
             {confirmRemove ? (
                 <ConfirmDialog
@@ -277,24 +217,47 @@ export default function UserProfile() {
                     onCancel={() => setConfirmRemove(false)}
                 />
             ) : null}
-        </div>
+        </>
     );
 }
 
-function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
+function Stat({
+    label,
+    value,
+    color,
+    icon,
+    last
+}: {
+    label: string;
+    value: string;
+    color?: string;
+    icon?: React.ReactNode;
+    last?: boolean;
+}) {
     return (
         <div
             style={{
                 flex: 1,
-                borderRadius: 16,
-                border: "1px solid var(--km-veil-10)",
-                background: "var(--km-veil-04)",
-                padding: "12px 10px",
-                textAlign: "center"
+                padding: S2.s12 + "px " + S.sm + "px",
+                textAlign: "center",
+                borderRight: last ? "none" : "1px solid " + C.border
             }}
         >
-            <div style={{ fontWeight: 700, fontSize: 16, color: color ?? C.text }}>{value}</div>
-            <div style={{ color: C.textMuted, fontSize: 11, marginTop: 2 }}>{label}</div>
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 3,
+                    ...T.bodyStrong,
+                    fontSize: 17,
+                    color: color ?? C.text
+                }}
+            >
+                {icon}
+                {value}
+            </div>
+            <div style={{ ...T.footnote, fontSize: 10, color: C.textMuted, marginTop: 2 }}>{label}</div>
         </div>
     );
 }

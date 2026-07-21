@@ -1,9 +1,12 @@
 # KaraMatch Web
 
 React + TypeScript + Vite front end for the KaraMatch flow, built against the
-`karamatch-api` backend. It recreates the `karaoke-matchmaking-app-flow`
-prototype (`KaraMatch.dc.html`) screen for screen, rendered inside an iOS-sized
-phone frame.
+`karamatch-api` backend. It covers the `karaoke-matchmaking-app-flow` prototype
+(`KaraMatch.dc.html`) screen for screen, rendered inside a phone frame.
+
+The UI follows cross-platform native conventions rather than web ones, and is
+deliberately **identical on Android and iOS** — no platform forks, and no
+translucent "liquid glass" tab bar. See [Design system](#design-system).
 
 ## Setup
 
@@ -52,11 +55,40 @@ new one; registration walks through the pin drop and song picker.
   (which venue, which party, what is being paid) and the toast. On boot a stored
   token is resolved via `GET /me`, which also decides where you land: no location
   → pin drop, fewer than 3 songs → picker, otherwise the Venues tab.
-- `theme.ts` — colours, fonts and the button/input/card recipes taken from the
-  prototype's inline styles.
-- `ui.tsx` — phone frame, avatar (falls back to an initial when a photo 404s),
-  toast, spinner, check-ring, plus `useAsync`/`useDebounced` and the date
-  helpers that turn ISO starts into "Today 21:00" / "Sat 22:00".
+- `design/tokens.ts` — the scales: colour, spacing (4pt grid), radii, type ramp,
+  elevation and layout constants. No screen invents its own values.
+- `design/icons.tsx` — the stroked icon set, drawn on a 24px grid. Tab icons
+  also have a filled form for the selected state.
+- `ui.tsx` — every shared component (see below), plus `useAsync`/`useDebounced`
+  and the date helpers that turn ISO starts into "Today 21:00" / "Sat 22:00".
+
+## Design system
+
+Colours resolve through CSS variables in `index.css`, so the light theme is a
+variable swap rather than a branch in any component. The surface ladder is
+semantic (`--km-surface-1`, `-2`, `-3`) instead of stacked translucent veils, so
+nesting a card inside a card stays predictable.
+
+Load-bearing conventions:
+
+- **`Pressable`** backs every touchable. It dips scale + opacity on pointerdown,
+  because `:hover` and `cursor: pointer` do not exist on a phone.
+- **The tab bar is flat, opaque and edge-to-edge**, with a filled icon marking
+  the selected tab. It is not a floating translucent pill: that is an iOS-only
+  idiom that renders differently wherever `backdrop-filter` is unsupported.
+- **The gradient is scarce** — one primary action per screen, plus the brand
+  mark. In-list actions use the flat `tinted` button variant.
+- **Destructive is red, not brand pink** (`--km-danger`), so "leave this party"
+  never reads as "this is on brand".
+- **Stack screens push/pop**; tab switches cross-fade. `App.tsx` picks the
+  direction by comparing each screen's depth in `DEPTH`.
+- Touch targets are at least `LAYOUT.touch` (44px), and text inputs are 16px or
+  larger, or mobile Safari zooms the page on focus.
+
+Shared components: `AppBar` · `BottomBar` · `ScrollBody` · `Card` · `Group` /
+`ListRow` · `Section` · `Button` · `Chip` · `OptionPill` · `Segmented` ·
+`Toggle` · `Stepper` · `TextField` / `SearchField` · `StepHeader` · `Avatar` /
+`AvatarStack` · `StarInput` · `Skeleton` · `EmptyState` · `ConfirmDialog`.
 
 ## Notes on the real data
 

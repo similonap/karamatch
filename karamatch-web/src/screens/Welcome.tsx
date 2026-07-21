@@ -1,91 +1,66 @@
 import { useApp } from "../AppContext";
-import { C, GRAD, GRAD_TILE } from "../theme";
+import { C, FONT, LAYOUT, S, S2, T } from "../design/tokens";
+import { BrandMark, Button } from "../ui";
 
 export default function Welcome() {
     const app = useApp();
+
     return (
         <div
             style={{
                 flex: 1,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "flex-end",
-                padding: "0 28px 48px",
+                padding: "0 " + LAYOUT.gutter + "px",
+                paddingBottom: LAYOUT.safeBottom + S.md,
                 position: "relative",
+                // One soft brand wash behind the mark. The old screen stacked two
+                // radial gradients and a glow; at phone size that just read as fog.
                 background:
-                    "radial-gradient(500px 400px at 50% 20%, rgba(255,61,143,.22), transparent 70%), radial-gradient(400px 300px at 80% 55%, rgba(41,224,255,.14), transparent 70%)"
+                    "radial-gradient(420px 340px at 50% 22%, var(--km-tint-glow), transparent 70%)"
             }}
         >
             <div
                 style={{
-                    position: "absolute",
-                    top: 120,
-                    left: 0,
-                    right: 0,
+                    flex: 1,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: 14
+                    justifyContent: "center",
+                    gap: S.md,
+                    paddingBottom: S.xxl
                 }}
             >
-                <div
+                <BrandMark size={80} />
+                <h1
                     style={{
-                        width: 88,
-                        height: 88,
-                        borderRadius: 28,
-                        background: GRAD_TILE,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 42,
-                        boxShadow: "0 0 60px rgba(255,61,143,.55)",
-                        color: "#fff"
+                        fontFamily: FONT.display,
+                        fontWeight: 800,
+                        fontSize: 34,
+                        letterSpacing: -1,
+                        margin: 0,
+                        color: C.text
                     }}
                 >
-                    ♪
-                </div>
-                <div style={{ fontFamily: "Unbounded, sans-serif", fontWeight: 900, fontSize: 34, letterSpacing: -1 }}>
-                    Kara<span style={{ color: C.pink }}>Match</span>
-                </div>
-                <div style={{ color: C.textDim, fontSize: 16, textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
+                    Kara<span style={{ color: C.tint }}>Match</span>
+                </h1>
+                <p
+                    style={{
+                        ...T.body,
+                        fontSize: 16,
+                        color: C.textDim,
+                        textAlign: "center",
+                        maxWidth: 260,
+                        margin: 0
+                    }}
+                >
                     Find people who sing what you sing. Book a party. Split the bill.
-                </div>
+                </p>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <button
-                    onClick={() => app.go("register")}
-                    style={{
-                        height: 56,
-                        border: "none",
-                        borderRadius: 18,
-                        background: GRAD,
-                        color: "#fff",
-                        fontFamily: "Outfit, sans-serif",
-                        fontSize: 17,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        boxShadow: "0 8px 32px rgba(255,61,143,.4)"
-                    }}
-                >
-                    Create account
-                </button>
-                <button
-                    onClick={() => app.go("signin")}
-                    style={{
-                        height: 56,
-                        border: "1px solid var(--km-veil-16)",
-                        borderRadius: 18,
-                        background: "var(--km-veil-05)",
-                        color: C.text,
-                        fontFamily: "Outfit, sans-serif",
-                        fontSize: 17,
-                        fontWeight: 600,
-                        cursor: "pointer"
-                    }}
-                >
-                    Sign in
-                </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: S2.s10 }}>
+                <Button label="Create account" onClick={() => app.go("register")} />
+                <Button label="Sign in" variant="secondary" onClick={() => app.go("signin")} />
             </div>
         </div>
     );

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { api, setToken } from "../api";
 import { useApp } from "../AppContext";
-import { C, GRAD_TILE, inputStyle, primaryButton, roundBack } from "../theme";
-import { ErrorNote } from "../ui";
+import { C, LAYOUT, S, S2, T } from "../design/tokens";
+import { AppBar, BottomBar, BrandMark, Button, ErrorNote, Pressable, ScrollBody, TextField } from "../ui";
 
 export default function SignIn() {
     const app = useApp();
@@ -49,83 +49,63 @@ export default function SignIn() {
     }
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 24px 40px", gap: 18 }}>
-            <button onClick={() => app.go("welcome")} style={{ ...roundBack, borderRadius: "50%" }}>
-                ‹
-            </button>
+        <>
+            <AppBar onBack={() => app.go("welcome")} bordered={false} />
 
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 8 }}>
-                <div
-                    style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 22,
-                        background: GRAD_TILE,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 30,
-                        boxShadow: "0 0 40px rgba(255,61,143,.4)",
-                        color: "#fff"
-                    }}
-                >
-                    ♪
+            <ScrollBody gap={S.md} bottomPad={S.md}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: S2.s10, padding: S.sm + "px 0 " + S.md + "px" }}>
+                    <BrandMark size={60} />
+                    <h1 style={{ ...T.title, color: C.text, margin: 0 }}>Welcome back</h1>
+                    <div style={{ ...T.callout, color: C.textMuted, textAlign: "center" }}>
+                        Sign in to find your next party.
+                    </div>
                 </div>
-                <div style={{ fontFamily: "Unbounded, sans-serif", fontWeight: 700, fontSize: 24 }}>Welcome back</div>
-                <div style={{ color: C.textDim, fontSize: 14, textAlign: "center" }}>Sign in to find your next party.</div>
-            </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
-                <input
+                <TextField
                     value={login}
-                    onChange={event => {
-                        setLogin(event.target.value);
+                    onChange={value => {
+                        setLogin(value);
                         setError(null);
                     }}
                     placeholder="Email or username"
-                    style={inputStyle}
+                    label="Account"
                 />
-                <input
-                    type="password"
+                <TextField
                     value={password}
-                    onChange={event => {
-                        setPassword(event.target.value);
+                    type="password"
+                    onChange={value => {
+                        setPassword(value);
                         setError(null);
                     }}
-                    onKeyDown={event => {
-                        if (event.key === "Enter") {
-                            void submit();
-                        }
-                    }}
+                    onEnter={submit}
                     placeholder="Password"
-                    style={inputStyle}
+                    label="Password"
                 />
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <span
-                        onClick={forgot}
-                        style={{ color: C.cyan, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-                    >
-                        Forgot password?
-                    </span>
-                </div>
-            </div>
 
-            {error ? <ErrorNote message={error} /> : null}
+                <Pressable onClick={forgot} style={{ alignSelf: "flex-end", padding: S.xs, minHeight: 0 }}>
+                    <span style={{ ...T.captionStrong, color: C.tintSoft }}>Forgot password?</span>
+                </Pressable>
 
-            <div style={{ flex: 1 }} />
+                {error ? <ErrorNote message={error} /> : null}
+            </ScrollBody>
 
-            <button onClick={submit} style={primaryButton(ready)}>
-                {busy ? "Signing in…" : "Sign in"}
-            </button>
-            <div style={{ textAlign: "center", color: C.textMuted, fontSize: 14 }}>
-                No account?{" "}
-                <span
+            <BottomBar>
+                <Button label={busy ? "Signing in" : "Sign in"} onClick={submit} disabled={!ready} busy={busy} />
+                <Pressable
                     onClick={() => app.go("register")}
-                    style={{ color: C.pinkSoft, fontWeight: 700, cursor: "pointer" }}
+                    scaleTo={1}
+                    style={{
+                        height: LAYOUT.touch,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 5
+                    }}
                 >
-                    Create one
-                </span>
-            </div>
-        </div>
+                    <span style={{ ...T.caption, color: C.textMuted }}>No account?</span>
+                    <span style={{ ...T.captionStrong, color: C.tintSoft }}>Create one</span>
+                </Pressable>
+            </BottomBar>
+        </>
     );
 }

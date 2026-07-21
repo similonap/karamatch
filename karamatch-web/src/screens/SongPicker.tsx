@@ -2,8 +2,22 @@ import { useState } from "react";
 import { api } from "../api";
 import type { Song } from "../api";
 import { useApp } from "../AppContext";
-import { C, GRAD, inputStyle, primaryButton } from "../theme";
-import { CheckRing, ErrorNote, Loading, useAsync, useDebounced } from "../ui";
+import { C, GRAD, LAYOUT, R, S, S2, T } from "../design/tokens";
+import { Icon } from "../design/icons";
+import {
+    BottomBar,
+    Button,
+    CheckRing,
+    EmptyState,
+    ErrorNote,
+    Pressable,
+    ScrollBody,
+    SearchField,
+    Skeleton,
+    StepHeader,
+    useAsync,
+    useDebounced
+} from "../ui";
 
 const MAX_SONGS = 10;
 const MIN_SONGS = 3;
@@ -12,72 +26,54 @@ const MIN_SONGS = 3;
 export function SongRow({
     song,
     selected,
-    onToggle,
-    compact
+    onToggle
 }: {
     song: Song;
     selected: boolean;
     onToggle: () => void;
-    compact?: boolean;
 }) {
-    const tile = compact ? 38 : 40;
     return (
-        <div
+        <Pressable
             onClick={onToggle}
+            scaleTo={0.99}
+            opacityTo={0.75}
             style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                padding: compact ? "11px 14px" : "12px 14px",
-                borderRadius: 14,
-                cursor: "pointer",
-                border: "1px solid " + (selected ? "rgba(255,61,143,.55)" : "var(--km-veil-09)"),
-                background: selected ? "rgba(255,61,143,.1)" : "var(--km-veil-04)",
-                flexShrink: 0
+                gap: S2.s12,
+                padding: "10px 12px",
+                borderRadius: R.md,
+                border: "1px solid " + (selected ? C.tintBorder : C.border),
+                background: selected ? C.tintBg : C.surface1,
+                flexShrink: 0,
+                transition: "background 140ms ease, border-color 140ms ease"
             }}
         >
             <div
                 style={{
-                    width: tile,
-                    height: tile,
-                    borderRadius: compact ? 11 : 12,
-                    background: selected ? GRAD : "var(--km-veil-09)",
+                    width: 38,
+                    height: 38,
+                    borderRadius: R.sm,
+                    background: selected ? GRAD : C.surface3,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: compact ? 16 : 17,
-                    color: "#fff",
+                    color: selected ? "#fff" : C.textFaint,
                     flexShrink: 0
                 }}
             >
-                ♪
+                <Icon name="music" size={18} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                    style={{
-                        fontWeight: 600,
-                        fontSize: 15,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis"
-                    }}
-                >
+                <div style={{ ...T.body, fontWeight: 600, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {song.title}
                 </div>
-                <div
-                    style={{
-                        color: C.textMuted,
-                        fontSize: 13,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis"
-                    }}
-                >
+                <div style={{ ...T.caption, color: C.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {song.artist}
                 </div>
             </div>
             <CheckRing on={selected} />
-        </div>
+        </Pressable>
     );
 }
 
@@ -102,6 +98,7 @@ export default function SongPicker() {
     }
 
     const ready = picked.length >= MIN_SONGS && !busy;
+    const remaining = MIN_SONGS - picked.length;
 
     async function finish() {
         if (!ready) {
@@ -121,74 +118,54 @@ export default function SongPicker() {
     }
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 0 0", overflow: "hidden" }}>
-            <div style={{ padding: "0 24px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ color: C.pink, fontSize: 13, fontWeight: 700, letterSpacing: 2 }}>STEP 3 OF 3</div>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                    <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 24, fontWeight: 700 }}>
-                        Your go-to songs
-                    </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: C.cyan }}>
-                        {picked.length}/{MAX_SONGS}
-                    </div>
-                </div>
-                <div style={{ color: C.textDim, fontSize: 14 }}>
-                    Pick up to 10 songs you love to sing — we match you by taste.
-                </div>
-                <input
-                    value={query}
-                    onChange={event => setQuery(event.target.value)}
-                    placeholder="Search songs or artists"
-                    style={{ ...inputStyle, height: 48, borderRadius: 14, fontSize: 15, padding: "0 16px" }}
+        <>
+            {/* The header is fixed while only the list scrolls, so the search
+                field and the running count stay reachable. */}
+            <div
+                style={{
+                    flexShrink: 0,
+                    padding: S.md + "px " + LAYOUT.gutter + "px " + S2.s12 + "px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: S2.s12
+                }}
+            >
+                <StepHeader
+                    step={3}
+                    total={3}
+                    title="Your go-to songs"
+                    subtitle="Pick up to 10 songs you love to sing — we match you by taste."
+                    trailing={
+                        <span style={{ ...T.captionStrong, color: picked.length >= MIN_SONGS ? C.cyan : C.textMuted }}>
+                            {picked.length}/{MAX_SONGS}
+                        </span>
+                    }
                 />
+                <SearchField value={query} onChange={setQuery} placeholder="Search songs or artists" />
                 {error ? <ErrorNote message={error} /> : null}
             </div>
 
-            <div
-                style={{
-                    flex: 1,
-                    overflow: "auto",
-                    padding: "14px 24px 120px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8
-                }}
-            >
-                {songs.loading ? <Loading /> : null}
+            <ScrollBody gap={S.sm} bottomPad={S.md}>
+                {songs.loading ? <Skeleton height={60} count={5} radius={12} /> : null}
                 {songs.error ? <ErrorNote message={songs.error} /> : null}
-                {(songs.data ?? []).map(song => (
-                    <SongRow
-                        key={song.id}
-                        song={song}
-                        selected={picked.includes(song.id)}
-                        onToggle={() => toggle(song.id)}
-                    />
-                ))}
-                {!songs.loading && (songs.data ?? []).length === 0 ? (
-                    <div style={{ color: C.textMuted, fontSize: 14, textAlign: "center", padding: 20 }}>
-                        No songs match "{query}".
-                    </div>
-                ) : null}
-            </div>
 
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: "16px 24px 36px",
-                    background: "linear-gradient(180deg,transparent,var(--km-bg) 40%)"
-                }}
-            >
-                <button onClick={finish} style={primaryButton(ready)}>
-                    {busy
-                        ? "Saving…"
-                        : picked.length >= MIN_SONGS
-                          ? "Find my people →"
-                          : "Pick at least " + MIN_SONGS + " songs"}
-                </button>
-            </div>
-        </div>
+                {(songs.data ?? []).map(song => (
+                    <SongRow key={song.id} song={song} selected={picked.includes(song.id)} onToggle={() => toggle(song.id)} />
+                ))}
+
+                {!songs.loading && (songs.data ?? []).length === 0 ? (
+                    <EmptyState icon="search" title="No songs found" body={query ? "Nothing matches “" + query + "”." : undefined} />
+                ) : null}
+            </ScrollBody>
+
+            <BottomBar>
+                <Button
+                    label={busy ? "Saving" : ready ? "Find my people" : "Pick " + remaining + " more"}
+                    onClick={finish}
+                    disabled={!ready}
+                    busy={busy}
+                />
+            </BottomBar>
+        </>
     );
 }

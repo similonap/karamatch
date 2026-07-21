@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { api } from "../api";
 import { useApp } from "../AppContext";
-import { C, GRAD, roundBack } from "../theme";
-import { Avatar, EmptyCard, ErrorNote, Loading, formatWhen, money, useAsync } from "../ui";
+import { C, S, S2, T } from "../design/tokens";
+import { AppBar, Avatar, Button, Card, EmptyState, ErrorNote, Pressable, ScrollBody, Skeleton, formatWhen, money, useAsync } from "../ui";
 
 export default function Notifications() {
     const app = useApp();
@@ -39,109 +39,62 @@ export default function Notifications() {
     const list = notifications.data ?? [];
 
     return (
-        <div
-            style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "auto",
-                padding: "24px 24px 40px",
-                gap: 16
-            }}
-        >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button onClick={() => app.go("app")} style={{ ...roundBack, width: 36, height: 36, fontSize: 16 }}>
-                    ‹
-                </button>
-                <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700 }}>Notifications</div>
-            </div>
+        <>
+            <AppBar title="Notifications" onBack={() => app.go("app")} />
 
-            {notifications.loading ? <Loading /> : null}
-            {notifications.error ? <ErrorNote message={notifications.error} /> : null}
-            {!notifications.loading && list.length === 0 ? (
-                <EmptyCard>
-                    No new notifications.
-                    <br />
-                    Invites to karaoke parties show up here.
-                </EmptyCard>
-            ) : null}
+            <ScrollBody style={{ paddingTop: S.md }}>
+                {notifications.loading ? <Skeleton height={140} count={2} /> : null}
+                {notifications.error ? <ErrorNote message={notifications.error} /> : null}
 
-            {list.map(notification => (
-                <div
-                    key={notification.id}
-                    style={{
-                        borderRadius: 20,
-                        border: "1px solid rgba(255,61,143,.35)",
-                        background: "rgba(255,61,143,.06)",
-                        padding: 16,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                        flexShrink: 0
-                    }}
-                >
-                    <div
-                        onClick={() => app.openProfile(notification.from.username)}
-                        style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
-                    >
-                        <Avatar
-                            name={notification.from.name}
-                            photoUrl={notification.from.photoUrl}
-                            seed={notification.from.id}
-                            size={42}
-                            fontSize={16}
-                        />
-                        <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 14, lineHeight: 1.45 }}>
-                                <span style={{ fontWeight: 700 }}>@{notification.from.username}</span> invited you to{" "}
-                                <span style={{ fontWeight: 700, color: C.pinkSoft }}>{notification.party.title}</span>
+                {!notifications.loading && !notifications.error && list.length === 0 ? (
+                    <EmptyState icon="bell" title="You're all caught up" body="Invites to karaoke parties will show up here." />
+                ) : null}
+
+                {list.map(notification => (
+                    <Card key={notification.id} highlight style={{ gap: S2.s12 }}>
+                        <Pressable
+                            onClick={() => app.openProfile(notification.from.username)}
+                            scaleTo={1}
+                            style={{ display: "flex", alignItems: "center", gap: S2.s12 }}
+                        >
+                            <Avatar
+                                name={notification.from.name}
+                                photoUrl={notification.from.photoUrl}
+                                seed={notification.from.id}
+                                size={42}
+                            />
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ ...T.callout, color: C.textDim }}>
+                                    <span style={{ fontWeight: 700, color: C.text }}>@{notification.from.username}</span>
+                                    {" invited you to "}
+                                    <span style={{ fontWeight: 700, color: C.tintSoft }}>{notification.party.title}</span>
+                                </div>
+                                <div style={{ ...T.footnote, color: C.textMuted, marginTop: 3 }}>
+                                    {notification.party.venueName} · {formatWhen(notification.party.start)}
+                                </div>
                             </div>
-                            <div style={{ color: C.textMuted, fontSize: 12, marginTop: 2 }}>
-                                {notification.party.venueName} · {formatWhen(notification.party.start)}
-                            </div>
+                        </Pressable>
+
+                        <div style={{ display: "flex", gap: S.sm }}>
+                            <Button
+                                label="Decline"
+                                variant="secondary"
+                                size="md"
+                                disabled={busy === notification.id}
+                                onClick={() => decline(notification.id)}
+                                style={{ flex: 1 }}
+                            />
+                            <Button
+                                label={"Accept · " + money(notification.party.share)}
+                                size="md"
+                                busy={busy === notification.id}
+                                onClick={() => accept(notification.id, notification.from.username)}
+                                style={{ flex: 1.4 }}
+                            />
                         </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                        <button
-                            onClick={() => accept(notification.id, notification.from.username)}
-                            disabled={busy === notification.id}
-                            style={{
-                                flex: 1,
-                                height: 44,
-                                border: "none",
-                                borderRadius: 12,
-                                background: GRAD,
-                                color: "#fff",
-                                fontWeight: 700,
-                                fontSize: 14,
-                                fontFamily: "Outfit, sans-serif",
-                                cursor: "pointer",
-                                opacity: busy === notification.id ? 0.6 : 1
-                            }}
-                        >
-                            Accept · pay {money(notification.party.share)}
-                        </button>
-                        <button
-                            onClick={() => decline(notification.id)}
-                            disabled={busy === notification.id}
-                            style={{
-                                flex: 1,
-                                height: 44,
-                                border: "1px solid var(--km-veil-16)",
-                                borderRadius: 12,
-                                background: "var(--km-veil-05)",
-                                color: C.textDim,
-                                fontWeight: 600,
-                                fontSize: 14,
-                                fontFamily: "Outfit, sans-serif",
-                                cursor: "pointer"
-                            }}
-                        >
-                            Decline
-                        </button>
-                    </div>
-                </div>
-            ))}
-        </div>
+                    </Card>
+                ))}
+            </ScrollBody>
+        </>
     );
 }

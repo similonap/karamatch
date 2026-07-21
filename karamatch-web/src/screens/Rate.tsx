@@ -1,13 +1,30 @@
 import { useState } from "react";
 import { api } from "../api";
 import { useApp } from "../AppContext";
-import { C, GRAD, roundBack } from "../theme";
-import { Avatar, EmptyCard, ErrorNote, Loading, MatchBadge, useAsync } from "../ui";
+import { C, S, S2, T } from "../design/tokens";
+import {
+    AppBar,
+    Avatar,
+    BottomBar,
+    Button,
+    Card,
+    EmptyState,
+    ErrorNote,
+    MatchBadge,
+    ScrollBody,
+    Skeleton,
+    StarInput,
+    TextField,
+    plural,
+    useAsync
+} from "../ui";
 
 interface Draft {
     stars: number;
     text: string;
 }
+
+const STAR_WORDS = ["", "Rough night", "Off-key", "Solid", "Great voice", "Absolute star"];
 
 export default function Rate() {
     const app = useApp();
@@ -25,6 +42,8 @@ export default function Rate() {
     function update(username: string, changes: Partial<Draft>) {
         setDrafts(current => ({ ...current, [username]: { ...draftFor(username), ...changes } }));
     }
+
+    const rated = Object.values(drafts).filter(draft => draft.stars > 0).length;
 
     async function submit() {
         if (!partyId) {
@@ -52,129 +71,84 @@ export default function Rate() {
         }
     }
 
+    const crewList = crew.data ?? [];
+
     return (
-        <div
-            style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "auto",
-                padding: "24px 24px 40px",
-                gap: 18
-            }}
-        >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button onClick={() => app.goTab("mine")} style={{ ...roundBack, width: 36, height: 36, fontSize: 16 }}>
-                    ‹
-                </button>
-                <div>
-                    <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700 }}>
-                        Rate your crew
-                    </div>
-                    <div style={{ color: C.textMuted, fontSize: 13 }}>
-                        {party.data ? party.data.title + " · " + (party.data.venue?.name ?? "") : "…"}
-                    </div>
-                </div>
-            </div>
+        <>
+            <AppBar
+                title="Rate your crew"
+                onBack={() => app.goTab("mine")}
+                right={
+                    crewList.length > 0 ? (
+                        <span style={{ ...T.caption, color: C.textMuted, paddingRight: S.sm }}>
+                            {rated}/{crewList.length}
+                        </span>
+                    ) : null
+                }
+            />
 
-            {crew.loading ? <Loading /> : null}
-            {crew.error ? <ErrorNote message={crew.error} /> : null}
-            {error ? <ErrorNote message={error} /> : null}
-            {!crew.loading && (crew.data ?? []).length === 0 ? (
-                <EmptyCard>You sang this one solo — nobody to rate.</EmptyCard>
-            ) : null}
+            <ScrollBody style={{ paddingTop: S2.s12 }}>
+                {party.data ? (
+                    <div style={{ ...T.caption, color: C.textMuted, flexShrink: 0 }}>
+                        {party.data.title}
+                        {party.data.venue?.name ? " · " + party.data.venue.name : ""}
+                    </div>
+                ) : null}
 
-            {(crew.data ?? []).map(member => {
-                const draft = draftFor(member.username);
-                return (
-                    <div
-                        key={member.id}
-                        style={{
-                            borderRadius: 20,
-                            border: "1px solid var(--km-veil-10)",
-                            background: "var(--km-veil-04)",
-                            padding: 16,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 12,
-                            flexShrink: 0
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <Avatar
-                                name={member.name}
-                                photoUrl={member.photoUrl}
-                                seed={member.id}
-                                size={44}
-                                fontSize={17}
-                            />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: 700, fontSize: 15 }}>{member.name}</div>
-                                <div style={{ color: C.textMuted, fontSize: 12 }}>@{member.username}</div>
+                {crew.loading ? <Skeleton height={190} count={2} /> : null}
+                {crew.error ? <ErrorNote message={crew.error} /> : null}
+                {error ? <ErrorNote message={error} /> : null}
+
+                {!crew.loading && !crew.error && crewList.length === 0 ? (
+                    <EmptyState icon="users" title="You sang this one solo" body="Nobody else to rate for this night." />
+                ) : null}
+
+                {crewList.map(member => {
+                    const draft = draftFor(member.username);
+                    return (
+                        <Card key={member.id} style={{ gap: S2.s12 }} highlight={draft.stars > 0}>
+                            <div style={{ display: "flex", alignItems: "center", gap: S2.s12 }}>
+                                <Avatar name={member.name} photoUrl={member.photoUrl} seed={member.id} size={42} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ ...T.body, fontWeight: 700, color: C.text }}>{member.name}</div>
+                                    <div style={{ ...T.caption, color: C.textMuted }}>@{member.username}</div>
+                                </div>
+                                <MatchBadge pct={member.matchPct} />
                             </div>
-                            <MatchBadge pct={member.matchPct} />
-                        </div>
 
-                        <div style={{ display: "flex", gap: 6 }}>
-                            {[1, 2, 3, 4, 5].map(star => (
-                                <button
-                                    key={star}
-                                    onClick={() => update(member.username, { stars: star })}
-                                    style={{
-                                        width: 40,
-                                        height: 40,
-                                        border: "none",
-                                        background: "none",
-                                        fontSize: 26,
-                                        cursor: "pointer",
-                                        color: star <= draft.stars ? C.gold : "var(--km-veil-18)",
-                                        padding: 0
-                                    }}
-                                >
-                                    ★
-                                </button>
-                            ))}
-                        </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: S.sm }}>
+                                <StarInput value={draft.stars} onChange={stars => update(member.username, { stars })} />
+                                {draft.stars > 0 ? (
+                                    <span style={{ ...T.caption, color: C.gold }}>{STAR_WORDS[draft.stars]}</span>
+                                ) : null}
+                            </div>
 
-                        <textarea
-                            value={draft.text}
-                            onChange={event => update(member.username, { text: event.target.value })}
-                            placeholder="Write a short review…"
-                            rows={2}
-                            style={{
-                                borderRadius: 12,
-                                border: "1px solid var(--km-veil-14)",
-                                background: "var(--km-veil-06)",
-                                color: C.text,
-                                padding: "10px 14px",
-                                fontSize: 14,
-                                fontFamily: "Outfit, sans-serif",
-                                resize: "none"
-                            }}
-                        />
-                    </div>
-                );
-            })}
+                            {/* The review box only appears once they have stars —
+                                an empty textarea per person made this screen a wall. */}
+                            {draft.stars > 0 ? (
+                                <TextField
+                                    value={draft.text}
+                                    onChange={text => update(member.username, { text })}
+                                    placeholder="Add a few words (optional)"
+                                    multiline
+                                    maxLength={280}
+                                />
+                            ) : null}
+                        </Card>
+                    );
+                })}
+            </ScrollBody>
 
-            <button
-                onClick={submit}
-                disabled={busy}
-                style={{
-                    height: 56,
-                    border: "none",
-                    borderRadius: 18,
-                    background: GRAD,
-                    color: "#fff",
-                    fontSize: 17,
-                    fontWeight: 700,
-                    fontFamily: "Outfit, sans-serif",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                    opacity: busy ? 0.6 : 1
-                }}
-            >
-                {busy ? "Posting…" : "Submit reviews"}
-            </button>
-        </div>
+            {crewList.length > 0 ? (
+                <BottomBar>
+                    <Button
+                        label={busy ? "Posting" : rated > 0 ? "Post " + plural(rated, "review", "reviews") : "Rate someone first"}
+                        onClick={submit}
+                        disabled={rated === 0 || busy}
+                        busy={busy}
+                    />
+                </BottomBar>
+            ) : null}
+        </>
     );
 }

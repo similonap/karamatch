@@ -1,157 +1,134 @@
 import { useApp } from "../AppContext";
 import type { Tab } from "../AppContext";
-import { C, GRAD } from "../theme";
-import { Avatar } from "../ui";
+import { C, LAYOUT, S, T } from "../design/tokens";
+import { Icon } from "../design/icons";
+import type { IconName } from "../design/icons";
+import { Avatar, IconButton, Pressable, Transition, Wordmark } from "../ui";
 import VenuesTab from "./tabs/VenuesTab";
 import OpenPartiesTab from "./tabs/OpenPartiesTab";
 import MatchTab from "./tabs/MatchTab";
 import FriendsTab from "./tabs/FriendsTab";
 import MineTab from "./tabs/MineTab";
 
-const TABS: { key: Tab; label: string }[] = [
-    { key: "venues", label: "Venues" },
-    { key: "parties", label: "Parties" },
-    { key: "match", label: "Match" },
-    { key: "friends", label: "Friends" },
-    { key: "mine", label: "Mine" }
+const TABS: { key: Tab; label: string; icon: IconName }[] = [
+    { key: "venues", label: "Venues", icon: "pin" },
+    { key: "parties", label: "Parties", icon: "mic" },
+    { key: "match", label: "Match", icon: "spark" },
+    { key: "friends", label: "Friends", icon: "users" },
+    { key: "mine", label: "Mine", icon: "calendar" }
 ];
 
 export default function MainTabs() {
     const app = useApp();
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            {/* App bar: wordmark left, actions right — one layout for both platforms. */}
             <div
                 style={{
-                    padding: "14px 24px 12px",
+                    height: LAYOUT.appBar,
+                    flexShrink: 0,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    flexShrink: 0
+                    padding: "0 " + S.sm + "px 0 " + LAYOUT.gutter + "px",
+                    boxSizing: "border-box"
                 }}
             >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <button
+                <Wordmark />
+                <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <IconButton icon="bell" label="Notifications" badge={app.notifCount} onClick={() => app.go("notifs")} />
+                    <Pressable
                         onClick={() => app.go("profile")}
+                        ariaLabel="Your profile"
+                        title="Your profile"
                         style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: "50%",
-                            border: "1px solid rgba(255,61,143,.4)",
-                            background: "transparent",
-                            padding: 0,
-                            cursor: "pointer",
-                            overflow: "hidden"
+                            width: LAYOUT.touch,
+                            height: LAYOUT.touch,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
                         }}
-                        title="Edit profile"
                     >
                         <Avatar
                             name={app.me?.name ?? "You"}
                             photoUrl={app.me?.photoUrl}
                             seed={app.me?.id ?? "me"}
-                            size={36}
-                            fontSize={14}
+                            size={32}
                         />
-                    </button>
-                    <button
-                        onClick={() => app.go("notifs")}
-                        style={{
-                            position: "relative",
-                            width: 38,
-                            height: 38,
-                            borderRadius: "50%",
-                            border: "1px solid var(--km-veil-14)",
-                            background: "var(--km-veil-06)",
-                            color: C.text,
-                            fontSize: 16,
-                            cursor: "pointer"
-                        }}
-                        title="Notifications"
-                    >
-                        🔔
-                        {app.notifCount > 0 ? (
-                            <span
-                                style={{
-                                    position: "absolute",
-                                    top: -4,
-                                    right: -4,
-                                    minWidth: 18,
-                                    height: 18,
-                                    borderRadius: 999,
-                                    background: C.pink,
-                                    color: "#fff",
-                                    fontSize: 11,
-                                    fontWeight: 800,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    padding: "0 4px",
-                                    boxShadow: "0 0 12px rgba(255,61,143,.6)"
-                                }}
-                            >
-                                {app.notifCount}
-                            </span>
-                        ) : null}
-                    </button>
+                    </Pressable>
                 </div>
-                <div style={{ fontFamily: "Unbounded, sans-serif", fontWeight: 900, fontSize: 19 }}>
-                    Kara<span style={{ color: C.pink }}>Match</span>
-                </div>
-                <div style={{ width: 38 }} />
             </div>
 
-            {app.tab === "venues" ? <VenuesTab /> : null}
-            {app.tab === "parties" ? <OpenPartiesTab /> : null}
-            {app.tab === "match" ? <MatchTab /> : null}
-            {app.tab === "friends" ? <FriendsTab /> : null}
-            {app.tab === "mine" ? <MineTab /> : null}
+            {/* Tab content cross-fades — tabs never slide, only stack pushes do. */}
+            <Transition mode="fade" keyed={app.tab}>
+                {app.tab === "venues" ? <VenuesTab /> : null}
+                {app.tab === "parties" ? <OpenPartiesTab /> : null}
+                {app.tab === "match" ? <MatchTab /> : null}
+                {app.tab === "friends" ? <FriendsTab /> : null}
+                {app.tab === "mine" ? <MineTab /> : null}
+            </Transition>
 
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: "10px 20px 30px",
-                    background: "linear-gradient(180deg,transparent,var(--km-bg-deep) 30%)",
-                    display: "flex",
-                    gap: 6
-                }}
-            >
-                <div
-                    style={{
-                        flex: 1,
-                        display: "flex",
-                        background: "var(--km-veil-06)",
-                        border: "1px solid var(--km-veil-10)",
-                        borderRadius: 20,
-                        padding: 6,
-                        backdropFilter: "blur(14px)"
-                    }}
-                >
-                    {TABS.map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => app.goTab(tab.key)}
+            <TabBar current={app.tab} onSelect={app.goTab} />
+        </div>
+    );
+}
+
+// A flat, opaque, edge-to-edge tab bar: hairline on top, icon over label, the
+// selected tab marked by a filled glyph and the tint colour.
+//
+// Explicitly *not* a floating translucent pill. That treatment is an iOS 26
+// idiom, it renders differently wherever backdrop-filter is unsupported, and
+// it would break the "identical on both platforms" requirement. This one
+// composites the same everywhere.
+function TabBar({ current, onSelect }: { current: Tab; onSelect: (tab: Tab) => void }) {
+    return (
+        <nav
+            style={{
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "stretch",
+                height: LAYOUT.tabBar + LAYOUT.safeBottom,
+                paddingBottom: LAYOUT.safeBottom,
+                background: C.surface,
+                borderTop: "1px solid " + C.border,
+                boxSizing: "border-box"
+            }}
+        >
+            {TABS.map(tab => {
+                const on = current === tab.key;
+                return (
+                    <Pressable
+                        key={tab.key}
+                        onClick={() => onSelect(tab.key)}
+                        ariaLabel={tab.label}
+                        scaleTo={0.92}
+                        opacityTo={0.6}
+                        style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 3,
+                            color: on ? C.tint : C.textMuted,
+                            transition: "color 160ms ease"
+                        }}
+                    >
+                        <Icon name={tab.icon} size={24} solid={on} strokeWidth={1.8} />
+                        <span
                             style={{
-                                flex: 1,
-                                height: 46,
-                                border: "none",
-                                borderRadius: 15,
-                                background: app.tab === tab.key ? GRAD : "transparent",
-                                color: app.tab === tab.key ? "#fff" : C.textMuted,
-                                fontFamily: "Outfit, sans-serif",
-                                fontWeight: 700,
-                                fontSize: 12,
-                                cursor: "pointer",
-                                padding: 0
+                                ...T.footnote,
+                                fontSize: 10,
+                                fontWeight: on ? 700 : 500,
+                                letterSpacing: 0.1
                             }}
                         >
                             {tab.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        </div>
+                        </span>
+                    </Pressable>
+                );
+            })}
+        </nav>
     );
 }

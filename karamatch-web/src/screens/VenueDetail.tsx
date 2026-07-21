@@ -2,8 +2,27 @@ import { useMemo, useState } from "react";
 import { api } from "../api";
 import type { RoomSlots } from "../api";
 import { useApp } from "../AppContext";
-import { C, inputStyle, primaryButton } from "../theme";
-import { ErrorNote, Loading, formatDayLabel, formatTime, money, optionStyle, useAsync } from "../ui";
+import { C, LAYOUT, R, S, S2, T } from "../design/tokens";
+import { Icon } from "../design/icons";
+import {
+    AppBar,
+    BottomBar,
+    Button,
+    Card,
+    ErrorNote,
+    Loading,
+    OptionPill,
+    Pressable,
+    Rating,
+    ScrollBody,
+    Section,
+    Stepper,
+    TextField,
+    formatDayLabel,
+    formatTime,
+    money,
+    useAsync
+} from "../ui";
 
 // Kept in step with TITLE_MAX_LENGTH in routers/parties.ts.
 const TITLE_MAX_LENGTH = 60;
@@ -27,6 +46,9 @@ export default function VenueDetail() {
     const [spots, setSpots] = useState<number | null>(null);
     const [title, setTitle] = useState("");
     const [busy, setBusy] = useState(false);
+    // Drives the collapsing header: 0 while the hero is fully visible, 1 once it
+    // has scrolled away and the solid nav bar has taken over.
+    const [scrollY, setScrollY] = useState(0);
 
     const roomSlots: RoomSlots[] = useMemo(() => slots.data ?? [], [slots.data]);
 
@@ -117,292 +139,292 @@ export default function VenueDetail() {
     }
 
     if (venue.loading || slots.loading) {
-        return <Loading label="Loading venue…" />;
+        return (
+            <>
+                <AppBar onBack={() => app.go("app")} />
+                <Loading label="Loading venue…" />
+            </>
+        );
     }
+
     if (venue.error || !venue.data) {
         return (
-            <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-                <button onClick={() => app.go("app")} style={{ ...primaryButton(true), height: 44 }}>
-                    ‹ Back
-                </button>
-                <ErrorNote message={venue.error ?? "Venue not found"} />
-            </div>
+            <>
+                <AppBar title="Venue" onBack={() => app.go("app")} />
+                <ScrollBody style={{ paddingTop: S.md }}>
+                    <ErrorNote message={venue.error ?? "Venue not found"} />
+                </ScrollBody>
+            </>
         );
     }
 
     const data = venue.data;
+    // The hero is 180 tall and the bar is 56, so it is fully handed over by the
+    // time the photo's bottom edge reaches the bar.
+    const collapse = Math.min(1, Math.max(0, (scrollY - 60) / (180 - LAYOUT.appBar - 60)));
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", paddingBottom: 120 }}>
-            <div
-                style={{
-                    height: 170,
-                    position: "relative",
-                    background: "repeating-linear-gradient(45deg,var(--km-stripe-a),var(--km-stripe-a) 10px,var(--km-stripe-b) 10px,var(--km-stripe-b) 20px)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0
-                }}
-            >
-                {data.imageUrl ? (
-                    <img
-                        src={data.imageUrl}
-                        alt={data.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={event => {
-                            (event.currentTarget as HTMLImageElement).style.display = "none";
-                        }}
-                    />
-                ) : null}
-                <button
-                    onClick={() => app.go("app")}
-                    style={{
-                        position: "absolute",
-                        top: 14,
-                        left: 16,
-                        width: 38,
-                        height: 38,
-                        borderRadius: "50%",
-                        border: "none",
-                        background: "var(--km-shadow)",
-                        color: "#fff",
-                        fontSize: 17,
-                        cursor: "pointer"
-                    }}
-                >
-                    ‹
-                </button>
-            </div>
+        <>
+            {/* The hero scrolls away with the content; only the back control is
+                pinned, floating over whatever has scrolled under it. */}
+            <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                <ScrollBody pad={false} gap={0} onScroll={setScrollY}>
+                    <div style={{ height: 180, flexShrink: 0, background: C.surface3, overflow: "hidden", position: "relative" }}>
+                        {data.imageUrl ? (
+                            <img
+                                src={data.imageUrl}
+                                alt=""
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                onError={event => {
+                                    (event.currentTarget as HTMLImageElement).style.display = "none";
+                                }}
+                            />
+                        ) : (
+                            <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: C.textFaint }}>
+                                <Icon name="mic" size={36} />
+                            </div>
+                        )}
+                        <div
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                background: "linear-gradient(180deg, rgba(0,0,0,.5) 0%, transparent 45%)",
+                                pointerEvents: "none"
+                            }}
+                        />
+                    </div>
 
-            <div style={{ padding: "18px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                    <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 22, fontWeight: 700 }}>{data.name}</div>
-                    <div style={{ color: C.textMuted, fontSize: 14, marginTop: 4 }}>
-                        ★ {data.rating.toFixed(1)} · {data.rooms.length} rooms · open till {data.openUntil}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: S.lg,
+                            padding: S.md + "px " + 20 + "px 0"
+                        }}
+                    >
+                <div style={{ flexShrink: 0 }}>
+                    <h1 style={{ ...T.title, color: C.text, margin: 0 }}>{data.name}</h1>
+                    <div style={{ display: "flex", alignItems: "center", gap: S.sm, marginTop: S2.s6, ...T.caption, color: C.textMuted }}>
+                        <Rating value={data.rating} />
+                        <span style={{ width: 3, height: 3, borderRadius: 2, background: C.textFaint }} />
+                        <span>{data.rooms.length} rooms</span>
+                        <span style={{ width: 3, height: 3, borderRadius: 2, background: C.textFaint }} />
+                        <span>open till {data.openUntil}</span>
                     </div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>When</div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                <Section title="When" hint="Sessions run one hour.">
+                    <div style={{ display: "flex", gap: S.sm }}>
                         {days.map(([key, sample]) => (
-                            <button
+                            <OptionPill
                                 key={key}
+                                label={formatDayLabel(sample)}
+                                selected={activeDay === key}
                                 onClick={() => {
                                     setDay(key);
                                     setTime(null);
                                 }}
-                                style={{
-                                    flex: 1,
-                                    height: 44,
-                                    borderRadius: 12,
-                                    border: "1px solid",
-                                    fontFamily: "Outfit, sans-serif",
-                                    fontWeight: 600,
-                                    fontSize: 13,
-                                    cursor: "pointer",
-                                    ...optionStyle(activeDay === key)
-                                }}
-                            >
-                                {formatDayLabel(sample)}
-                            </button>
+                            />
                         ))}
                         {days.length === 0 ? (
-                            <div style={{ color: C.textMuted, fontSize: 13 }}>No free slots in the next week.</div>
+                            <div style={{ ...T.caption, color: C.textMuted }}>No free slots in the next week.</div>
                         ) : null}
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                        {times.map(value => (
-                            <button
-                                key={value}
-                                onClick={() => setTime(value)}
-                                style={{
-                                    flex: 1,
-                                    height: 40,
-                                    borderRadius: 12,
-                                    border: "1px solid",
-                                    fontFamily: "Outfit, sans-serif",
-                                    fontWeight: 600,
-                                    fontSize: 13,
-                                    cursor: "pointer",
-                                    ...optionStyle(activeTime === value)
-                                }}
-                            >
-                                {value}
-                            </button>
-                        ))}
-                    </div>
-                    <div style={{ color: C.textMuted, fontSize: 12 }}>1-hour session</div>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>Choose a room</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        {data.rooms.map(room => {
-                            const selected = roomId === room.id;
-                            const option = optionStyle(selected);
-                            return (
-                                <button
-                                    key={room.id}
-                                    onClick={() => {
-                                        setRoomId(room.id);
-                                        setTime(null);
-                                        setSpots(null);
-                                    }}
-                                    style={{
-                                        height: 60,
-                                        borderRadius: 16,
-                                        border: "1px solid " + option.borderColor,
-                                        background: option.background,
-                                        color: C.text,
-                                        fontFamily: "Outfit, sans-serif",
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        padding: "0 16px"
-                                    }}
-                                >
-                                    <span style={{ textAlign: "left" }}>
-                                        <div style={{ fontWeight: 700, fontSize: 15 }}>{room.name}</div>
-                                        <div style={{ fontSize: 12, color: C.textMuted }}>{room.seats} seats</div>
-                                    </span>
-                                    <span style={{ fontWeight: 700, fontSize: 14, color: C.cyan }}>
-                                        {money(room.pricePerHour)}/hr
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {selectedRoom ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>Spots for other singers</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <button
-                                onClick={() => setSpots(Math.max(minSpots, openSpots - 1))}
-                                disabled={openSpots <= minSpots}
-                                style={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 12,
-                                    border: "1px solid",
-                                    fontSize: 20,
-                                    fontWeight: 700,
-                                    cursor: openSpots <= minSpots ? "default" : "pointer",
-                                    opacity: openSpots <= minSpots ? 0.4 : 1,
-                                    ...optionStyle(false)
-                                }}
-                            >
-                                −
-                            </button>
-                            <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700, minWidth: 28, textAlign: "center" }}>
-                                {openSpots}
-                            </div>
-                            <button
-                                onClick={() => setSpots(Math.min(maxSpots, openSpots + 1))}
-                                disabled={openSpots >= maxSpots}
-                                style={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 12,
-                                    border: "1px solid",
-                                    fontSize: 20,
-                                    fontWeight: 700,
-                                    cursor: openSpots >= maxSpots ? "default" : "pointer",
-                                    opacity: openSpots >= maxSpots ? 0.4 : 1,
-                                    ...optionStyle(false)
-                                }}
-                            >
-                                +
-                            </button>
-                        </div>
-                        <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
-                            {selectedRoom.seats} seats in this room: you plus {openSpots} open
-                            {openSpots < maxSpots ? " · " + (maxSpots - openSpots) + " kept free for people you bring yourself" : ""}
-                        </div>
-                    </div>
-                ) : null}
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>Name your party</div>
-                    <input
-                        value={title}
-                        onChange={event => setTitle(event.target.value)}
-                        maxLength={TITLE_MAX_LENGTH}
-                        placeholder="Rock Legends Only"
-                        style={{ ...inputStyle, height: 48, borderRadius: 14, fontSize: 15, padding: "0 16px" }}
-                    />
-                    <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
-                        This is what singers see in the open list — say what you're here to sing.
-                    </div>
-                </div>
-
-                <div
-                    style={{
-                        borderRadius: 16,
-                        border: "1px solid var(--km-veil-12)",
-                        background: "var(--km-veil-05)",
-                        padding: "14px 16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 6
-                    }}
-                >
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: C.textDim }}>
-                        <span>
-                            1h ·{" "}
-                            {selectedRoom ? selectedRoom.name + " · " + selectedRoom.seats + " seats" : "no room selected"}
-                        </span>
-                        <span style={{ color: C.text, fontWeight: 700 }}>{money(total)}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.textMuted }}>
-                        <span>per seat</span>
-                        <span style={{ color: C.cyan, fontWeight: 600 }}>
-                            {selectedRoom ? money(share) + " / person" : "—"}
-                        </span>
-                    </div>
-                    {selectedRoom && openSpots < maxSpots ? (
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.textMuted }}>
-                            <span>your part if all {openSpots} spots fill</span>
-                            <span style={{ color: C.cyan, fontWeight: 600 }}>{money(hostCost)}</span>
+                    {times.length > 0 ? (
+                        <div style={{ display: "flex", gap: S.sm, flexWrap: "wrap" }}>
+                            {times.map(value => (
+                                <OptionPill key={value} label={value} selected={activeTime === value} onClick={() => setTime(value)} />
+                            ))}
                         </div>
                     ) : null}
-                    <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5, marginTop: 4 }}>
-                        As host you pay the full amount now. Everyone who joins pays {selectedRoom ? money(share) : "their share"}{" "}
-                        back to you — the seats you keep free are yours to settle with the guests you bring.
+                </Section>
+
+                <Section title="Room">
+                    {data.rooms.map(room => {
+                        const selected = roomId === room.id;
+                        return (
+                            <Pressable
+                                key={room.id}
+                                onClick={() => {
+                                    setRoomId(room.id);
+                                    setTime(null);
+                                    setSpots(null);
+                                }}
+                                scaleTo={0.99}
+                                opacityTo={0.8}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: S.sm,
+                                    minHeight: 58,
+                                    padding: "0 " + S.md + "px",
+                                    borderRadius: R.md,
+                                    border: "1px solid " + (selected ? C.tintBorder : C.border),
+                                    background: selected ? C.tintBg : C.surface1,
+                                    transition: "background 140ms ease, border-color 140ms ease"
+                                }}
+                            >
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ ...T.body, fontWeight: 700, color: C.text }}>{room.name}</div>
+                                    <div style={{ ...T.footnote, color: C.textMuted }}>{room.seats} seats</div>
+                                </div>
+                                <div style={{ ...T.captionStrong, color: C.cyan, flexShrink: 0 }}>
+                                    {money(room.pricePerHour)}/hr
+                                </div>
+                            </Pressable>
+                        );
+                    })}
+                </Section>
+
+                {selectedRoom ? (
+                    <Section
+                        title="Spots for other singers"
+                        hint={
+                            selectedRoom.seats +
+                            " seats in this room: you plus " +
+                            openSpots +
+                            " open" +
+                            (openSpots < maxSpots
+                                ? " · " + (maxSpots - openSpots) + " kept free for people you bring yourself"
+                                : "")
+                        }
+                    >
+                        <Stepper
+                            value={openSpots}
+                            min={minSpots}
+                            max={maxSpots}
+                            onChange={setSpots}
+                            suffix={openSpots === 1 ? "spot" : "spots"}
+                        />
+                    </Section>
+                ) : null}
+
+                <Section title="Name your party" hint="This is what singers see in the open list.">
+                    <TextField
+                        value={title}
+                        onChange={setTitle}
+                        maxLength={TITLE_MAX_LENGTH}
+                        placeholder="Rock Legends Only"
+                    />
+                </Section>
+
+                {/* The price breakdown, laid out like a receipt so the host can
+                    see exactly what they front and what comes back. */}
+                <Card style={{ gap: S.sm }}>
+                    <Line
+                        label={selectedRoom ? "1h · " + selectedRoom.name : "1h · no room selected"}
+                        value={money(total)}
+                        strong
+                    />
+                    <Line label="Per seat" value={selectedRoom ? money(share) + " / person" : "—"} accent />
+                    {selectedRoom && openSpots < maxSpots ? (
+                        <Line label={"Your part if all " + openSpots + " fill"} value={money(hostCost)} accent />
+                    ) : null}
+                    <div style={{ ...T.footnote, color: C.textFaint, marginTop: S.xs, lineHeight: 1.5 }}>
+                        As host you pay the full amount now. Everyone who joins pays{" "}
+                        {selectedRoom ? money(share) : "their share"} back to you — seats you keep free are yours to settle
+                        with the guests you bring.
+                    </div>
+                </Card>
+                    </div>
+                </ScrollBody>
+
+                {/* Collapsing header: a scrim-backed chevron over the photo that
+                    hands over to a solid, titled nav bar once the hero is gone. */}
+                <div
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: LAYOUT.appBar,
+                        display: "flex",
+                        alignItems: "center",
+                        paddingLeft: S.xs,
+                        pointerEvents: "none"
+                    }}
+                >
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            background: C.surface,
+                            borderBottom: "1px solid " + C.border,
+                            opacity: collapse,
+                            transition: "opacity 120ms linear"
+                        }}
+                    />
+                    <Pressable
+                        onClick={() => app.go("app")}
+                        ariaLabel="Go back"
+                        style={{
+                            position: "relative",
+                            width: LAYOUT.touch,
+                            height: LAYOUT.touch,
+                            borderRadius: "50%",
+                            background: "rgba(7,4,13," + 0.55 * (1 - collapse) + ")",
+                            color: collapse > 0.5 ? C.text : "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            pointerEvents: "auto"
+                        }}
+                    >
+                        <Icon name="chevronLeft" size={22} strokeWidth={2.2} />
+                    </Pressable>
+                    <div
+                        style={{
+                            ...T.navTitle,
+                            position: "relative",
+                            color: C.text,
+                            opacity: collapse,
+                            minWidth: 0,
+                            paddingRight: S.md,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            transition: "opacity 120ms linear"
+                        }}
+                    >
+                        {data.name}
                     </div>
                 </div>
             </div>
 
-            <div
+            <BottomBar>
+                <Button
+                    label={
+                        busy
+                            ? "Booking"
+                            : canBook
+                              ? "Book & pay " + money(total)
+                              : roomPicked
+                                ? "Name your party"
+                                : "Select a room"
+                    }
+                    onClick={book}
+                    disabled={!canBook}
+                    busy={busy}
+                />
+            </BottomBar>
+        </>
+    );
+}
+
+function Line({ label, value, strong, accent }: { label: string; value: string; strong?: boolean; accent?: boolean }) {
+    return (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: S.sm }}>
+            <span style={{ ...T.caption, color: C.textMuted, minWidth: 0 }}>{label}</span>
+            <span
                 style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: "16px 24px 36px",
-                    background: "linear-gradient(180deg,transparent,var(--km-bg-deep) 40%)"
+                    ...(strong ? T.bodyStrong : T.captionStrong),
+                    color: accent ? C.cyan : C.text,
+                    flexShrink: 0
                 }}
             >
-                <button
-                    onClick={book}
-                    style={{
-                        ...primaryButton(canBook),
-                        boxShadow: canBook ? "0 8px 32px rgba(255,61,143,.35)" : "none"
-                    }}
-                >
-                    {busy
-                        ? "Booking…"
-                        : canBook
-                          ? "Book & pay " + money(total)
-                          : roomPicked
-                            ? "Name your party"
-                            : "Select a room"}
-                </button>
-            </div>
+                {value}
+            </span>
         </div>
     );
 }

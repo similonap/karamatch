@@ -1,0 +1,154 @@
+import type { CSSProperties } from "react";
+
+// One stroked icon set, drawn on a 24px grid with round caps and a 1.75 stem,
+// so everything optically matches at any size. The app used emoji before
+// (🔔 ◎ ★ ✓ ♪ ‹), which render as a different typeface per platform — the exact
+// thing the "identical on Android and iOS" brief rules out.
+//
+// Tab icons additionally have a `solid` form: outline when inactive, filled
+// when selected. Both platforms' native tab bars do this, and it carries the
+// selected state without relying on colour alone.
+
+export type IconName =
+    | "pin"
+    | "mic"
+    | "spark"
+    | "users"
+    | "calendar"
+    | "bell"
+    | "star"
+    | "check"
+    | "close"
+    | "chevronLeft"
+    | "chevronRight"
+    | "chevronDown"
+    | "search"
+    | "plus"
+    | "minus"
+    | "camera"
+    | "send"
+    | "sun"
+    | "moon"
+    | "logout"
+    | "crown"
+    | "music"
+    | "locate"
+    | "pencil"
+    | "clock"
+    | "card"
+    | "userPlus"
+    | "trash"
+    | "heart"
+    | "info"
+    | "share"
+    | "sliders";
+
+/** Icons that have a filled counterpart, used by the tab bar. */
+const SOLID: Partial<Record<IconName, string>> = {
+    pin: "M12 22s7.5-6.6 7.5-11.8A7.5 7.5 0 0 0 4.5 10.2C4.5 15.4 12 22 12 22Zm0-8.6a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z",
+    mic: "M12 2a3.5 3.5 0 0 0-3.5 3.5v6a3.5 3.5 0 0 0 7 0v-6A3.5 3.5 0 0 0 12 2Zm-7 9.5a1 1 0 0 1 2 0 5 5 0 0 0 10 0 1 1 0 0 1 2 0 7 7 0 0 1-6 6.93V20h2.5a1 1 0 0 1 0 2h-7a1 1 0 0 1 0-2H11v-1.57A7 7 0 0 1 5 11.5Z",
+    spark: "M12 2.2c.42 0 .79.26.94.65l1.62 4.32 4.32 1.62a1 1 0 0 1 0 1.87l-4.32 1.62-1.62 4.32a1 1 0 0 1-1.88 0L9.44 12.28 5.12 10.66a1 1 0 0 1 0-1.87l4.32-1.62 1.62-4.32c.15-.39.52-.65.94-.65ZM18.6 15.4l.62 1.63 1.63.62-1.63.62-.62 1.63-.62-1.63-1.63-.62 1.63-.62Z",
+    users: "M9.5 3.6a4 4 0 1 1 0 8 4 4 0 0 1 0-8ZM2.6 19.4a6.9 6.9 0 0 1 13.8 0 1.4 1.4 0 0 1-1.4 1.4H4a1.4 1.4 0 0 1-1.4-1.4Zm14.2-13a3.4 3.4 0 1 1 0 6.8 3.4 3.4 0 0 1 0-6.8Zm.6 8.4a5.9 5.9 0 0 1 4.6 4.9 1.2 1.2 0 0 1-1.2 1.1h-2.5a8.3 8.3 0 0 0-1.9-5.4 6 6 0 0 1 1-.6Z",
+    calendar:
+        "M8 2a1 1 0 0 1 1 1v1h6V3a1 1 0 1 1 2 0v1h.5A3.5 3.5 0 0 1 21 7.5V9H3V7.5A3.5 3.5 0 0 1 6.5 4H7V3a1 1 0 0 1 1-1ZM3 11h18v6.5a3.5 3.5 0 0 1-3.5 3.5h-11A3.5 3.5 0 0 1 3 17.5Zm12.7 3.3a1 1 0 0 0-1.4 0L11 17.6l-1.3-1.3a1 1 0 0 0-1.4 1.4l2 2a1 1 0 0 0 1.4 0l4-4a1 1 0 0 0 0-1.4Z"
+};
+
+/** Outline geometry. Multiple subpaths are separated so caps stay round. */
+const PATHS: Record<IconName, string[]> = {
+    pin: ["M12 21.2c0-.1 7-6.2 7-11.1a7 7 0 1 0-14 0c0 4.9 7 11 7 11.1Z", "M12 12.9a2.8 2.8 0 1 0 0-5.6 2.8 2.8 0 0 0 0 5.6Z"],
+    mic: ["M12 2.8a2.9 2.9 0 0 0-2.9 2.9v5.8a2.9 2.9 0 0 0 5.8 0V5.7A2.9 2.9 0 0 0 12 2.8Z", "M5.5 11.2a6.5 6.5 0 0 0 13 0", "M12 17.7v3.5", "M8.6 21.2h6.8"],
+    spark: ["M12 3.4 13.7 8 18.3 9.7 13.7 11.4 12 16l-1.7-4.6L5.7 9.7 10.3 8Z", "M18.4 15.6l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7Z"],
+    users: ["M9.4 11.4a3.8 3.8 0 1 0 0-7.6 3.8 3.8 0 0 0 0 7.6Z", "M3 20.2a6.4 6.4 0 0 1 12.8 0", "M16.8 5a3.2 3.2 0 0 1 0 6.4", "M17.6 14.9a5.6 5.6 0 0 1 3.4 5.3"],
+    calendar: ["M6.5 4.8h11A2.7 2.7 0 0 1 20.2 7.5v10A2.7 2.7 0 0 1 17.5 20.2h-11A2.7 2.7 0 0 1 3.8 17.5v-10A2.7 2.7 0 0 1 6.5 4.8Z", "M8.4 2.8v3.6", "M15.6 2.8v3.6", "M3.8 9.8h16.4", "M9 15.2l2 2 4-4"],
+    bell: ["M18 8.6a6 6 0 1 0-12 0c0 5.7-2.1 7-2.1 7h16.2s-2.1-1.3-2.1-7Z", "M10.2 19.4a2.1 2.1 0 0 0 3.6 0"],
+    star: ["M12 3.6l2.6 5.3 5.8.9-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.8l5.8-.9Z"],
+    check: ["M5.2 12.6l4.6 4.6L18.8 7.4"],
+    close: ["M6.2 6.2l11.6 11.6", "M17.8 6.2 6.2 17.8"],
+    chevronLeft: ["M14.8 5.2 7.9 12l6.9 6.8"],
+    chevronRight: ["M9.2 5.2 16.1 12l-6.9 6.8"],
+    chevronDown: ["M5.2 9.2 12 16.1l6.8-6.9"],
+    search: ["M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z", "M20.4 20.4 16.2 16.2"],
+    plus: ["M12 5.2v13.6", "M5.2 12h13.6"],
+    minus: ["M5.2 12h13.6"],
+    camera: [
+        "M5.6 6.9h1.6a2 2 0 0 0 1.7-1l.5-.9a1.5 1.5 0 0 1 1.3-.7h2.6a1.5 1.5 0 0 1 1.3.7l.5.9a2 2 0 0 0 1.7 1h1.6a2.6 2.6 0 0 1 2.6 2.6v8A2.6 2.6 0 0 1 18.4 20H5.6A2.6 2.6 0 0 1 3 17.5v-8a2.6 2.6 0 0 1 2.6-2.6Z",
+        "M12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z"
+    ],
+    send: ["M20.8 3.2 10.2 13.8", "M20.8 3.2 14.2 21l-3.9-7.2L3.2 9.9Z"],
+    sun: ["M12 16.2a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Z", "M12 2.4v2.1", "M12 19.5v2.1", "M2.4 12h2.1", "M19.5 12h2.1", "M5.2 5.2l1.5 1.5", "M17.3 17.3l1.5 1.5", "M18.8 5.2l-1.5 1.5", "M6.7 17.3l-1.5 1.5"],
+    moon: ["M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a8.6 8.6 0 1 0 11 11Z"],
+    logout: ["M9.4 3.8H6.2a2.4 2.4 0 0 0-2.4 2.4v11.6a2.4 2.4 0 0 0 2.4 2.4h3.2", "M16.2 8.2 20 12l-3.8 3.8", "M20 12H9.4"],
+    crown: ["M3.4 7.6 7.5 11l4.5-6.6L16.5 11l4.1-3.4-1.6 11.4a1.4 1.4 0 0 1-1.4 1.2H6.4A1.4 1.4 0 0 1 5 19Z"],
+    music: ["M9.6 17.4a2.9 2.9 0 1 1-5.8 0 2.9 2.9 0 0 1 5.8 0Z", "M20.2 15.4a2.9 2.9 0 1 1-5.8 0 2.9 2.9 0 0 1 5.8 0Z", "M9.6 17.4V6.2l10.6-2.4v11.6"],
+    locate: ["M12 19.6a7.6 7.6 0 1 0 0-15.2 7.6 7.6 0 0 0 0 15.2Z", "M12 14.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8Z", "M12 2v2.4", "M12 19.6V22", "M2 12h2.4", "M19.6 12H22"],
+    pencil: ["M4 20l.9-3.7L15.7 5.5a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L8.7 20Z", "M14.6 6.6l2.8 2.8"],
+    clock: ["M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17Z", "M12 7.4V12l3.1 2.1"],
+    card: ["M5.4 5.2h13.2A2.4 2.4 0 0 1 21 7.6v8.8a2.4 2.4 0 0 1-2.4 2.4H5.4A2.4 2.4 0 0 1 3 16.4V7.6a2.4 2.4 0 0 1 2.4-2.4Z", "M3 10.2h18", "M6.8 14.6h3.4"],
+    userPlus: ["M10 11.6a3.9 3.9 0 1 0 0-7.8 3.9 3.9 0 0 0 0 7.8Z", "M3 20.2a7 7 0 0 1 11.2-5.6", "M18 14.2v6", "M15 17.2h6"],
+    trash: ["M4.2 7h15.6", "M9.2 7V5.4A1.6 1.6 0 0 1 10.8 3.8h2.4A1.6 1.6 0 0 1 14.8 5.4V7", "M6.6 7l.8 12a2 2 0 0 0 2 1.9h5.2a2 2 0 0 0 2-1.9l.8-12"],
+    heart: ["M12 20.4S3.8 15.6 3.8 10.3A4.6 4.6 0 0 1 12 7.4a4.6 4.6 0 0 1 8.2 2.9c0 5.3-8.2 10.1-8.2 10.1Z"],
+    info: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z", "M12 11.2v5.2", "M12 7.6v.4"],
+    share: ["M12 15.8V3.6", "M8.2 7.4 12 3.6l3.8 3.8", "M5 13.8v4.2a2.4 2.4 0 0 0 2.4 2.4h9.2a2.4 2.4 0 0 0 2.4-2.4v-4.2"],
+    sliders: ["M4 7.4h4.2", "M13.4 7.4H20", "M4 16.6h6.6", "M15.8 16.6H20", "M10.8 7.4a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0Z", "M18.4 16.6a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0Z"]
+};
+
+export function Icon({
+    name,
+    size = 22,
+    color = "currentColor",
+    solid = false,
+    strokeWidth = 1.75,
+    style
+}: {
+    name: IconName;
+    size?: number;
+    color?: string;
+    /** Filled form, for a selected tab. Falls back to the outline if undrawn. */
+    solid?: boolean;
+    strokeWidth?: number;
+    style?: CSSProperties;
+}) {
+    const filled = solid ? SOLID[name] : undefined;
+
+    return (
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            focusable="false"
+            style={{ display: "block", flexShrink: 0, ...style }}
+        >
+            {filled ? (
+                <path d={filled} fill={color} />
+            ) : (
+                PATHS[name].map(d => (
+                    <path
+                        key={d}
+                        d={d}
+                        stroke={color}
+                        strokeWidth={strokeWidth}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                ))
+            )}
+        </svg>
+    );
+}
+
+/** A filled star, for ratings — the outline form reads as "not rated". */
+export function StarIcon({ size = 14, color, filled = true }: { size?: number; color?: string; filled?: boolean }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+            <path
+                d={PATHS.star[0]}
+                fill={filled ? color ?? "currentColor" : "none"}
+                stroke={color ?? "currentColor"}
+                strokeWidth={filled ? 0 : 1.75}
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}

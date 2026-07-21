@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { api, setToken } from "../api";
 import { useApp } from "../AppContext";
-import { C, inputStyle, primaryButton } from "../theme";
-import { ErrorNote } from "../ui";
+import { C, LAYOUT, S, T } from "../design/tokens";
+import { AppBar, BottomBar, Button, ErrorNote, Pressable, ScrollBody, StepHeader, TextField } from "../ui";
 
 export default function Register() {
     const app = useApp();
@@ -34,57 +34,43 @@ export default function Register() {
     }
 
     return (
-        <div
-            style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                padding: "24px 24px 40px",
-                gap: 18,
-                overflow: "auto"
-            }}
-        >
-            <div style={{ color: C.pink, fontSize: 13, fontWeight: 700, letterSpacing: 2 }}>STEP 1 OF 3</div>
-            <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1.2 }}>
-                Who's on the mic?
-            </div>
+        <>
+            <AppBar onBack={() => app.go("welcome")} bordered={false} />
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
-                <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" style={inputStyle} />
-                <input
+            <ScrollBody gap={S.md} bottomPad={S.md}>
+                <StepHeader step={1} total={3} title="Who's on the mic?" subtitle="This is how other singers will find you." />
+
+                <TextField value={name} onChange={setName} placeholder="Alex Rivera" label="Full name" />
+                <TextField
                     value={username}
-                    onChange={e => setUsername(e.target.value.replace(/^@/, ""))}
-                    placeholder="Username"
-                    style={inputStyle}
+                    onChange={value => setUsername(value.replace(/^@/, ""))}
+                    placeholder="alexsings"
+                    label="Username"
                 />
-                <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" style={inputStyle} />
-                <input
-                    type="password"
+                <TextField value={email} onChange={setEmail} type="email" placeholder="you@example.com" label="Email" />
+                <TextField
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => {
-                        if (e.key === "Enter") {
-                            void submit();
-                        }
-                    }}
-                    placeholder="Password"
-                    style={inputStyle}
+                    onChange={setPassword}
+                    type="password"
+                    onEnter={submit}
+                    placeholder="At least 8 characters"
+                    label="Password"
                 />
-            </div>
 
-            {error ? <ErrorNote message={error} /> : null}
+                {error ? <ErrorNote message={error} /> : null}
+            </ScrollBody>
 
-            <div style={{ flex: 1, minHeight: 20 }} />
-
-            <button onClick={submit} style={primaryButton(ready)}>
-                {busy ? "Creating account…" : "Continue"}
-            </button>
-            <div style={{ textAlign: "center", color: C.textMuted, fontSize: 14 }}>
-                Already singing?{" "}
-                <span onClick={() => app.go("signin")} style={{ color: C.pinkSoft, fontWeight: 700, cursor: "pointer" }}>
-                    Sign in
-                </span>
-            </div>
-        </div>
+            <BottomBar>
+                <Button label={busy ? "Creating account" : "Continue"} onClick={submit} disabled={!ready} busy={busy} />
+                <Pressable
+                    onClick={() => app.go("signin")}
+                    scaleTo={1}
+                    style={{ height: LAYOUT.touch, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+                >
+                    <span style={{ ...T.caption, color: C.textMuted }}>Already singing?</span>
+                    <span style={{ ...T.captionStrong, color: C.tintSoft }}>Sign in</span>
+                </Pressable>
+            </BottomBar>
+        </>
     );
 }

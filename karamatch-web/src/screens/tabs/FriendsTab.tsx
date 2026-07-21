@@ -1,8 +1,22 @@
 import { useState } from "react";
 import { api } from "../../api";
 import { useApp } from "../../AppContext";
-import { C, inputStyle, screenTitle, sectionLabel } from "../../theme";
-import { Avatar, EmptyCard, ErrorNote, Loading, MatchBadge, useAsync, useDebounced } from "../../ui";
+import { C, S, S2, T } from "../../design/tokens";
+import { StarIcon } from "../../design/icons";
+import {
+    Avatar,
+    Button,
+    EmptyState,
+    ErrorNote,
+    Group,
+    ListRow,
+    MatchBadge,
+    ScrollBody,
+    SearchField,
+    Skeleton,
+    useAsync,
+    useDebounced
+} from "../../ui";
 
 export default function FriendsTab() {
     const app = useApp();
@@ -30,119 +44,91 @@ export default function FriendsTab() {
     const people = suggestions.data ?? [];
 
     return (
-        <div
-            style={{
-                flex: 1,
-                overflow: "auto",
-                padding: "4px 24px 110px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 14
-            }}
-        >
-            <div style={screenTitle}>Friends</div>
+        <ScrollBody bottomPad={S.md} gap={S.md}>
+            <div style={{ paddingTop: S.xs, flexShrink: 0 }}>
+                <h1 style={{ ...T.title, color: C.text, margin: "0 0 " + S2.s12 + "px" }}>Friends</h1>
+                <SearchField value={query} onChange={setQuery} placeholder="Find singers by name or @username" />
+            </div>
 
-            <input
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                placeholder="Add by @username or email"
-                style={{ ...inputStyle, height: 48, borderRadius: 14, fontSize: 15, padding: "0 16px", flexShrink: 0 }}
-            />
-
-            {people.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={sectionLabel}>PEOPLE</div>
-                    {people.map(person => (
-                        <div
+            {/* Search results replace the list rather than pushing it down, so
+                the screen never has two competing lists on it at once. */}
+            {query.trim() ? (
+                <Group title={suggestions.loading ? "Searching" : people.length + " found"}>
+                    {people.length === 0 && !suggestions.loading ? (
+                        <ListRow title="No singers found" subtitle={"Nothing matches “" + query.trim() + "”"} last />
+                    ) : null}
+                    {people.map((person, index) => (
+                        <ListRow
                             key={person.id}
+                            last={index === people.length - 1}
                             onClick={() => app.openProfile(person.username)}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                                padding: "10px 12px",
-                                borderRadius: 14,
-                                border: "1px solid var(--km-veil-09)",
-                                background: "var(--km-veil-04)",
-                                flexShrink: 0,
-                                cursor: "pointer"
-                            }}
-                        >
-                            <Avatar name={person.name} photoUrl={person.photoUrl} seed={person.id} size={38} />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: 600, fontSize: 15 }}>{person.name}</div>
-                                <div style={{ color: C.textMuted, fontSize: 13 }}>@{person.username}</div>
-                            </div>
-                            <MatchBadge pct={person.matchPct} />
-                            <button
-                                onClick={event => {
-                                    event.stopPropagation();
-                                    void add(person.username);
-                                }}
-                                style={{
-                                    height: 36,
-                                    padding: "0 14px",
-                                    border: "1px solid rgba(41,224,255,.4)",
-                                    borderRadius: 10,
-                                    background: "rgba(41,224,255,.1)",
-                                    color: C.cyan,
-                                    fontWeight: 700,
-                                    fontSize: 13,
-                                    fontFamily: "Outfit, sans-serif",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                + Add
-                            </button>
-                        </div>
+                            leading={<Avatar name={person.name} photoUrl={person.photoUrl} seed={person.id} size={40} />}
+                            title={person.name}
+                            subtitle={"@" + person.username}
+                            trailing={
+                                <div style={{ display: "flex", alignItems: "center", gap: S.sm, flexShrink: 0 }}>
+                                    <MatchBadge pct={person.matchPct} />
+                                    <Button
+                                        label="Add"
+                                        icon="userPlus"
+                                        variant="tinted"
+                                        size="sm"
+                                        stopPropagation
+                                        onClick={() => void add(person.username)}
+                                    />
+                                </div>
+                            }
+                        />
                     ))}
-                </div>
-            ) : null}
+                </Group>
+            ) : (
+                <>
+                    {friends.loading ? <Skeleton height={62} count={4} radius={16} /> : null}
+                    {friends.error ? <ErrorNote message={friends.error} /> : null}
 
-            <div style={sectionLabel}>YOUR FRIENDS · {friendList.length}</div>
+                    {!friends.loading && !friends.error && friendList.length === 0 ? (
+                        <EmptyState
+                            icon="users"
+                            title="No friends yet"
+                            body="Search above to find singers you know, and add them to your crew."
+                        />
+                    ) : null}
 
-            {friends.loading ? <Loading /> : null}
-            {friends.error ? <ErrorNote message={friends.error} /> : null}
-            {!friends.loading && friendList.length === 0 ? (
-                <EmptyCard>
-                    No friends yet.
-                    <br />
-                    Search for a singer above and add them.
-                </EmptyCard>
-            ) : null}
-
-            {friendList.map(friend => (
-                <div
-                    key={friend.id}
-                    onClick={() => app.openProfile(friend.username)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        padding: "12px 14px",
-                        borderRadius: 16,
-                        border: "1px solid var(--km-veil-09)",
-                        background: "var(--km-veil-04)",
-                        flexShrink: 0,
-                        cursor: "pointer"
-                    }}
-                >
-                    <Avatar name={friend.name} photoUrl={friend.photoUrl} seed={friend.id} size={44} fontSize={17} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>{friend.name}</div>
-                        <div style={{ color: C.textMuted, fontSize: 13 }}>
-                            @{friend.username} · {friend.eventsCount} nights
-                        </div>
-                    </div>
-                    <MatchBadge pct={friend.matchPct} />
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ color: C.gold, fontWeight: 700, fontSize: 15 }}>
-                            ★ {friend.singerRating.toFixed(1)}
-                        </div>
-                        <div style={{ color: C.textMuted, fontSize: 11 }}>singer rating</div>
-                    </div>
-                </div>
-            ))}
-        </div>
+                    {friendList.length > 0 ? (
+                        <Group title={friendList.length + (friendList.length === 1 ? " friend" : " friends")}>
+                            {friendList.map((friend, index) => (
+                                <ListRow
+                                    key={friend.id}
+                                    last={index === friendList.length - 1}
+                                    onClick={() => app.openProfile(friend.username)}
+                                    leading={<Avatar name={friend.name} photoUrl={friend.photoUrl} seed={friend.id} size={44} />}
+                                    title={friend.name}
+                                    subtitle={"@" + friend.username + " · " + friend.eventsCount + " nights"}
+                                    chevron
+                                    trailing={
+                                        <div style={{ display: "flex", alignItems: "center", gap: S.sm, flexShrink: 0 }}>
+                                            <MatchBadge pct={friend.matchPct} />
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 3,
+                                                    color: C.gold,
+                                                    ...T.captionStrong
+                                                }}
+                                                title={friend.singerRating.toFixed(1) + " singer rating"}
+                                            >
+                                                <StarIcon size={12} />
+                                                {friend.singerRating.toFixed(1)}
+                                            </div>
+                                        </div>
+                                    }
+                                />
+                            ))}
+                        </Group>
+                    ) : null}
+                </>
+            )}
+        </ScrollBody>
     );
 }

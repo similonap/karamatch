@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { api } from "../api";
 import { useApp } from "../AppContext";
-import { C, GRAD, roundBack } from "../theme";
-import { ErrorNote, money } from "../ui";
+import { C, FONT, LAYOUT, R, S, S2, T } from "../design/tokens";
+import { Icon } from "../design/icons";
+import { AppBar, BottomBar, Button, Card, ErrorNote, ScrollBody, Spinner, money } from "../ui";
 
 type Phase = "idle" | "processing" | "done";
 
@@ -14,9 +15,12 @@ export default function Pay() {
 
     if (!pay) {
         return (
-            <div style={{ padding: 24 }}>
-                <ErrorNote message="Nothing to pay for." />
-            </div>
+            <>
+                <AppBar title="Payment" onBack={() => app.go("app")} />
+                <ScrollBody style={{ paddingTop: S.md }}>
+                    <ErrorNote message="Nothing to pay for." />
+                </ScrollBody>
+            </>
         );
     }
 
@@ -38,130 +42,124 @@ export default function Pay() {
         }
     }
 
+    if (phase === "processing") {
+        return (
+            <Centered>
+                <Spinner size={40} />
+                <div style={{ ...T.body, color: C.textDim }}>Processing payment…</div>
+            </Centered>
+        );
+    }
+
+    if (phase === "done") {
+        return (
+            <>
+                <Centered>
+                    <div
+                        style={{
+                            width: 76,
+                            height: 76,
+                            borderRadius: "50%",
+                            background: "color-mix(in srgb, var(--km-green) 14%, transparent)",
+                            border: "2px solid " + C.green,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: C.green,
+                            animation: "km-sheet-in 320ms cubic-bezier(.22,.61,.36,1)"
+                        }}
+                    >
+                        <Icon name="check" size={36} strokeWidth={2.4} />
+                    </div>
+                    <h1 style={{ ...T.title, color: C.text, margin: 0 }}>You're in</h1>
+                    <p style={{ ...T.callout, color: C.textMuted, maxWidth: 260, textAlign: "center", margin: 0 }}>
+                        {isJoin
+                            ? "Your share went to the host. Say hi in the party chat."
+                            : "Party booked. Invite friends, or leave it open for others to join."}
+                    </p>
+                </Centered>
+                <BottomBar>
+                    <Button label="Open party room" onClick={() => app.openRoom(pay.partyId)} />
+                </BottomBar>
+            </>
+        );
+    }
+
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 24 }}>
-            <button
-                onClick={() => app.go(isJoin ? "app" : "venue")}
-                style={{ ...roundBack, visibility: phase === "done" ? "hidden" : "visible" }}
-            >
-                ‹
-            </button>
+        <>
+            <AppBar title={isJoin ? "Join party" : "Book party"} onBack={() => app.go(isJoin ? "app" : "venue")} />
 
-            <div
-                style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    gap: 20,
-                    alignItems: "center",
-                    textAlign: "center"
-                }}
-            >
-                {phase === "idle" ? (
-                    <>
-                        <div style={{ color: C.textDim, fontSize: 14, fontWeight: 600, letterSpacing: 1 }}>
-                            {isJoin ? "YOUR SHARE" : "FULL PARTY — YOU HOST"}
-                        </div>
-                        <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 52, fontWeight: 900 }}>
-                            {money(pay.amount)}
-                        </div>
-                        <div style={{ color: C.textMuted, fontSize: 14, maxWidth: 260, lineHeight: 1.6 }}>
-                            {isJoin
-                                ? "Paid straight back to the host @" +
-                                  (pay.hostUsername ?? "") +
-                                  ". Your spot is locked once paid."
-                                : "You pay the party in full up front. Each person who joins pays their share back to you — so you're never left covering an empty room alone."}
-                        </div>
-                        {error ? <ErrorNote message={error} /> : null}
-                        <button
-                            onClick={confirm}
-                            style={{
-                                width: "100%",
-                                maxWidth: 300,
-                                height: 58,
-                                border: "none",
-                                borderRadius: 18,
-                                background: GRAD,
-                                color: "#fff",
-                                fontSize: 17,
-                                fontWeight: 700,
-                                fontFamily: "Outfit, sans-serif",
-                                cursor: "pointer",
-                                boxShadow: "0 8px 32px rgba(255,61,143,.4)",
-                                marginTop: 12
-                            }}
-                        >
-                            Pay {money(pay.amount)}
-                        </button>
-                    </>
-                ) : null}
+            <ScrollBody gap={S.md} style={{ paddingTop: S.lg }}>
+                {/* The amount is the whole point of this screen, so it gets the
+                    display type and nothing competes with it. */}
+                <div style={{ textAlign: "center", flexShrink: 0 }}>
+                    <div style={{ ...T.sectionHeader, color: C.textMuted }}>
+                        {isJoin ? "Your share" : "Full party — you host"}
+                    </div>
+                    <div
+                        style={{
+                            fontFamily: FONT.display,
+                            fontSize: 52,
+                            fontWeight: 800,
+                            letterSpacing: -2,
+                            color: C.text,
+                            marginTop: S.sm
+                        }}
+                    >
+                        {money(pay.amount)}
+                    </div>
+                </div>
 
-                {phase === "processing" ? (
-                    <>
+                <Card style={{ gap: S2.s12 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: S2.s12 }}>
                         <div
                             style={{
-                                width: 64,
-                                height: 64,
-                                borderRadius: "50%",
-                                border: "3px solid rgba(255,61,143,.25)",
-                                borderTopColor: C.pink,
-                                animation: "km-pulse 1s infinite"
-                            }}
-                        />
-                        <div style={{ color: C.textDim, fontSize: 15 }}>Processing payment…</div>
-                    </>
-                ) : null}
-
-                {phase === "done" ? (
-                    <>
-                        <div
-                            style={{
-                                width: 84,
-                                height: 84,
-                                borderRadius: "50%",
-                                background: "rgba(61,255,154,.12)",
-                                border: "2px solid " + C.green,
+                                width: 34,
+                                height: 34,
+                                borderRadius: R.sm,
+                                background: C.tintBg,
+                                color: C.tintSoft,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: 36,
-                                color: C.green,
-                                animation: "km-pop .3s ease"
+                                flexShrink: 0
                             }}
                         >
-                            ✓
+                            <Icon name="info" size={18} />
                         </div>
-                        <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 24, fontWeight: 700 }}>
-                            You're in!
-                        </div>
-                        <div style={{ color: C.textMuted, fontSize: 14, maxWidth: 260, lineHeight: 1.6 }}>
+                        <p style={{ ...T.caption, color: C.textDim, margin: 0 }}>
                             {isJoin
-                                ? "Your share went to the host. Say hi in the party chat!"
-                                : "Party booked. Invite friends or open it up for others to join."}
-                        </div>
-                        <button
-                            onClick={() => app.openRoom(pay.partyId)}
-                            style={{
-                                width: "100%",
-                                maxWidth: 300,
-                                height: 58,
-                                borderRadius: 18,
-                                background: "rgba(41,224,255,.12)",
-                                border: "1px solid rgba(41,224,255,.4)",
-                                color: C.cyan,
-                                fontSize: 16,
-                                fontWeight: 700,
-                                fontFamily: "Outfit, sans-serif",
-                                cursor: "pointer",
-                                marginTop: 12
-                            }}
-                        >
-                            Open party room →
-                        </button>
-                    </>
-                ) : null}
-            </div>
+                                ? "Paid straight back to @" + (pay.hostUsername ?? "the host") + ". Your spot is locked once paid."
+                                : "You pay the room in full up front. Everyone who joins pays their share back to you — so you are never left covering an empty room alone."}
+                        </p>
+                    </div>
+                </Card>
+
+                {error ? <ErrorNote message={error} /> : null}
+            </ScrollBody>
+
+            <BottomBar>
+                <Button label={"Pay " + money(pay.amount)} icon="card" onClick={confirm} />
+            </BottomBar>
+        </>
+    );
+}
+
+function Centered({ children }: { children: React.ReactNode }) {
+    return (
+        <div
+            style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: S.md,
+                padding: "0 " + LAYOUT.gutter + "px",
+                textAlign: "center"
+            }}
+        >
+            {children}
         </div>
     );
 }

@@ -2,16 +2,33 @@ import { useRef, useState } from "react";
 import { api } from "../api";
 import { useApp } from "../AppContext";
 import type { ThemeName } from "../AppContext";
-import { C, inputStyle, primaryButton, roundBack, sectionLabel } from "../theme";
-import { ErrorNote, Loading, useAsync, useDebounced } from "../ui";
+import { C, R, S, S2, T } from "../design/tokens";
+import { Icon } from "../design/icons";
+import type { IconName } from "../design/icons";
+import {
+    AppBar,
+    BottomBar,
+    Button,
+    ErrorNote,
+    Group,
+    ListRow,
+    Loading,
+    Pressable,
+    ScrollBody,
+    SearchField,
+    Section,
+    TextField,
+    useAsync,
+    useDebounced
+} from "../ui";
 import { SongRow } from "./SongPicker";
 
 const MAX_SONGS = 10;
 const MIN_SONGS = 3;
 
-const THEMES: { key: ThemeName; label: string; icon: string }[] = [
-    { key: "dark", label: "Dark", icon: "🌙" },
-    { key: "light", label: "Light", icon: "☀️" }
+const THEMES: { key: ThemeName; label: string; icon: IconName }[] = [
+    { key: "dark", label: "Dark", icon: "moon" },
+    { key: "light", label: "Light", icon: "sun" }
 ];
 
 export default function Profile() {
@@ -84,7 +101,7 @@ export default function Profile() {
 
     async function save() {
         if (await persist()) {
-            app.toast("Profile updated ✓");
+            app.toast("Profile updated");
             app.go("app");
         }
     }
@@ -104,94 +121,59 @@ export default function Profile() {
     const canSave = Boolean(name) && picked.length >= MIN_SONGS && !busy;
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 24px 12px", flexShrink: 0 }}>
-                <button onClick={() => app.go("app")} style={{ ...roundBack, width: 36, height: 36, fontSize: 16 }}>
-                    ‹
-                </button>
-                <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 20, fontWeight: 700, flex: 1 }}>
-                    Edit profile
-                </div>
-                <button
-                    onClick={app.logout}
-                    style={{
-                        height: 32,
-                        padding: "0 12px",
-                        borderRadius: 10,
-                        border: "1px solid var(--km-veil-16)",
-                        background: "var(--km-veil-05)",
-                        color: C.textDim,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        fontFamily: "Outfit, sans-serif",
-                        cursor: "pointer"
-                    }}
-                >
-                    Sign out
-                </button>
-            </div>
+        <>
+            <AppBar title="Edit profile" onBack={() => app.go("app")} />
 
-            <div
-                style={{
-                    flex: 1,
-                    overflow: "auto",
-                    padding: "8px 24px 130px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 22
-                }}
-            >
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                    <div
+            <ScrollBody gap={S.lg} style={{ paddingTop: S.md }}>
+                {/* Avatar with a camera badge — the badge is what makes it read as
+                    editable, rather than the old dashed "Add photo" ring. */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: S.sm, flexShrink: 0 }}>
+                    <Pressable
                         onClick={() => fileInput.current?.click()}
-                        style={{
-                            position: "relative",
-                            width: 104,
-                            height: 104,
-                            borderRadius: "50%",
-                            boxShadow: "0 0 34px rgba(255,61,143,.35)",
-                            background: me.photoUrl ? "transparent" : "var(--km-veil-06)",
-                            border: "1px dashed var(--km-veil-25)",
-                            cursor: "pointer",
-                            overflow: "hidden",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: C.textMuted,
-                            fontSize: 13,
-                            boxSizing: "border-box"
-                        }}
+                        ariaLabel="Change profile photo"
+                        style={{ position: "relative", width: 96, height: 96 }}
                     >
-                        {me.photoUrl ? (
-                            <img
-                                src={me.photoUrl}
-                                alt={me.name}
-                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            />
-                        ) : (
-                            "Add photo"
-                        )}
+                        <div
+                            style={{
+                                width: 96,
+                                height: 96,
+                                borderRadius: "50%",
+                                overflow: "hidden",
+                                background: C.surface2,
+                                border: "1px solid " + C.border,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: C.textFaint,
+                                boxSizing: "border-box"
+                            }}
+                        >
+                            {me.photoUrl ? (
+                                <img src={me.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                                <Icon name="camera" size={28} />
+                            )}
+                        </div>
                         <div
                             style={{
                                 position: "absolute",
                                 bottom: 0,
                                 right: 0,
-                                width: 32,
-                                height: 32,
+                                width: 30,
+                                height: 30,
                                 borderRadius: "50%",
-                                background: "linear-gradient(135deg,#FF3D8F,#B23DFF)",
-                                border: "2px solid " + C.bg,
+                                background: C.tint,
+                                border: "2.5px solid " + C.surface,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: 14,
-                                color: "#fff",
-                                pointerEvents: "none"
+                                color: C.onTint,
+                                boxSizing: "border-box"
                             }}
                         >
-                            ✎
+                            <Icon name="camera" size={14} strokeWidth={2} />
                         </div>
-                    </div>
+                    </Pressable>
                     <input
                         ref={fileInput}
                         type="file"
@@ -204,247 +186,134 @@ export default function Profile() {
                             }
                         }}
                     />
-                    <div style={{ color: C.textMuted, fontSize: 12, textAlign: "center", maxWidth: 260 }}>
-                        Tap the circle to upload a photo.
-                    </div>
+                    <div style={{ ...T.footnote, color: C.textMuted }}>Tap to change your photo</div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={sectionLabel}>DETAILS</div>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ fontSize: 12, color: C.textMuted }}>Display name</span>
-                        <input
-                            value={name}
-                            onChange={event => setName(event.target.value)}
-                            placeholder="Full name"
-                            style={{ ...inputStyle, height: 52 }}
-                        />
-                    </label>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ fontSize: 12, color: C.textMuted }}>Username</span>
-                        <div
-                            style={{
-                                height: 52,
-                                borderRadius: 16,
-                                border: "1px solid var(--km-veil-14)",
-                                background: "var(--km-veil-04)",
-                                color: C.textMuted,
-                                padding: "0 18px",
-                                fontSize: 16,
-                                display: "flex",
-                                alignItems: "center",
-                                fontWeight: 500,
-                                boxSizing: "border-box"
-                            }}
-                        >
-                            @{me.username}
-                        </div>
-                        <div style={{ fontSize: 11, color: C.textFaint }}>
-                            Usernames can't be changed. Contact support if needed.
-                        </div>
-                    </label>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ fontSize: 12, color: C.textMuted }}>Bio</span>
-                        <textarea
-                            value={bio}
-                            onChange={event => setBio(event.target.value)}
-                            placeholder="Say what you love to sing…"
-                            rows={2}
-                            style={{
-                                borderRadius: 16,
-                                border: "1px solid var(--km-veil-14)",
-                                background: "var(--km-veil-06)",
-                                color: C.text,
-                                padding: "12px 18px",
-                                fontSize: 15,
-                                fontFamily: "Outfit, sans-serif",
-                                resize: "none"
-                            }}
-                        />
-                    </label>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ fontSize: 12, color: C.textMuted }}>Location</span>
-                        <button
+                <Section title="Details" gap={S2.s12}>
+                    <TextField value={name} onChange={setName} label="Display name" placeholder="Full name" />
+                    <TextField
+                        value={bio}
+                        onChange={setBio}
+                        label="Bio"
+                        placeholder="Say what you love to sing…"
+                        multiline
+                        maxLength={200}
+                    />
+                    <Group>
+                        <ListRow icon="users" title="Username" value={"@" + me.username} />
+                        <ListRow
+                            icon="pin"
+                            title="Location"
+                            subtitle={
+                                me.location
+                                    ? me.location.label || me.location.lat.toFixed(4) + ", " + me.location.lng.toFixed(4)
+                                    : "Not set — venues and parties need this"
+                            }
+                            chevron
+                            last
                             onClick={() => void editLocation()}
-                            disabled={busy}
-                            style={{
-                                height: 52,
-                                borderRadius: 16,
-                                border: "1px solid var(--km-veil-14)",
-                                background: "var(--km-veil-06)",
-                                color: C.text,
-                                padding: "0 18px",
-                                fontSize: 15,
-                                fontFamily: "Outfit, sans-serif",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 10,
-                                textAlign: "left",
-                                cursor: busy ? "default" : "pointer",
-                                boxSizing: "border-box"
-                            }}
-                        >
-                            <span style={{ flexShrink: 0 }}>📍</span>
-                            <span
-                                style={{
-                                    flex: 1,
-                                    minWidth: 0,
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    color: me.location ? C.text : C.textMuted
-                                }}
-                            >
-                                {me.location
-                                    ? me.location.label ||
-                                      me.location.lat.toFixed(4) + ", " + me.location.lng.toFixed(4)
-                                    : "Set your location"}
-                            </span>
-                            <span style={{ color: C.textMuted, fontSize: 18, flexShrink: 0 }}>›</span>
-                        </button>
-                        <div style={{ fontSize: 11, color: C.textFaint }}>
-                            This decides which venues and parties you see.
-                        </div>
-                    </label>
-                </div>
+                        />
+                    </Group>
+                </Section>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={sectionLabel}>APPEARANCE</div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                <Section title="Appearance" hint="Saved on this device — it is not part of your profile.">
+                    <div style={{ display: "flex", gap: S.sm }}>
                         {THEMES.map(option => {
                             const on = app.theme === option.key;
                             return (
-                                <button
+                                <Pressable
                                     key={option.key}
                                     onClick={() => app.setTheme(option.key)}
+                                    scaleTo={0.97}
                                     style={{
                                         flex: 1,
-                                        height: 64,
-                                        borderRadius: 16,
-                                        border: "1px solid " + (on ? "rgba(255,61,143,.45)" : "var(--km-veil-14)"),
-                                        background: on ? "rgba(255,61,143,.12)" : "var(--km-veil-05)",
-                                        color: on ? C.pinkSoft : C.textDim,
-                                        fontFamily: "Outfit, sans-serif",
-                                        fontSize: 13,
-                                        fontWeight: 700,
-                                        cursor: "pointer",
+                                        height: 62,
+                                        borderRadius: R.md,
+                                        border: "1px solid " + (on ? C.tintBorder : C.border),
+                                        background: on ? C.tintBg : C.surface1,
+                                        color: on ? C.tintSoft : C.textDim,
                                         display: "flex",
                                         flexDirection: "column",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        gap: 4
+                                        gap: 4,
+                                        transition: "background 140ms ease, border-color 140ms ease"
                                     }}
                                 >
-                                    <span style={{ fontSize: 20 }}>{option.icon}</span>
-                                    {option.label}
-                                </button>
+                                    <Icon name={option.icon} size={20} />
+                                    <span style={{ ...T.footnote, fontWeight: 700 }}>{option.label}</span>
+                                </Pressable>
                             );
                         })}
                     </div>
-                    <div style={{ fontSize: 11, color: C.textFaint }}>
-                        Saved on this device — it isn't part of your profile.
-                    </div>
-                </div>
+                </Section>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                        <div style={sectionLabel}>FAVOURITE SONGS</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: C.cyan }}>
-                            {picked.length}/{MAX_SONGS}
-                        </div>
-                    </div>
-                    <div style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5 }}>
+                <Section title={"Favourite songs · " + picked.length + "/" + MAX_SONGS} gap={S2.s12}>
+                    <div style={{ ...T.caption, color: C.textMuted }}>
                         These drive your match score — pick the songs you love to sing.
                     </div>
 
                     {pickedSongs.length > 0 ? (
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", gap: S2.s6, flexWrap: "wrap" }}>
                             {pickedSongs.map(song => (
-                                <div
+                                <Pressable
                                     key={song.id}
                                     onClick={() => toggle(song.id)}
+                                    ariaLabel={"Remove " + song.title}
+                                    scaleTo={0.95}
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: 8,
-                                        background: "rgba(255,61,143,.12)",
-                                        border: "1px solid rgba(255,61,143,.45)",
-                                        borderRadius: 999,
-                                        padding: "6px 10px 6px 12px",
-                                        cursor: "pointer",
+                                        gap: 6,
+                                        background: C.tintBg,
+                                        border: "1px solid " + C.tintBorder,
+                                        borderRadius: R.full,
+                                        padding: "5px 8px 5px 11px",
                                         maxWidth: "100%"
                                     }}
                                 >
                                     <span
                                         style={{
-                                            fontSize: 13,
+                                            ...T.footnote,
+                                            fontSize: 12,
                                             fontWeight: 600,
-                                            color: C.pinkPale,
+                                            color: C.tintSoft,
                                             whiteSpace: "nowrap",
                                             overflow: "hidden",
                                             textOverflow: "ellipsis",
-                                            maxWidth: 220
+                                            maxWidth: 200
                                         }}
                                     >
-                                        ♪ {song.title}
+                                        {song.title}
                                     </span>
-                                    <span
-                                        style={{
-                                            width: 18,
-                                            height: 18,
-                                            borderRadius: "50%",
-                                            background: "rgba(255,61,143,.3)",
-                                            color: "#fff",
-                                            fontSize: 12,
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0
-                                        }}
-                                    >
-                                        ×
-                                    </span>
-                                </div>
+                                    <Icon name="close" size={13} strokeWidth={2.4} style={{ color: C.tintSoft, opacity: 0.8 }} />
+                                </Pressable>
                             ))}
                         </div>
                     ) : null}
 
-                    <input
-                        value={query}
-                        onChange={event => setQuery(event.target.value)}
-                        placeholder="Search songs or artists to add"
-                        style={{ ...inputStyle, height: 48, borderRadius: 14, fontSize: 15, padding: "0 16px" }}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <SearchField value={query} onChange={setQuery} placeholder="Search songs or artists to add" />
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: S.sm }}>
                         {visibleSongs.map(song => (
                             <SongRow
                                 key={song.id}
                                 song={song}
                                 selected={picked.includes(song.id)}
                                 onToggle={() => toggle(song.id)}
-                                compact
                             />
                         ))}
                     </div>
-                </div>
+                </Section>
 
                 {error ? <ErrorNote message={error} /> : null}
-            </div>
 
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: "16px 24px 36px",
-                    background: "linear-gradient(180deg,transparent,var(--km-bg-deep) 40%)"
-                }}
-            >
-                <button onClick={save} style={primaryButton(canSave)}>
-                    {busy ? "Saving…" : "Save profile"}
-                </button>
-            </div>
-        </div>
+                <Button label="Sign out" icon="logout" variant="secondary" onClick={app.logout} />
+            </ScrollBody>
+
+            <BottomBar>
+                <Button label={busy ? "Saving" : "Save profile"} onClick={save} disabled={!canSave} busy={busy} />
+            </BottomBar>
+        </>
     );
 }

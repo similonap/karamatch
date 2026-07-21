@@ -3,7 +3,7 @@ import { api, getToken, setToken } from "./api";
 import type { Me } from "./api";
 import { AppContext } from "./AppContext";
 import type { AppApi, PayContext, Screen, Tab, ThemeName } from "./AppContext";
-import { PhoneFrame, Toast, Loading } from "./ui";
+import { PhoneFrame, Toast, Loading, Transition } from "./ui";
 import Welcome from "./screens/Welcome";
 import SignIn from "./screens/SignIn";
 import Register from "./screens/Register";
@@ -46,6 +46,7 @@ export default function App() {
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [notifCount, setNotifCount] = useState(0);
     const toastTimer = useRef<number | undefined>(undefined);
+    const direction = useTransitionDirection(screen);
 
     const toast = useCallback((message: string) => {
         window.clearTimeout(toastTimer.current);
@@ -182,11 +183,52 @@ export default function App() {
     return (
         <AppContext.Provider value={value}>
             <PhoneFrame>
-                {booting ? <Loading label="Signing you back in…" /> : <CurrentScreen screen={screen} />}
+                {booting ? (
+                    <Loading label="Signing you back in…" />
+                ) : (
+                    <Transition mode={direction} keyed={screen}>
+                        <CurrentScreen screen={screen} />
+                    </Transition>
+                )}
                 {toastMessage ? <Toast message={toastMessage} /> : null}
             </PhoneFrame>
         </AppContext.Provider>
     );
+}
+
+// How deep each screen sits in the navigation stack. Comparing the depth of
+// where you were against where you are going is what decides whether the next
+// screen slides in from the right or from the left.
+const DEPTH: Record<Screen, number> = {
+    welcome: 0,
+    app: 0,
+    signin: 1,
+    register: 1,
+    location: 2,
+    songs: 3,
+    venue: 1,
+    room: 1,
+    notifs: 1,
+    rate: 1,
+    profile: 1,
+    pay: 2,
+    invitefriends: 2,
+    user: 2
+};
+
+// Derived during render rather than in an effect: the animation is chosen on
+// the same frame the new screen first paints, so it never plays one transition
+// behind.
+function useTransitionDirection(screen: Screen) {
+    const previous = useRef<Screen>(screen);
+    const direction = useRef<"push" | "pop">("push");
+
+    if (previous.current !== screen) {
+        direction.current = DEPTH[screen] < DEPTH[previous.current] ? "pop" : "push";
+        previous.current = screen;
+    }
+
+    return direction.current;
 }
 
 function CurrentScreen({ screen }: { screen: Screen }) {

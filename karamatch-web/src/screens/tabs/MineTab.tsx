@@ -1,157 +1,132 @@
+import { useState } from "react";
 import { api } from "../../api";
 import { useApp } from "../../AppContext";
-import { C, screenTitle, sectionLabel } from "../../theme";
-import { Avatar, EmptyCard, ErrorNote, Loading, formatWhen, plural, useAsync } from "../../ui";
+import { C, S, S2, T } from "../../design/tokens";
+import { Icon } from "../../design/icons";
+import {
+    Avatar,
+    Button,
+    Card,
+    Chip,
+    EmptyState,
+    ErrorNote,
+    Pressable,
+    ScrollBody,
+    Segmented,
+    Skeleton,
+    formatWhen,
+    plural,
+    useAsync
+} from "../../ui";
+
+type Pane = "upcoming" | "past";
 
 export default function MineTab() {
     const app = useApp();
     const mine = useAsync(() => api.myParties(), []);
+    // Upcoming and past were two stacked lists you had to scroll past each
+    // other. They are alternatives, not a sequence — so they get a segment.
+    const [pane, setPane] = useState<Pane>("upcoming");
 
     const upcoming = mine.data?.upcoming ?? [];
     const past = mine.data?.past ?? [];
+    const list = pane === "upcoming" ? upcoming : past;
 
     return (
-        <div
-            style={{
-                flex: 1,
-                overflow: "auto",
-                padding: "4px 24px 110px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 14
-            }}
-        >
-            <div style={screenTitle}>My parties</div>
+        <ScrollBody bottomPad={S.md}>
+            <div style={{ paddingTop: S.xs, paddingBottom: S2.s12, flexShrink: 0, display: "flex", flexDirection: "column", gap: S2.s12 }}>
+                <h1 style={{ ...T.title, color: C.text, margin: 0 }}>My parties</h1>
+                <Segmented<Pane>
+                    value={pane}
+                    onChange={setPane}
+                    items={[
+                        { key: "upcoming", label: "Upcoming" + (upcoming.length ? " · " + upcoming.length : "") },
+                        { key: "past", label: "Past" + (past.length ? " · " + past.length : "") }
+                    ]}
+                />
+            </div>
 
-            {mine.loading ? <Loading /> : null}
+            {mine.loading ? <Skeleton height={128} count={2} /> : null}
             {mine.error ? <ErrorNote message={mine.error} /> : null}
 
-            {!mine.loading ? <div style={sectionLabel}>UPCOMING</div> : null}
-
-            {!mine.loading && upcoming.length === 0 ? (
-                <EmptyCard>
-                    No upcoming parties yet.
-                    <br />
-                    Book a venue or join a match to get started.
-                </EmptyCard>
+            {!mine.loading && !mine.error && list.length === 0 ? (
+                pane === "upcoming" ? (
+                    <EmptyState
+                        icon="calendar"
+                        title="Nothing booked"
+                        body="Book a room or join a match, and it will show up here."
+                        action={<Button label="Find a venue" variant="tinted" size="md" onClick={() => app.goTab("venues")} />}
+                    />
+                ) : (
+                    <EmptyState icon="clock" title="No past nights yet" body="Everything you have sung will be listed here." />
+                )
             ) : null}
 
-            {upcoming.map(party => {
-                const isHost = party.host.id === app.me?.id;
-                return (
-                    <div
-                        key={party.id}
-                        onClick={() => app.openRoom(party.id)}
-                        style={{
-                            borderRadius: 20,
-                            border: "1px solid rgba(255,61,143,.4)",
-                            background: "linear-gradient(135deg,rgba(255,61,143,.12),rgba(138,43,226,.1))",
-                            padding: 16,
-                            cursor: "pointer",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 8,
-                            boxShadow: "0 0 30px rgba(255,61,143,.15)",
-                            flexShrink: 0
-                        }}
-                    >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                            <div style={{ fontWeight: 700, fontSize: 16 }}>{party.title}</div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: C.pinkSoft, flexShrink: 0 }}>
-                                {isHost ? "HOST" : "JOINED"}
-                            </div>
-                        </div>
-                        <div style={{ color: C.textDim, fontSize: 13 }}>
-                            {party.venue.name} · {formatWhen(party.start)} · {party.membersCount}/{party.capacity} singers
-                        </div>
-                        {isHost ? null : (
-                            <div
-                                onClick={event => {
-                                    event.stopPropagation();
-                                    app.openProfile(party.host.username);
-                                }}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    alignSelf: "flex-start",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                <Avatar
-                                    name={party.host.name}
-                                    photoUrl={party.host.photoUrl}
-                                    seed={party.host.id}
-                                    size={26}
-                                    fontSize={11}
-                                />
-                                <span style={{ color: C.textMuted, fontSize: 13 }}>
-                                    hosted by @{party.host.username}
-                                </span>
-                            </div>
-                        )}
-                        <div style={{ color: C.cyan, fontSize: 13, fontWeight: 600 }}>Open room · chat &amp; invites →</div>
-                    </div>
-                );
-            })}
+            {pane === "upcoming"
+                ? upcoming.map(party => {
+                      const isHost = party.host.id === app.me?.id;
+                      return (
+                          <Card key={party.id} onClick={() => app.openRoom(party.id)} highlight style={{ gap: S.sm }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: S.sm }}>
+                                  <div style={{ minWidth: 0 }}>
+                                      <div style={{ ...T.bodyStrong, fontSize: 16, color: C.text }}>{party.title}</div>
+                                      <div style={{ ...T.caption, color: C.textMuted, marginTop: 2 }}>
+                                          {party.venue.name} · {formatWhen(party.start)}
+                                      </div>
+                                  </div>
+                                  <Chip label={isHost ? "Host" : "Joined"} icon={isHost ? "crown" : "check"} tone="tint" />
+                              </div>
 
-            {!mine.loading ? <div style={{ ...sectionLabel, marginTop: 8 }}>PAST</div> : null}
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: S.sm }}>
+                                  {isHost ? (
+                                      <div style={{ ...T.caption, color: C.textMuted }}>
+                                          {party.membersCount}/{party.capacity} singers
+                                      </div>
+                                  ) : (
+                                      <Pressable
+                                          onClick={() => app.openProfile(party.host.username)}
+                                          stopPropagation
+                                          scaleTo={1}
+                                          style={{ display: "flex", alignItems: "center", gap: S2.s6 }}
+                                      >
+                                          <Avatar name={party.host.name} photoUrl={party.host.photoUrl} seed={party.host.id} size={22} />
+                                          <span style={{ ...T.caption, color: C.textMuted }}>@{party.host.username}</span>
+                                      </Pressable>
+                                  )}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 3, ...T.captionStrong, color: C.tintSoft }}>
+                                      Open room
+                                      <Icon name="chevronRight" size={14} strokeWidth={2.2} />
+                                  </div>
+                              </div>
+                          </Card>
+                      );
+                  })
+                : past.map(party => (
+                      <Card key={party.id} onClick={() => app.openRoom(party.id)} style={{ gap: S2.s10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: S.sm }}>
+                              <div style={{ minWidth: 0 }}>
+                                  <div style={{ ...T.bodyStrong, fontSize: 16, color: C.text }}>{party.title}</div>
+                                  <div style={{ ...T.caption, color: C.textMuted, marginTop: 2 }}>
+                                      {party.venue.name} · {plural(party.membersCount, "singer", "singers")}
+                                  </div>
+                              </div>
+                              <div style={{ ...T.footnote, color: C.textFaint, flexShrink: 0 }}>{formatWhen(party.start)}</div>
+                          </div>
 
-            {!mine.loading && past.length === 0 ? (
-                <EmptyCard>Nothing sung yet — your past nights will show up here.</EmptyCard>
-            ) : null}
-
-            {past.map(party => (
-                <div
-                    key={party.id}
-                    onClick={() => app.openRoom(party.id)}
-                    style={{
-                        borderRadius: 20,
-                        border: "1px solid var(--km-veil-10)",
-                        background: "var(--km-veil-04)",
-                        padding: 16,
-                        cursor: "pointer",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 10,
-                        flexShrink: 0
-                    }}
-                >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontWeight: 700, fontSize: 16 }}>{party.title}</div>
-                        <div style={{ fontSize: 12, color: C.textMuted, flexShrink: 0 }}>
-                            ended · {formatWhen(party.start)}
-                        </div>
-                    </div>
-                    <div style={{ color: C.textMuted, fontSize: 13 }}>
-                        {party.venue.name} · {plural(party.membersCount, "singer", "singers")}
-                    </div>
-                    <div style={{ color: C.cyan, fontSize: 13, fontWeight: 600 }}>Open room · chat &amp; crew →</div>
-                    {party.rated ? (
-                        <div style={{ color: C.green, fontSize: 13, fontWeight: 600 }}>★ Crew rated — thanks!</div>
-                    ) : (
-                        <button
-                            onClick={event => {
-                                event.stopPropagation();
-                                app.openRate(party.id);
-                            }}
-                            style={{
-                                height: 44,
-                                border: "1px solid rgba(255,193,69,.45)",
-                                borderRadius: 12,
-                                background: "rgba(255,193,69,.08)",
-                                color: C.gold,
-                                fontWeight: 700,
-                                fontSize: 14,
-                                fontFamily: "Outfit, sans-serif",
-                                cursor: "pointer"
-                            }}
-                        >
-                            ★ Rate your crew
-                        </button>
-                    )}
-                </div>
-            ))}
-        </div>
+                          {party.rated ? (
+                              <Chip label="Crew rated" icon="check" tone="green" />
+                          ) : (
+                              <Button
+                                  label="Rate your crew"
+                                  icon="star"
+                                  variant="secondary"
+                                  size="md"
+                                  stopPropagation
+                                  onClick={() => app.openRate(party.id)}
+                              />
+                          )}
+                      </Card>
+                  ))}
+        </ScrollBody>
     );
 }

@@ -1,106 +1,110 @@
 /* Every colour in the app resolves through these variables, so flipping
    data-theme on <html> re-skins the whole thing without any React re-render.
-   The dark values are the original prototype palette, unchanged. */
+
+   The ladder is semantic, not alpha-indexed: a card is `--km-surface-1`, not
+   "white at 4%". Native apps composite opaque surfaces — stacking translucent
+   veils is what made the old build read as a web page, because nesting two
+   cards silently changed the colour of both. */
 :root {
-    /* Surfaces */
-    --km-bg: #0a0512;
-    --km-bg-deep: #08040f;
-    --km-panel: #140b22;
-    --km-stage: radial-gradient(1200px 700px at 50% -10%, #1b0f33 0%, #07040d 60%);
-    --km-screen: linear-gradient(180deg, #0d0718 0%, #0a0512 100%);
+    /* Surface ladder — each step is a real colour, so nesting is predictable. */
+    --km-bg: #07040d;
+    --km-surface: #0d0817;
+    --km-surface-1: #171029;
+    --km-surface-2: #211735;
+    --km-surface-3: #2b1f43;
+    --km-surface-press: #342650;
 
-    /* Text */
-    --km-text: #f5f1fa;
+    /* Hairlines. Native dividers are barely there; these are deliberately faint. */
+    --km-border: rgba(255, 255, 255, 0.08);
+    --km-border-strong: rgba(255, 255, 255, 0.14);
+
+    /* Text ramp */
+    --km-text: #f6f2fb;
     --km-text-dim: #b9aecf;
-    --km-text-muted: #9a8fb0;
-    --km-text-faint: #6e6284;
+    --km-text-muted: #8d82a5;
+    --km-text-faint: #665b7d;
+    --km-text-on-tint: #ffffff;
 
-    /* Accents. Kept at full strength on dark; the light theme darkens the ones
-       that carry text so they stay legible on a pale background. */
-    --km-pink: #ff3d8f;
-    --km-pink-soft: #ff6fae;
-    --km-pink-pale: #ff9ec8;
+    /* Brand. `tint` is the one accent that marks interactive + selected state,
+       the way a native app has a single tintColor. */
+    --km-tint: #ff3d8f;
+    --km-tint-soft: #ff6fae;
+    --km-tint-pale: #ff9ec8;
+    --km-tint-bg: rgba(255, 61, 143, 0.14);
+    --km-tint-border: rgba(255, 61, 143, 0.42);
+    --km-tint-glow: rgba(255, 61, 143, 0.38);
+
     --km-purple: #b23dff;
     --km-violet: #8a2be2;
     --km-cyan: #29e0ff;
+    --km-cyan-bg: rgba(41, 224, 255, 0.12);
+    --km-cyan-border: rgba(41, 224, 255, 0.28);
     --km-green: #3dff9a;
     --km-gold: #ffc145;
 
-    /* Translucent overlays, indexed by their original alpha. Dark mode lifts
-       surfaces with white; light mode presses them down with brand-tinted
-       near-black, which keeps the whole depth hierarchy intact. */
-    --km-veil-04: rgba(255, 255, 255, 0.04);
-    --km-veil-05: rgba(255, 255, 255, 0.05);
-    --km-veil-06: rgba(255, 255, 255, 0.06);
-    --km-veil-07: rgba(255, 255, 255, 0.07);
-    --km-veil-08: rgba(255, 255, 255, 0.08);
-    --km-veil-09: rgba(255, 255, 255, 0.09);
-    --km-veil-10: rgba(255, 255, 255, 0.1);
-    --km-veil-12: rgba(255, 255, 255, 0.12);
-    --km-veil-14: rgba(255, 255, 255, 0.14);
-    --km-veil-15: rgba(255, 255, 255, 0.15);
-    --km-veil-16: rgba(255, 255, 255, 0.16);
-    --km-veil-18: rgba(255, 255, 255, 0.18);
-    --km-veil-25: rgba(255, 255, 255, 0.25);
-    --km-veil-35: rgba(255, 255, 255, 0.35);
+    /* Destructive. Kept distinct from the brand pink: "leave this party" must
+       not look like "this is on brand". */
+    --km-danger: #ff5a5f;
+    --km-danger-bg: rgba(255, 90, 95, 0.13);
+    --km-danger-border: rgba(255, 90, 95, 0.4);
 
     /* Chrome */
-    --km-scrim: rgba(5, 2, 10, 0.72);
-    --km-shadow: rgba(0, 0, 0, 0.5);
-    --km-shadow-deep: rgba(0, 0, 0, 0.6);
-    --km-toast-bg: rgba(20, 11, 34, 0.95);
+    --km-scrim: rgba(4, 2, 8, 0.66);
+    --km-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --km-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --km-shadow-3: 0 16px 48px rgba(0, 0, 0, 0.55);
+    --km-stage: radial-gradient(1200px 700px at 50% -10%, #1b0f33 0%, #07040d 60%);
     --km-map-bg: #0b1220;
-    --km-map-chrome: rgba(11, 18, 32, 0.9);
-    --km-stripe-a: #2a1548;
-    --km-stripe-b: #1c0e33;
+    --km-map-chrome: rgba(17, 11, 28, 0.92);
+    --km-skeleton: #211735;
 
     color-scheme: dark;
 }
 
 :root[data-theme="light"] {
-    --km-bg: #faf6ff;
-    --km-bg-deep: #f1eafa;
-    --km-panel: #ffffff;
-    --km-stage: radial-gradient(1200px 700px at 50% -10%, #f3e7ff 0%, #e7dcf5 60%);
-    --km-screen: linear-gradient(180deg, #ffffff 0%, #faf6ff 100%);
+    --km-bg: #f4eefb;
+    --km-surface: #ffffff;
+    --km-surface-1: #ffffff;
+    --km-surface-2: #f7f2fd;
+    --km-surface-3: #efe7f9;
+    --km-surface-press: #e5daf4;
 
-    --km-text: #1b1027;
-    --km-text-dim: #574a6e;
-    --km-text-muted: #766a8c;
-    --km-text-faint: #9a8fae;
+    --km-border: rgba(38, 16, 64, 0.1);
+    --km-border-strong: rgba(38, 16, 64, 0.18);
 
-    --km-pink: #ff3d8f;
-    --km-pink-soft: #c8146c;
-    --km-pink-pale: #a81159;
+    --km-text: #170e22;
+    --km-text-dim: #52466a;
+    --km-text-muted: #7a6e91;
+    --km-text-faint: #a396b8;
+    --km-text-on-tint: #ffffff;
+
+    --km-tint: #e01a72;
+    --km-tint-soft: #c8146c;
+    --km-tint-pale: #a81159;
+    --km-tint-bg: rgba(224, 26, 114, 0.1);
+    --km-tint-border: rgba(224, 26, 114, 0.35);
+    --km-tint-glow: rgba(224, 26, 114, 0.28);
+
     --km-purple: #8c1fd6;
     --km-violet: #7622c4;
     --km-cyan: #0089a6;
+    --km-cyan-bg: rgba(0, 137, 166, 0.1);
+    --km-cyan-border: rgba(0, 137, 166, 0.26);
     --km-green: #0f9a5c;
     --km-gold: #96650a;
 
-    --km-veil-04: rgba(38, 16, 64, 0.035);
-    --km-veil-05: rgba(38, 16, 64, 0.045);
-    --km-veil-06: rgba(38, 16, 64, 0.05);
-    --km-veil-07: rgba(38, 16, 64, 0.06);
-    --km-veil-08: rgba(38, 16, 64, 0.07);
-    --km-veil-09: rgba(38, 16, 64, 0.075);
-    --km-veil-10: rgba(38, 16, 64, 0.09);
-    --km-veil-12: rgba(38, 16, 64, 0.1);
-    --km-veil-14: rgba(38, 16, 64, 0.12);
-    --km-veil-15: rgba(38, 16, 64, 0.13);
-    --km-veil-16: rgba(38, 16, 64, 0.14);
-    --km-veil-18: rgba(38, 16, 64, 0.16);
-    --km-veil-25: rgba(38, 16, 64, 0.22);
-    --km-veil-35: rgba(38, 16, 64, 0.3);
+    --km-danger: #d1373c;
+    --km-danger-bg: rgba(209, 55, 60, 0.1);
+    --km-danger-border: rgba(209, 55, 60, 0.32);
 
-    --km-scrim: rgba(38, 16, 64, 0.45);
-    --km-shadow: rgba(38, 16, 64, 0.18);
-    --km-shadow-deep: rgba(38, 16, 64, 0.24);
-    --km-toast-bg: rgba(255, 255, 255, 0.97);
+    --km-scrim: rgba(38, 16, 64, 0.4);
+    --km-shadow-1: 0 1px 2px rgba(38, 16, 64, 0.08);
+    --km-shadow-2: 0 4px 16px rgba(38, 16, 64, 0.1);
+    --km-shadow-3: 0 16px 48px rgba(38, 16, 64, 0.18);
+    --km-stage: radial-gradient(1200px 700px at 50% -10%, #f3e7ff 0%, #e7dcf5 60%);
     --km-map-bg: #e8eef6;
-    --km-map-chrome: rgba(255, 255, 255, 0.9);
-    --km-stripe-a: #efe2ff;
-    --km-stripe-b: #e2d2f8;
+    --km-map-chrome: rgba(255, 255, 255, 0.92);
+    --km-skeleton: #ece4f7;
 
     color-scheme: light;
 }
@@ -109,11 +113,38 @@ html,
 body {
     margin: 0;
     padding: 0;
-    background: var(--km-bg-deep);
+    background: var(--km-bg);
+    /* Native text never selects on a tap-drag, and never blows up on rotate. */
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
 }
 
 #root {
     min-height: 100vh;
+}
+
+/* Nothing in a native UI is selectable except actual content. Inputs opt back
+   in below. This alone removes most of the "this is a web page" tells. */
+body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    /* Momentum scrolling, and no rubber-band on the document itself. */
+    overscroll-behavior: none;
+}
+
+input,
+textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* Scroll containers get momentum + contained overscroll, so a list at its end
+   does not start dragging the screen behind it. */
+.km-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 @keyframes km-pulse {
@@ -126,20 +157,86 @@ body {
     }
 }
 
-@keyframes km-pop {
-    0% {
-        transform: scale(0.92);
+@keyframes km-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Screen transitions. Push/pop mirror a native stack navigator; fade is for
+   tab switches, which never slide. */
+@keyframes km-push {
+    from {
+        transform: translateX(28px);
         opacity: 0;
     }
-    100% {
-        transform: scale(1);
+    to {
+        transform: translateX(0);
         opacity: 1;
     }
 }
 
-@keyframes km-spin {
+@keyframes km-pop-screen {
+    from {
+        transform: translateX(-22px);
+        opacity: 0;
+    }
     to {
-        transform: rotate(360deg);
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes km-fade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes km-sheet-in {
+    from {
+        transform: translateY(16px) scale(0.97);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes km-toast-in {
+    from {
+        transform: translateY(12px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes km-skeleton {
+    0% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.5;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 
@@ -150,8 +247,17 @@ textarea::placeholder {
 
 input,
 textarea,
-button {
+button,
+select {
     outline: none;
+    font-family: inherit;
+}
+
+/* Keyboard focus still needs to be visible — suppressing it entirely would be
+   an accessibility regression, so only the mouse/touch ring is dropped. */
+:focus-visible {
+    outline: 2px solid var(--km-tint);
+    outline-offset: 2px;
 }
 
 ::-webkit-scrollbar {
@@ -180,11 +286,11 @@ button {
 
 .leaflet-control-zoom a {
     background: var(--km-map-chrome);
-    border-color: var(--km-veil-12);
+    border-color: var(--km-border);
     color: var(--km-text);
 }
 
 .leaflet-control-zoom a:hover {
-    background: var(--km-veil-12);
+    background: var(--km-surface-3);
     color: var(--km-text);
 }
