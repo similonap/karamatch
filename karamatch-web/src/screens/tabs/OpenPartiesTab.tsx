@@ -58,8 +58,8 @@ export default function OpenPartiesTab() {
                     key={party.id}
                     style={{
                         borderRadius: 20,
-                        border: "1px solid rgba(255,255,255,.1)",
-                        background: "rgba(255,255,255,.04)",
+                        border: "1px solid var(--km-veil-10)",
+                        background: "var(--km-veil-04)",
                         padding: 16,
                         display: "flex",
                         flexDirection: "column",

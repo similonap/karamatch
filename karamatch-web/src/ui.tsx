@@ -2,17 +2,26 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useApp } from "./AppContext";
+import type { ThemeName } from "./AppContext";
 import { C, GRAD, avatarColor, initial, roundBack } from "./theme";
 
-// OpenStreetMap data through CARTO's dark basemap, so a map sits inside the
-// app's dark theme instead of glowing white. Shared with the Location picker.
-export const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+// OpenStreetMap data through CARTO's basemaps, picked to match the theme so a
+// map never glows white in the dark app or goes black in the light one.
+// Shared with the Location picker.
+export function tileUrl(theme: ThemeName) {
+    const variant = theme === "light" ? "light_all" : "dark_all";
+    return "https://{s}.basemaps.cartocdn.com/" + variant + "/{z}/{x}/{y}{r}.png";
+}
 
 // CARTO's dark basemap is near-black by design, which reads as an empty panel
 // at this size. Lifting the tiles brings the streets back without turning the
 // map into a white hole in a dark screen. Applied to the tile pane only, so
-// the pin keeps its true colour.
-export const TILE_FILTER = "brightness(3.1) contrast(0.72) saturate(1.25)";
+// the pin keeps its true colour. The light basemap already reads well, so it
+// only gets a touch of contrast.
+export function tileFilter(theme: ThemeName) {
+    return theme === "light" ? "contrast(1.05) saturate(1.1)" : "brightness(3.1) contrast(0.72) saturate(1.25)";
+}
 export const TILE_ATTRIBUTION =
     "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>";
 
@@ -28,7 +37,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "radial-gradient(1200px 700px at 50% -10%, #1B0F33 0%, #07040D 60%)",
+                background: "var(--km-stage)",
                 padding: 32,
                 fontFamily: "Outfit, sans-serif",
                 boxSizing: "border-box"
@@ -42,7 +51,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
                     overflow: "hidden",
                     position: "relative",
                     background: "#000",
-                    boxShadow: "0 40px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08)",
+                    boxShadow: "0 40px 80px var(--km-shadow), 0 0 0 1px var(--km-veil-08)",
                     flexShrink: 0
                 }}
             >
@@ -64,7 +73,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
-                        background: "linear-gradient(180deg,#0D0718 0%,#0A0512 100%)",
+                        background: "var(--km-screen)",
                         color: C.text,
                         overflow: "hidden",
                         position: "relative",
@@ -83,7 +92,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
                         width: 140,
                         height: 5,
                         borderRadius: 3,
-                        background: "rgba(255,255,255,.35)",
+                        background: "var(--km-veil-35)",
                         zIndex: 60,
                         pointerEvents: "none"
                     }}
@@ -162,8 +171,8 @@ export function MatchBadge({ pct }: { pct: number | null | undefined }) {
                 fontWeight: 800,
                 lineHeight: 1.4,
                 color: strong ? C.pinkSoft : C.textMuted,
-                border: "1px solid " + (strong ? "rgba(255,61,143,.5)" : "rgba(255,255,255,.14)"),
-                background: strong ? "rgba(255,61,143,.14)" : "rgba(255,255,255,.05)"
+                border: "1px solid " + (strong ? "rgba(255,61,143,.5)" : "var(--km-veil-14)"),
+                background: strong ? "rgba(255,61,143,.14)" : "var(--km-veil-05)"
             }}
         >
             {pct}%
@@ -187,7 +196,7 @@ export function Toast({ message }: { message: string }) {
                 bottom: 110,
                 left: 24,
                 right: 24,
-                background: "rgba(20,11,34,.95)",
+                background: "var(--km-toast-bg)",
                 border: "1px solid rgba(41,224,255,.4)",
                 color: C.text,
                 padding: "12px 16px",
@@ -195,7 +204,7 @@ export function Toast({ message }: { message: string }) {
                 fontSize: 14,
                 textAlign: "center",
                 animation: "km-pop .25s ease",
-                boxShadow: "0 8px 30px rgba(0,0,0,.5)",
+                boxShadow: "0 8px 30px var(--km-shadow)",
                 zIndex: 50
             }}
         >
@@ -227,7 +236,7 @@ export function ConfirmDialog({
             style={{
                 position: "absolute",
                 inset: 0,
-                background: "rgba(5,2,10,.72)",
+                background: "var(--km-scrim)",
                 backdropFilter: "blur(2px)",
                 display: "flex",
                 alignItems: "center",
@@ -241,14 +250,14 @@ export function ConfirmDialog({
                 style={{
                     width: "100%",
                     background: C.panel,
-                    border: "1px solid rgba(255,255,255,.12)",
+                    border: "1px solid var(--km-veil-12)",
                     borderRadius: 22,
                     padding: 22,
                     display: "flex",
                     flexDirection: "column",
                     gap: 10,
                     animation: "km-pop .25s ease",
-                    boxShadow: "0 20px 60px rgba(0,0,0,.6)"
+                    boxShadow: "0 20px 60px var(--km-shadow-deep)"
                 }}
             >
                 <div style={{ fontFamily: "Unbounded, sans-serif", fontSize: 17, fontWeight: 700 }}>{title}</div>
@@ -261,8 +270,8 @@ export function ConfirmDialog({
                             flex: 1,
                             height: 46,
                             borderRadius: 14,
-                            border: "1px solid rgba(255,255,255,.16)",
-                            background: "rgba(255,255,255,.05)",
+                            border: "1px solid var(--km-veil-16)",
+                            background: "var(--km-veil-05)",
                             color: C.textDim,
                             fontWeight: 700,
                             fontSize: 14,
@@ -355,7 +364,7 @@ export function EmptyCard({ children }: { children: ReactNode }) {
         <div
             style={{
                 borderRadius: 20,
-                border: "1px dashed rgba(255,255,255,.18)",
+                border: "1px dashed var(--km-veil-18)",
                 padding: 24,
                 textAlign: "center",
                 color: C.textMuted,
@@ -371,8 +380,8 @@ export function EmptyCard({ children }: { children: ReactNode }) {
 // A selectable pill (day / time / room) — the prototype's `opt()` helper.
 export function optionStyle(selected: boolean): CSSProperties {
     return {
-        borderColor: selected ? "rgba(255,61,143,.6)" : "rgba(255,255,255,.12)",
-        background: selected ? "rgba(255,61,143,.12)" : "rgba(255,255,255,.05)",
+        borderColor: selected ? "rgba(255,61,143,.6)" : "var(--km-veil-12)",
+        background: selected ? "rgba(255,61,143,.12)" : "var(--km-veil-05)",
         color: selected ? C.pinkSoft : C.textDim
     };
 }
@@ -385,7 +394,7 @@ export function CheckRing({ on, size = 24 }: { on: boolean; size?: number }) {
                 width: size,
                 height: size,
                 borderRadius: "50%",
-                border: "2px solid " + (on ? C.pink : "rgba(255,255,255,.25)"),
+                border: "2px solid " + (on ? C.pink : "var(--km-veil-25)"),
                 background: on ? C.pink : "transparent",
                 display: "flex",
                 alignItems: "center",
@@ -433,7 +442,10 @@ export function VenueMap({
 }) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<L.Map | null>(null);
+    const theme = useApp().theme;
 
+    // Rebuilt on a theme change so the basemap swaps with it — cheaper to write
+    // than swapping the tile layer in place, and the map is tiny.
     useEffect(() => {
         if (!containerRef.current) {
             return;
@@ -450,11 +462,11 @@ export function VenueMap({
             boxZoom: false,
             keyboard: false
         });
-        L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
+        L.tileLayer(tileUrl(theme), { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
         L.marker([lat, lng], { icon: VENUE_PIN, interactive: false, keyboard: false }).addTo(map);
         const tilePane = map.getPane("tilePane");
         if (tilePane) {
-            tilePane.style.filter = TILE_FILTER;
+            tilePane.style.filter = tileFilter(theme);
         }
         mapRef.current = map;
 
@@ -462,7 +474,7 @@ export function VenueMap({
             map.remove();
             mapRef.current = null;
         };
-    }, [lat, lng]);
+    }, [lat, lng, theme]);
 
     useEffect(() => {
         if (active) {
@@ -477,8 +489,8 @@ export function VenueMap({
                     height: height,
                     borderRadius: 16,
                     overflow: "hidden",
-                    border: "1px solid rgba(255,255,255,.12)",
-                    background: "#0B1220"
+                    border: "1px solid var(--km-veil-12)",
+                    background: "var(--km-map-bg)"
                 }}
             >
                 <div ref={containerRef} style={{ width: "100%", height: "100%" }} />

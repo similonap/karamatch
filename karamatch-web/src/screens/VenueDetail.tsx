@@ -138,7 +138,7 @@ export default function VenueDetail() {
                 style={{
                     height: 170,
                     position: "relative",
-                    background: "repeating-linear-gradient(45deg,#2A1548,#2A1548 10px,#1C0E33 10px,#1C0E33 20px)",
+                    background: "repeating-linear-gradient(45deg,var(--km-stripe-a),var(--km-stripe-a) 10px,var(--km-stripe-b) 10px,var(--km-stripe-b) 20px)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -165,7 +165,7 @@ export default function VenueDetail() {
                         height: 38,
                         borderRadius: "50%",
                         border: "none",
-                        background: "rgba(0,0,0,.5)",
+                        background: "var(--km-shadow)",
                         color: "#fff",
                         fontSize: 17,
                         cursor: "pointer"
@@ -343,8 +343,8 @@ export default function VenueDetail() {
                 <div
                     style={{
                         borderRadius: 16,
-                        border: "1px solid rgba(255,255,255,.12)",
-                        background: "rgba(255,255,255,.05)",
+                        border: "1px solid var(--km-veil-12)",
+                        background: "var(--km-veil-05)",
                         padding: "14px 16px",
                         display: "flex",
                         flexDirection: "column",
@@ -384,7 +384,7 @@ export default function VenueDetail() {
                     left: 0,
                     right: 0,
                     padding: "16px 24px 36px",
-                    background: "linear-gradient(180deg,transparent,#08040F 40%)"
+                    background: "linear-gradient(180deg,transparent,var(--km-bg-deep) 40%)"
                 }}
             >
                 <button

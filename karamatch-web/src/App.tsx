@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, getToken, setToken } from "./api";
 import type { Me } from "./api";
 import { AppContext } from "./AppContext";
-import type { AppApi, PayContext, Screen, Tab } from "./AppContext";
+import type { AppApi, PayContext, Screen, Tab, ThemeName } from "./AppContext";
 import { PhoneFrame, Toast, Loading } from "./ui";
 import Welcome from "./screens/Welcome";
 import SignIn from "./screens/SignIn";
@@ -19,8 +19,20 @@ import Rate from "./screens/Rate";
 import Profile from "./screens/Profile";
 import UserProfile from "./screens/UserProfile";
 
+const THEME_KEY = "karamatch.theme";
+
+// A stored choice wins; otherwise follow whatever the device is set to.
+function initialTheme(): ThemeName {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "dark" || stored === "light") {
+        return stored;
+    }
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
 export default function App() {
     const [me, setMe] = useState<Me | null>(null);
+    const [theme, setThemeState] = useState<ThemeName>(initialTheme);
     const [booting, setBooting] = useState(Boolean(getToken()));
     const [screen, setScreen] = useState<Screen>("welcome");
     const [tab, setTab] = useState<Tab>("venues");
@@ -39,6 +51,17 @@ export default function App() {
         window.clearTimeout(toastTimer.current);
         setToastMessage(message);
         toastTimer.current = window.setTimeout(() => setToastMessage(null), 2200);
+    }, []);
+
+    // Every colour is a CSS variable keyed off this attribute, so setting it on
+    // <html> reskins the app — nothing below has to re-render to follow along.
+    useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme);
+    }, [theme]);
+
+    const setTheme = useCallback((next: ThemeName) => {
+        localStorage.setItem(THEME_KEY, next);
+        setThemeState(next);
     }, []);
 
     const refreshMe = useCallback(async () => {
@@ -148,6 +171,8 @@ export default function App() {
             setEditingLocation(true);
             setScreen("location");
         },
+        theme,
+        setTheme,
         notifCount,
         refreshNotifCount,
         toast,

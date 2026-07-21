@@ -62,8 +62,8 @@ export default function FriendsTab() {
                                 gap: 12,
                                 padding: "10px 12px",
                                 borderRadius: 14,
-                                border: "1px solid rgba(255,255,255,.09)",
-                                background: "rgba(255,255,255,.04)",
+                                border: "1px solid var(--km-veil-09)",
+                                background: "var(--km-veil-04)",
                                 flexShrink: 0,
                                 cursor: "pointer"
                             }}
@@ -121,8 +121,8 @@ export default function FriendsTab() {
                         gap: 12,
                         padding: "12px 14px",
                         borderRadius: 16,
-                        border: "1px solid rgba(255,255,255,.09)",
-                        background: "rgba(255,255,255,.04)",
+                        border: "1px solid var(--km-veil-09)",
+                        background: "var(--km-veil-04)",
                         flexShrink: 0,
                         cursor: "pointer"
                     }}

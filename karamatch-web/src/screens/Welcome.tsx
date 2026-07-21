@@ -74,9 +74,9 @@ export default function Welcome() {
                     onClick={() => app.go("signin")}
                     style={{
                         height: 56,
-                        border: "1px solid rgba(255,255,255,.16)",
+                        border: "1px solid var(--km-veil-16)",
                         borderRadius: 18,
-                        background: "rgba(255,255,255,.05)",
+                        background: "var(--km-veil-05)",
                         color: C.text,
                         fontFamily: "Outfit, sans-serif",
                         fontSize: 17,

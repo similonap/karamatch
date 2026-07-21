@@ -127,9 +127,9 @@ export default function Notifications() {
                             style={{
                                 flex: 1,
                                 height: 44,
-                                border: "1px solid rgba(255,255,255,.16)",
+                                border: "1px solid var(--km-veil-16)",
                                 borderRadius: 12,
-                                background: "rgba(255,255,255,.05)",
+                                background: "var(--km-veil-05)",
                                 color: C.textDim,
                                 fontWeight: 600,
                                 fontSize: 14,

@@ -98,8 +98,8 @@ export default function UserProfile() {
                             height: 32,
                             padding: "0 12px",
                             borderRadius: 10,
-                            border: "1px solid rgba(255,255,255,.16)",
-                            background: "rgba(255,255,255,.05)",
+                            border: "1px solid var(--km-veil-16)",
+                            background: "var(--km-veil-05)",
                             color: C.textDim,
                             fontSize: 12,
                             fontWeight: 600,
@@ -211,8 +211,8 @@ export default function UserProfile() {
                                 gap: 12,
                                 padding: "10px 14px",
                                 borderRadius: 14,
-                                border: "1px solid rgba(255,255,255,.09)",
-                                background: "rgba(255,255,255,.04)"
+                                border: "1px solid var(--km-veil-09)",
+                                background: "var(--km-veil-04)"
                             }}
                         >
                             <span style={{ color: C.pinkSoft, fontSize: 15 }}>♪</span>
@@ -287,8 +287,8 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
             style={{
                 flex: 1,
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,.1)",
-                background: "rgba(255,255,255,.04)",
+                border: "1px solid var(--km-veil-10)",
+                background: "var(--km-veil-04)",
                 padding: "12px 10px",
                 textAlign: "center"
             }}

@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { api } from "../api";
 import { useApp } from "../AppContext";
 import { C, primaryButton, roundBack } from "../theme";
-import { TILE_ATTRIBUTION, TILE_FILTER, TILE_URL } from "../ui";
+import { TILE_ATTRIBUTION, tileFilter, tileUrl } from "../ui";
 
 // The seeded world sits around Antwerp, so a fresh pin lands somewhere
 // already populated. Moving the map moves the pin for real: the API
@@ -37,6 +37,7 @@ export default function Location() {
     // Onboarding sends you on to the songs step; the profile editor comes back.
     const editing = app.editingLocation;
     const mapRef = useRef<L.Map | null>(null);
+    const tileRef = useRef<L.TileLayer | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const reverseTimer = useRef<number | null>(null);
     const reverseAbort = useRef<AbortController | null>(null);
@@ -64,11 +65,11 @@ export default function Location() {
             zoomControl: false,
             attributionControl: true
         });
-        L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
+        tileRef.current = L.tileLayer(tileUrl(app.theme), { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: "topright" }).addTo(map);
         const tilePane = map.getPane("tilePane");
         if (tilePane) {
-            tilePane.style.filter = TILE_FILTER;
+            tilePane.style.filter = tileFilter(app.theme);
         }
         mapRef.current = map;
 
@@ -84,7 +85,18 @@ export default function Location() {
             map.remove();
             mapRef.current = null;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialCentre]);
+
+    // Swap the basemap in place on a theme change: rebuilding the map would
+    // snap the camera back to initialCentre and lose wherever the user panned.
+    useEffect(() => {
+        tileRef.current?.setUrl(tileUrl(app.theme));
+        const tilePane = mapRef.current?.getPane("tilePane");
+        if (tilePane) {
+            tilePane.style.filter = tileFilter(app.theme);
+        }
+    }, [app.theme]);
 
     // Ask Nominatim what sits under the pin, debounced so panning does not
     // hammer a free service (their policy allows about one call per second).
@@ -227,7 +239,7 @@ export default function Location() {
             </div>
 
             <div style={{ position: "relative", flex: 1, margin: "16px 0 0", overflow: "hidden" }}>
-                <div ref={containerRef} style={{ position: "absolute", inset: 0, background: "#0B1220" }} />
+                <div ref={containerRef} style={{ position: "absolute", inset: 0, background: "var(--km-map-bg)" }} />
 
                 <form
                     onSubmit={search}
@@ -251,8 +263,8 @@ export default function Location() {
                                 flex: 1,
                                 height: 44,
                                 borderRadius: 14,
-                                border: "1px solid rgba(255,255,255,.14)",
-                                background: "rgba(11,18,32,.9)",
+                                border: "1px solid var(--km-veil-14)",
+                                background: "var(--km-map-chrome)",
                                 color: C.text,
                                 padding: "0 14px",
                                 fontSize: 15,
@@ -268,7 +280,7 @@ export default function Location() {
                                 height: 44,
                                 borderRadius: 14,
                                 border: "1px solid rgba(41,224,255,.4)",
-                                background: "rgba(11,18,32,.9)",
+                                background: "var(--km-map-chrome)",
                                 color: C.cyan,
                                 fontSize: 17,
                                 cursor: "pointer",
@@ -284,8 +296,8 @@ export default function Location() {
                         <div
                             style={{
                                 borderRadius: 14,
-                                border: "1px solid rgba(255,255,255,.12)",
-                                background: "rgba(11,18,32,.95)",
+                                border: "1px solid var(--km-veil-12)",
+                                background: "var(--km-map-chrome)",
                                 overflow: "hidden",
                                 backdropFilter: "blur(8px)"
                             }}
@@ -300,7 +312,7 @@ export default function Location() {
                                         width: "100%",
                                         textAlign: "left",
                                         border: "none",
-                                        borderBottom: "1px solid rgba(255,255,255,.07)",
+                                        borderBottom: "1px solid var(--km-veil-07)",
                                         background: "transparent",
                                         color: C.text,
                                         padding: "10px 14px",
@@ -363,7 +375,7 @@ export default function Location() {
                         width: 14,
                         height: 5,
                         borderRadius: "50%",
-                        background: "rgba(0,0,0,.5)",
+                        background: "var(--km-shadow)",
                         filter: "blur(1px)",
                         pointerEvents: "none"
                     }}
@@ -380,7 +392,7 @@ export default function Location() {
                         height: 46,
                         borderRadius: 14,
                         border: "1px solid rgba(41,224,255,.4)",
-                        background: "rgba(11,18,32,.85)",
+                        background: "var(--km-map-chrome)",
                         color: C.cyan,
                         fontSize: 20,
                         cursor: "pointer",
@@ -397,7 +409,7 @@ export default function Location() {
                     display: "flex",
                     flexDirection: "column",
                     gap: 12,
-                    background: "linear-gradient(180deg,transparent,#0A0512 30%)"
+                    background: "linear-gradient(180deg,transparent,var(--km-bg) 30%)"
                 }}
             >
                 <div
@@ -406,8 +418,8 @@ export default function Location() {
                         alignItems: "center",
                         gap: 12,
                         borderRadius: 16,
-                        border: "1px solid rgba(255,255,255,.12)",
-                        background: "rgba(255,255,255,.05)",
+                        border: "1px solid var(--km-veil-12)",
+                        background: "var(--km-veil-05)",
                         padding: "12px 16px"
                     }}
                 >

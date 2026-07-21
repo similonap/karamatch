@@ -91,8 +91,8 @@ export default function Rate() {
                         key={member.id}
                         style={{
                             borderRadius: 20,
-                            border: "1px solid rgba(255,255,255,.1)",
-                            background: "rgba(255,255,255,.04)",
+                            border: "1px solid var(--km-veil-10)",
+                            background: "var(--km-veil-04)",
                             padding: 16,
                             display: "flex",
                             flexDirection: "column",
@@ -127,7 +127,7 @@ export default function Rate() {
                                         background: "none",
                                         fontSize: 26,
                                         cursor: "pointer",
-                                        color: star <= draft.stars ? C.gold : "rgba(255,255,255,.18)",
+                                        color: star <= draft.stars ? C.gold : "var(--km-veil-18)",
                                         padding: 0
                                     }}
                                 >
@@ -143,8 +143,8 @@ export default function Rate() {
                             rows={2}
                             style={{
                                 borderRadius: 12,
-                                border: "1px solid rgba(255,255,255,.14)",
-                                background: "rgba(255,255,255,.06)",
+                                border: "1px solid var(--km-veil-14)",
+                                background: "var(--km-veil-06)",
                                 color: C.text,
                                 padding: "10px 14px",
                                 fontSize: 14,

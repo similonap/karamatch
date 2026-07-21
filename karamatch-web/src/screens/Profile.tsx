@@ -1,12 +1,18 @@
 import { useRef, useState } from "react";
 import { api } from "../api";
 import { useApp } from "../AppContext";
+import type { ThemeName } from "../AppContext";
 import { C, inputStyle, primaryButton, roundBack, sectionLabel } from "../theme";
 import { ErrorNote, Loading, useAsync, useDebounced } from "../ui";
 import { SongRow } from "./SongPicker";
 
 const MAX_SONGS = 10;
 const MIN_SONGS = 3;
+
+const THEMES: { key: ThemeName; label: string; icon: string }[] = [
+    { key: "dark", label: "Dark", icon: "🌙" },
+    { key: "light", label: "Light", icon: "☀️" }
+];
 
 export default function Profile() {
     const app = useApp();
@@ -112,8 +118,8 @@ export default function Profile() {
                         height: 32,
                         padding: "0 12px",
                         borderRadius: 10,
-                        border: "1px solid rgba(255,255,255,.16)",
-                        background: "rgba(255,255,255,.05)",
+                        border: "1px solid var(--km-veil-16)",
+                        background: "var(--km-veil-05)",
                         color: C.textDim,
                         fontSize: 12,
                         fontWeight: 600,
@@ -144,8 +150,8 @@ export default function Profile() {
                             height: 104,
                             borderRadius: "50%",
                             boxShadow: "0 0 34px rgba(255,61,143,.35)",
-                            background: me.photoUrl ? "transparent" : "rgba(255,255,255,.06)",
-                            border: "1px dashed rgba(255,255,255,.25)",
+                            background: me.photoUrl ? "transparent" : "var(--km-veil-06)",
+                            border: "1px dashed var(--km-veil-25)",
                             cursor: "pointer",
                             overflow: "hidden",
                             display: "flex",
@@ -174,7 +180,7 @@ export default function Profile() {
                                 height: 32,
                                 borderRadius: "50%",
                                 background: "linear-gradient(135deg,#FF3D8F,#B23DFF)",
-                                border: "2px solid #0A0512",
+                                border: "2px solid " + C.bg,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -220,8 +226,8 @@ export default function Profile() {
                             style={{
                                 height: 52,
                                 borderRadius: 16,
-                                border: "1px solid rgba(255,255,255,.14)",
-                                background: "rgba(255,255,255,.04)",
+                                border: "1px solid var(--km-veil-14)",
+                                background: "var(--km-veil-04)",
                                 color: C.textMuted,
                                 padding: "0 18px",
                                 fontSize: 16,
@@ -246,8 +252,8 @@ export default function Profile() {
                             rows={2}
                             style={{
                                 borderRadius: 16,
-                                border: "1px solid rgba(255,255,255,.14)",
-                                background: "rgba(255,255,255,.06)",
+                                border: "1px solid var(--km-veil-14)",
+                                background: "var(--km-veil-06)",
                                 color: C.text,
                                 padding: "12px 18px",
                                 fontSize: 15,
@@ -264,8 +270,8 @@ export default function Profile() {
                             style={{
                                 height: 52,
                                 borderRadius: 16,
-                                border: "1px solid rgba(255,255,255,.14)",
-                                background: "rgba(255,255,255,.06)",
+                                border: "1px solid var(--km-veil-14)",
+                                background: "var(--km-veil-06)",
                                 color: C.text,
                                 padding: "0 18px",
                                 fontSize: 15,
@@ -300,6 +306,44 @@ export default function Profile() {
                             This decides which venues and parties you see.
                         </div>
                     </label>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={sectionLabel}>APPEARANCE</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                        {THEMES.map(option => {
+                            const on = app.theme === option.key;
+                            return (
+                                <button
+                                    key={option.key}
+                                    onClick={() => app.setTheme(option.key)}
+                                    style={{
+                                        flex: 1,
+                                        height: 64,
+                                        borderRadius: 16,
+                                        border: "1px solid " + (on ? "rgba(255,61,143,.45)" : "var(--km-veil-14)"),
+                                        background: on ? "rgba(255,61,143,.12)" : "var(--km-veil-05)",
+                                        color: on ? C.pinkSoft : C.textDim,
+                                        fontFamily: "Outfit, sans-serif",
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 4
+                                    }}
+                                >
+                                    <span style={{ fontSize: 20 }}>{option.icon}</span>
+                                    {option.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.textFaint }}>
+                        Saved on this device — it isn't part of your profile.
+                    </div>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -394,7 +438,7 @@ export default function Profile() {
                     left: 0,
                     right: 0,
                     padding: "16px 24px 36px",
-                    background: "linear-gradient(180deg,transparent,#08040F 40%)"
+                    background: "linear-gradient(180deg,transparent,var(--km-bg-deep) 40%)"
                 }}
             >
                 <button onClick={save} style={primaryButton(canSave)}>

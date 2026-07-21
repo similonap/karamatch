@@ -51,8 +51,8 @@ export default function VenuesTab() {
                     onClick={() => app.openVenue(venue.id)}
                     style={{
                         borderRadius: 20,
-                        border: "1px solid rgba(255,255,255,.1)",
-                        background: "rgba(255,255,255,.04)",
+                        border: "1px solid var(--km-veil-10)",
+                        background: "var(--km-veil-04)",
                         overflow: "hidden",
                         cursor: "pointer",
                         flexShrink: 0
@@ -61,7 +61,7 @@ export default function VenuesTab() {
                     <div
                         style={{
                             height: 110,
-                            background: "repeating-linear-gradient(45deg,#2A1548,#2A1548 10px,#1C0E33 10px,#1C0E33 20px)",
+                            background: "repeating-linear-gradient(45deg,var(--km-stripe-a),var(--km-stripe-a) 10px,var(--km-stripe-b) 10px,var(--km-stripe-b) 20px)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center"

@@ -31,8 +31,8 @@ export function SongRow({
                 padding: compact ? "11px 14px" : "12px 14px",
                 borderRadius: 14,
                 cursor: "pointer",
-                border: "1px solid " + (selected ? "rgba(255,61,143,.55)" : "rgba(255,255,255,.09)"),
-                background: selected ? "rgba(255,61,143,.1)" : "rgba(255,255,255,.04)",
+                border: "1px solid " + (selected ? "rgba(255,61,143,.55)" : "var(--km-veil-09)"),
+                background: selected ? "rgba(255,61,143,.1)" : "var(--km-veil-04)",
                 flexShrink: 0
             }}
         >
@@ -41,7 +41,7 @@ export function SongRow({
                     width: tile,
                     height: tile,
                     borderRadius: compact ? 11 : 12,
-                    background: selected ? GRAD : "rgba(255,255,255,.09)",
+                    background: selected ? GRAD : "var(--km-veil-09)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -178,7 +178,7 @@ export default function SongPicker() {
                     left: 0,
                     right: 0,
                     padding: "16px 24px 36px",
-                    background: "linear-gradient(180deg,transparent,#0A0512 40%)"
+                    background: "linear-gradient(180deg,transparent,var(--km-bg) 40%)"
                 }}
             >
                 <button onClick={finish} style={primaryButton(ready)}>

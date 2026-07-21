@@ -152,7 +152,7 @@ export default function PartyRoom() {
                     display: "flex",
                     alignItems: "center",
                     gap: 12,
-                    borderBottom: "1px solid rgba(255,255,255,.08)",
+                    borderBottom: "1px solid var(--km-veil-08)",
                     flexShrink: 0
                 }}
             >
@@ -179,14 +179,14 @@ export default function PartyRoom() {
                     style={{
                         flexShrink: 0,
                         background: ended
-                            ? "rgba(255,255,255,.06)"
+                            ? "var(--km-veil-06)"
                             : myMember?.paid
                               ? "rgba(61,255,154,.1)"
                               : "rgba(255,193,69,.1)",
                         border:
                             "1px solid " +
                             (ended
-                                ? "rgba(255,255,255,.16)"
+                                ? "var(--km-veil-16)"
                                 : myMember?.paid
                                   ? "rgba(61,255,154,.35)"
                                   : "rgba(255,193,69,.35)"),
@@ -205,8 +205,8 @@ export default function PartyRoom() {
                 <div
                     style={{
                         display: "flex",
-                        background: "rgba(255,255,255,.06)",
-                        border: "1px solid rgba(255,255,255,.1)",
+                        background: "var(--km-veil-06)",
+                        border: "1px solid var(--km-veil-10)",
                         borderRadius: 16,
                         padding: 4
                     }}
@@ -292,8 +292,8 @@ export default function PartyRoom() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 7,
-                                background: "rgba(255,255,255,.06)",
-                                border: "1px solid rgba(255,255,255,.12)",
+                                background: "var(--km-veil-06)",
+                                border: "1px solid var(--km-veil-12)",
                                 borderRadius: 999,
                                 padding: "5px 12px 5px 5px",
                                 cursor: "pointer"
@@ -338,8 +338,8 @@ export default function PartyRoom() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 7,
-                                background: "rgba(255,255,255,.04)",
-                                border: "1px solid rgba(255,255,255,.12)",
+                                background: "var(--km-veil-04)",
+                                border: "1px solid var(--km-veil-12)",
                                 borderRadius: 999,
                                 padding: "5px 12px"
                             }}
@@ -408,8 +408,8 @@ export default function PartyRoom() {
                                     flex: 1,
                                     height: 44,
                                     borderRadius: 12,
-                                    border: "1px solid rgba(255,255,255,.14)",
-                                    background: "rgba(255,255,255,.06)",
+                                    border: "1px solid var(--km-veil-14)",
+                                    background: "var(--km-veil-06)",
                                     color: C.text,
                                     padding: "0 14px",
                                     fontSize: 14,
@@ -455,7 +455,7 @@ export default function PartyRoom() {
                                     width: 48,
                                     height: 28,
                                     borderRadius: 999,
-                                    background: party.openToPublic ? C.green : "rgba(255,255,255,.15)",
+                                    background: party.openToPublic ? C.green : "var(--km-veil-15)",
                                     position: "relative",
                                     transition: "background .2s",
                                     flexShrink: 0
@@ -516,9 +516,9 @@ export default function PartyRoom() {
                                     borderRadius: 16,
                                     fontSize: 14,
                                     lineHeight: 1.45,
-                                    background: mine ? GRAD : "rgba(255,255,255,.07)",
+                                    background: mine ? GRAD : "var(--km-veil-07)",
                                     color: "#fff",
-                                    border: "1px solid " + (mine ? "transparent" : "rgba(255,255,255,.1)")
+                                    border: "1px solid " + (mine ? "transparent" : "var(--km-veil-10)")
                                 }}
                             >
                                 {message.text}
@@ -533,7 +533,7 @@ export default function PartyRoom() {
                 <div
                     style={{
                         padding: "16px 20px 32px",
-                        borderTop: "1px solid rgba(255,255,255,.08)",
+                        borderTop: "1px solid var(--km-veil-08)",
                         color: C.textMuted,
                         fontSize: 13,
                         textAlign: "center",
@@ -548,7 +548,7 @@ export default function PartyRoom() {
                         padding: "12px 20px 32px",
                         display: "flex",
                         gap: 8,
-                        borderTop: "1px solid rgba(255,255,255,.08)",
+                        borderTop: "1px solid var(--km-veil-08)",
                         flexShrink: 0
                     }}
                 >
@@ -565,8 +565,8 @@ export default function PartyRoom() {
                             flex: 1,
                             height: 46,
                             borderRadius: 14,
-                            border: "1px solid rgba(255,255,255,.14)",
-                            background: "rgba(255,255,255,.06)",
+                            border: "1px solid var(--km-veil-14)",
+                            background: "var(--km-veil-06)",
                             color: C.text,
                             padding: "0 16px",
                             fontSize: 14,

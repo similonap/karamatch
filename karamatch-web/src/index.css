@@ -1,8 +1,115 @@
+/* Every colour in the app resolves through these variables, so flipping
+   data-theme on <html> re-skins the whole thing without any React re-render.
+   The dark values are the original prototype palette, unchanged. */
+:root {
+    /* Surfaces */
+    --km-bg: #0a0512;
+    --km-bg-deep: #08040f;
+    --km-panel: #140b22;
+    --km-stage: radial-gradient(1200px 700px at 50% -10%, #1b0f33 0%, #07040d 60%);
+    --km-screen: linear-gradient(180deg, #0d0718 0%, #0a0512 100%);
+
+    /* Text */
+    --km-text: #f5f1fa;
+    --km-text-dim: #b9aecf;
+    --km-text-muted: #9a8fb0;
+    --km-text-faint: #6e6284;
+
+    /* Accents. Kept at full strength on dark; the light theme darkens the ones
+       that carry text so they stay legible on a pale background. */
+    --km-pink: #ff3d8f;
+    --km-pink-soft: #ff6fae;
+    --km-pink-pale: #ff9ec8;
+    --km-purple: #b23dff;
+    --km-violet: #8a2be2;
+    --km-cyan: #29e0ff;
+    --km-green: #3dff9a;
+    --km-gold: #ffc145;
+
+    /* Translucent overlays, indexed by their original alpha. Dark mode lifts
+       surfaces with white; light mode presses them down with brand-tinted
+       near-black, which keeps the whole depth hierarchy intact. */
+    --km-veil-04: rgba(255, 255, 255, 0.04);
+    --km-veil-05: rgba(255, 255, 255, 0.05);
+    --km-veil-06: rgba(255, 255, 255, 0.06);
+    --km-veil-07: rgba(255, 255, 255, 0.07);
+    --km-veil-08: rgba(255, 255, 255, 0.08);
+    --km-veil-09: rgba(255, 255, 255, 0.09);
+    --km-veil-10: rgba(255, 255, 255, 0.1);
+    --km-veil-12: rgba(255, 255, 255, 0.12);
+    --km-veil-14: rgba(255, 255, 255, 0.14);
+    --km-veil-15: rgba(255, 255, 255, 0.15);
+    --km-veil-16: rgba(255, 255, 255, 0.16);
+    --km-veil-18: rgba(255, 255, 255, 0.18);
+    --km-veil-25: rgba(255, 255, 255, 0.25);
+    --km-veil-35: rgba(255, 255, 255, 0.35);
+
+    /* Chrome */
+    --km-scrim: rgba(5, 2, 10, 0.72);
+    --km-shadow: rgba(0, 0, 0, 0.5);
+    --km-shadow-deep: rgba(0, 0, 0, 0.6);
+    --km-toast-bg: rgba(20, 11, 34, 0.95);
+    --km-map-bg: #0b1220;
+    --km-map-chrome: rgba(11, 18, 32, 0.9);
+    --km-stripe-a: #2a1548;
+    --km-stripe-b: #1c0e33;
+
+    color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+    --km-bg: #faf6ff;
+    --km-bg-deep: #f1eafa;
+    --km-panel: #ffffff;
+    --km-stage: radial-gradient(1200px 700px at 50% -10%, #f3e7ff 0%, #e7dcf5 60%);
+    --km-screen: linear-gradient(180deg, #ffffff 0%, #faf6ff 100%);
+
+    --km-text: #1b1027;
+    --km-text-dim: #574a6e;
+    --km-text-muted: #766a8c;
+    --km-text-faint: #9a8fae;
+
+    --km-pink: #ff3d8f;
+    --km-pink-soft: #c8146c;
+    --km-pink-pale: #a81159;
+    --km-purple: #8c1fd6;
+    --km-violet: #7622c4;
+    --km-cyan: #0089a6;
+    --km-green: #0f9a5c;
+    --km-gold: #96650a;
+
+    --km-veil-04: rgba(38, 16, 64, 0.035);
+    --km-veil-05: rgba(38, 16, 64, 0.045);
+    --km-veil-06: rgba(38, 16, 64, 0.05);
+    --km-veil-07: rgba(38, 16, 64, 0.06);
+    --km-veil-08: rgba(38, 16, 64, 0.07);
+    --km-veil-09: rgba(38, 16, 64, 0.075);
+    --km-veil-10: rgba(38, 16, 64, 0.09);
+    --km-veil-12: rgba(38, 16, 64, 0.1);
+    --km-veil-14: rgba(38, 16, 64, 0.12);
+    --km-veil-15: rgba(38, 16, 64, 0.13);
+    --km-veil-16: rgba(38, 16, 64, 0.14);
+    --km-veil-18: rgba(38, 16, 64, 0.16);
+    --km-veil-25: rgba(38, 16, 64, 0.22);
+    --km-veil-35: rgba(38, 16, 64, 0.3);
+
+    --km-scrim: rgba(38, 16, 64, 0.45);
+    --km-shadow: rgba(38, 16, 64, 0.18);
+    --km-shadow-deep: rgba(38, 16, 64, 0.24);
+    --km-toast-bg: rgba(255, 255, 255, 0.97);
+    --km-map-bg: #e8eef6;
+    --km-map-chrome: rgba(255, 255, 255, 0.9);
+    --km-stripe-a: #efe2ff;
+    --km-stripe-b: #e2d2f8;
+
+    color-scheme: light;
+}
+
 html,
 body {
     margin: 0;
     padding: 0;
-    background: #07040d;
+    background: var(--km-bg-deep);
 }
 
 #root {
@@ -38,7 +145,7 @@ body {
 
 input::placeholder,
 textarea::placeholder {
-    color: #6e6284;
+    color: var(--km-text-faint);
 }
 
 input,
@@ -55,30 +162,29 @@ button {
     scrollbar-width: none;
 }
 
-/* Leaflet's default chrome is built for light basemaps; retint it so the
-   OpenStreetMap view matches the app's dark theme. */
+/* Leaflet ships light-basemap chrome; retint it to whichever theme is on. */
 .leaflet-container {
-    background: #0b1220;
+    background: var(--km-map-bg);
     font-family: Outfit, sans-serif;
 }
 
 .leaflet-control-attribution {
-    background: rgba(11, 18, 32, 0.8) !important;
-    color: #9a8fb0;
+    background: var(--km-map-chrome) !important;
+    color: var(--km-text-muted);
     font-size: 10px;
 }
 
 .leaflet-control-attribution a {
-    color: #b9aecf;
+    color: var(--km-text-dim);
 }
 
 .leaflet-control-zoom a {
-    background: rgba(11, 18, 32, 0.9);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #f5f1fa;
+    background: var(--km-map-chrome);
+    border-color: var(--km-veil-12);
+    color: var(--km-text);
 }
 
 .leaflet-control-zoom a:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: var(--km-veil-12);
+    color: var(--km-text);
 }

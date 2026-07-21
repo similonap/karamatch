@@ -60,8 +60,8 @@ export default function MainTabs() {
                             width: 38,
                             height: 38,
                             borderRadius: "50%",
-                            border: "1px solid rgba(255,255,255,.14)",
-                            background: "rgba(255,255,255,.06)",
+                            border: "1px solid var(--km-veil-14)",
+                            background: "var(--km-veil-06)",
                             color: C.text,
                             fontSize: 16,
                             cursor: "pointer"
@@ -113,7 +113,7 @@ export default function MainTabs() {
                     left: 0,
                     right: 0,
                     padding: "10px 20px 30px",
-                    background: "linear-gradient(180deg,transparent,#08040F 30%)",
+                    background: "linear-gradient(180deg,transparent,var(--km-bg-deep) 30%)",
                     display: "flex",
                     gap: 6
                 }}
@@ -122,8 +122,8 @@ export default function MainTabs() {
                     style={{
                         flex: 1,
                         display: "flex",
-                        background: "rgba(255,255,255,.06)",
-                        border: "1px solid rgba(255,255,255,.1)",
+                        background: "var(--km-veil-06)",
+                        border: "1px solid var(--km-veil-10)",
                         borderRadius: 20,
                         padding: 6,
                         backdropFilter: "blur(14px)"

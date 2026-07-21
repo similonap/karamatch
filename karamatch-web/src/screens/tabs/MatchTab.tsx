@@ -60,8 +60,8 @@ export default function MatchTab() {
                         key={match.id}
                         style={{
                             borderRadius: 20,
-                            border: "1px solid " + (strong ? "rgba(255,61,143,.5)" : "rgba(255,255,255,.1)"),
-                            background: "rgba(255,255,255,.04)",
+                            border: "1px solid " + (strong ? "rgba(255,61,143,.5)" : "var(--km-veil-10)"),
+                            background: "var(--km-veil-04)",
                             padding: 16,
                             display: "flex",
                             flexDirection: "column",
@@ -78,7 +78,7 @@ export default function MatchTab() {
                                     borderRadius: "50%",
                                     flexShrink: 0,
                                     background:
-                                        "conic-gradient(#FF3D8F " + match.matchPct * 3.6 + "deg, rgba(255,255,255,.09) 0)",
+                                        "conic-gradient(#FF3D8F " + match.matchPct * 3.6 + "deg, var(--km-veil-09) 0)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center"

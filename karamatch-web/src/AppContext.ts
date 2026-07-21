@@ -19,6 +19,8 @@ export type Screen =
 
 export type Tab = "venues" | "parties" | "match" | "friends" | "mine";
 
+export type ThemeName = "dark" | "light";
+
 // What the payment screen is settling: a party you host in full, or your share.
 export interface PayContext {
     kind: "host" | "join";
@@ -55,6 +57,11 @@ export interface AppApi {
     // reached from the profile; this says which one is on screen.
     editingLocation: boolean;
     openLocationEditor: () => void;
+
+    // Dark or light. The colours themselves live in CSS variables, so this is
+    // only here for the toggle's own state and for the map's basemap choice.
+    theme: ThemeName;
+    setTheme: (theme: ThemeName) => void;
 
     notifCount: number;
     refreshNotifCount: () => void;

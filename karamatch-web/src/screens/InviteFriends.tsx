@@ -95,8 +95,8 @@ export default function InviteFriends() {
                                 padding: "12px 14px",
                                 borderRadius: 16,
                                 cursor: "pointer",
-                                border: "1px solid " + (on ? "rgba(255,61,143,.55)" : "rgba(255,255,255,.09)"),
-                                background: on ? "rgba(255,61,143,.1)" : "rgba(255,255,255,.04)",
+                                border: "1px solid " + (on ? "rgba(255,61,143,.55)" : "var(--km-veil-09)"),
+                                background: on ? "rgba(255,61,143,.1)" : "var(--km-veil-04)",
                                 flexShrink: 0
                             }}
                         >
@@ -127,7 +127,7 @@ export default function InviteFriends() {
                     left: 0,
                     right: 0,
                     padding: "16px 24px 36px",
-                    background: "linear-gradient(180deg,transparent,#08040F 40%)"
+                    background: "linear-gradient(180deg,transparent,var(--km-bg-deep) 40%)"
                 }}
             >
                 <button onClick={send} style={primaryButton(selected.length > 0 && !busy)}>
