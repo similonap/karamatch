@@ -24,12 +24,18 @@ export interface User {
     isNpc: boolean;
 }
 
+// The catalog holds the whole karafun export so users can find any song they
+// want to sing. `curated` marks the small genre-balanced pool that NPC taste is
+// drawn from and that the discovery list shows — matchmaking scores singers on
+// shared favourites, which only works while everyone picks from the same modest
+// set. See tools/importCatalog.ts.
 export interface Song {
     _id?: ObjectId;
     id: string;
     title: string;
     artist: string;
     genre: string[];
+    curated: boolean;
 }
 
 export interface Room {

@@ -258,9 +258,16 @@ export function randomNpcIdentity() {
 
 // Mostly one genre with a little bleed-over, so the Match tab shows a natural
 // spread of percentages against any real user's taste.
+// Matched on the song's *primary* tag, not any tag it carries. A tag like "Pop"
+// is on a third of the catalog, so matching on `includes` would spread a
+// singer's picks over hundreds of candidates and two Pop fans would almost
+// never land on the same song — which is the whole signal the Match tab runs
+// on. The primary tag keeps the pool at CURATED_PER_GENRE (see
+// tools/importCatalog.ts), where sharing a favourite stays likely. The `bleed`
+// below is what keeps taste from being perfectly on-genre.
 export function sampleFavoriteSongIds(songs: Song[], genre: string): string[] {
-    const inGenre = songs.filter(song => song.genre.includes(genre));
-    const others = songs.filter(song => !song.genre.includes(genre));
+    const inGenre = songs.filter(song => song.genre[0] === genre);
+    const others = songs.filter(song => song.genre[0] !== genre);
     const count = randomInt(4, 7);
     const bleed = randomInt(1, 2);
     const picks = [...pickMany(inGenre, count - bleed), ...pickMany(others, bleed)];
