@@ -1,4 +1,4 @@
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 
 import { useTheme } from "../../theme/ThemeProvider";
@@ -58,32 +58,30 @@ export function Button({
     const { textColor, ...skinStyle } = skin[variant];
 
     return (
-        <AppPressable
-            onPress={onPress}
-            disabled={off}
-            scaleTo={0.98}
-            style={[
-                styles.base,
-                {
-                    height,
-                    borderRadius: size === "sm" ? R.sm : R.md,
-                    gap: S.sm,
-                    paddingHorizontal: size === "sm" ? S2.s12 : S.lg,
-                    borderCurve: "continuous"
-                },
-                skinStyle,
-                style
-            ]}
-        >
-            {busy ? <Spinner size={16} color={textColor} /> : icon ? <Icon name={icon} size={18} strokeWidth={2} color={textColor} /> : null}
-            <Text
+        <AppPressable onPress={onPress} disabled={off} scaleTo={0.98} style={style}>
+            <View
                 style={[
-                    T.bodyStrong,
-                    { color: textColor, fontSize: size === "lg" ? 16 : size === "md" ? 15 : 13 }
+                    styles.base,
+                    {
+                        height,
+                        borderRadius: size === "sm" ? R.sm : R.md,
+                        gap: S.sm,
+                        paddingHorizontal: size === "sm" ? S2.s12 : S.lg,
+                        borderCurve: "continuous"
+                    },
+                    skinStyle
                 ]}
             >
-                {label}
-            </Text>
+                {busy ? <Spinner size={16} color={textColor} /> : icon ? <Icon name={icon} size={18} strokeWidth={2} color={textColor} /> : null}
+                <Text
+                    style={[
+                        T.bodyStrong,
+                        { color: textColor, fontSize: size === "lg" ? 16 : size === "md" ? 15 : 13 }
+                    ]}
+                >
+                    {label}
+                </Text>
+            </View>
         </AppPressable>
     );
 }

@@ -11,13 +11,16 @@ extended in place.
 
 ```sh
 npm install
-npm start          # Storybook (default)
-npm run start:app  # the two-screen placeholder app instead
+npm start                    # Storybook (default, prints Expo Go options)
+
+npm run ios                  # the placeholder app on iOS simulator
+npm run android               # the placeholder app on Android emulator
+
+npm run storybook:ios        # Storybook on iOS simulator
+npm run storybook:android    # Storybook on Android emulator
 ```
 
-Then open in Expo Go, an iOS simulator, or an Android emulator as usual
-(`npm start` prints the options). No dev client or prebuild is required —
-everything here runs in plain Expo Go.
+No dev client or prebuild is required — everything here runs in plain Expo Go.
 
 ### Storybook vs. the placeholder app
 
@@ -27,12 +30,13 @@ controls, actions, and backgrounds wired up — flip through them from the
 Storybook UI's own navigator, and use the "Theme" toolbar toggle to check a
 component in both light and dark.
 
-Setting `EXPO_PUBLIC_STORYBOOK=false` (`npm run start:app`) switches `App.tsx`
-to `src/PlaceholderApp.tsx` instead — a minimal two-screen app (a venue list
-and a venue detail screen) assembled purely from shelf components, just
-enough to prove the pieces actually compose into a real screen rather than
-only ever being seen one at a time in Storybook. It is not itself part of
-the shelf.
+Setting `EXPO_PUBLIC_STORYBOOK=false` (what `npm run ios`/`npm run android`
+do under the hood, or `npm run start:app` for the platform picker) switches
+`App.tsx` to `src/PlaceholderApp.tsx` instead — a minimal two-screen app (a
+venue list and a venue detail screen) assembled purely from shelf
+components, just enough to prove the pieces actually compose into a real
+screen rather than only ever being seen one at a time in Storybook. It is
+not itself part of the shelf.
 
 ## Using the shelf in your own app
 
