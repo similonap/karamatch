@@ -743,6 +743,7 @@ export function Button({
             stopPropagation={stopPropagation}
             style={{
                 height,
+                flexShrink: 0,
                 borderRadius: size === "sm" ? R.sm : R.md,
                 display: "flex",
                 alignItems: "center",
