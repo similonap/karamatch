@@ -96,6 +96,9 @@ export interface Song {
     title: string;
     artist: string;
     genre: string[];
+    // Cover Art Archive thumbnail. Absent for the ~17% of the catalog that
+    // could not be resolved, so every render needs a fallback.
+    coverArt?: string;
 }
 
 // A singer inside a list, carrying taste compatibility with the signed-in

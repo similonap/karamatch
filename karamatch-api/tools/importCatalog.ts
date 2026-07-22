@@ -4,6 +4,13 @@
 //
 //     npx ts-node tools/importCatalog.ts
 //
+// This rewrites songs.json from scratch, which drops the coverArt fields added
+// by tools/coverart. Follow it with:
+//
+//     npx ts-node tools/coverart/mergeCoverArt.ts
+//
+// (that step reads a committed TSV — it does not need the MusicBrainz dump).
+//
 // The output is what seed() inserts, so everything expensive (CSV parsing,
 // picking the curated pool) happens here rather than at server start.
 //

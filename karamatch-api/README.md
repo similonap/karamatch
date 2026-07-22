@@ -83,6 +83,30 @@ and every cross-genre match rounds to zero.
 when the CSV changes. Seeding inserts it in batches of 5,000, and the curated pool is
 read into memory once per process (never per request, and never per generated NPC).
 
+## Cover art
+
+**83.0%** of the catalog (69,843 of 84,104 songs, and 939 of the 1,110 curated) carries a
+`coverArt` thumbnail URL from the [Cover Art Archive](https://coverartarchive.org):
+
+```json
+{ "id": "49375", "title": "Tennessee Whiskey", "artist": "Chris Stapleton",
+  "coverArt": "https://coverartarchive.org/release/427ca738-.../44400368287-500.jpg" }
+```
+
+Songs that could not be resolved simply have no `coverArt` key, so clients should treat it
+as optional.
+
+These are resolved offline against the **MusicBrainz database dumps** rather than its web
+service — `/ws/2` allows 1 request/second, which would make 84k lookups a ~23 hour crawl,
+repeated on every catalog change. See `tools/coverart/` for the pipeline and
+`tools/coverart/README.md` for the runbook. It adds no npm dependencies (Postgres is
+Docker-only, at build time) and the resolved `coverart.tsv` is committed, so the usual
+case is one command:
+
+```bash
+npx ts-node tools/coverart/mergeCoverArt.ts   # re-run after importCatalog.ts
+```
+
 ## The world model, briefly
 
 - The map is a grid of ~1.1 km cells (`floor(lat/0.01) + ":" + floor(lng/0.01)`). The

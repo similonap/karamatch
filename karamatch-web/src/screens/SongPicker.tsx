@@ -3,7 +3,6 @@ import { api } from "../api";
 import type { Song } from "../api";
 import { useApp } from "../AppContext";
 import { C, GRAD, LAYOUT, R, S, S2, T } from "../design/tokens";
-import { Icon } from "../design/icons";
 import {
     BottomBar,
     Button,
@@ -14,6 +13,7 @@ import {
     ScrollBody,
     SearchField,
     Skeleton,
+    SongArt,
     StepHeader,
     useAsync,
     useDebounced
@@ -49,21 +49,11 @@ export function SongRow({
                 transition: "background 140ms ease, border-color 140ms ease"
             }}
         >
-            <div
-                style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: R.sm,
-                    background: selected ? GRAD : C.surface3,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: selected ? "#fff" : C.textFaint,
-                    flexShrink: 0
-                }}
-            >
-                <Icon name="music" size={18} />
-            </div>
+            <SongArt
+                coverArt={song.coverArt}
+                background={selected ? GRAD : C.surface3}
+                color={selected ? "#fff" : C.textFaint}
+            />
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ ...T.body, fontWeight: 600, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {song.title}

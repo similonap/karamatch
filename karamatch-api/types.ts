@@ -36,6 +36,9 @@ export interface Song {
     artist: string;
     genre: string[];
     curated: boolean;
+    // Cover Art Archive thumbnail, filled in by tools/coverart. Optional
+    // because not every catalog song can be resolved to a MusicBrainz release.
+    coverArt?: string;
 }
 
 export interface Room {

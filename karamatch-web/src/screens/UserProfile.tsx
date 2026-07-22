@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api } from "../api";
 import { useApp } from "../AppContext";
 import { C, R, S, S2, T } from "../design/tokens";
-import { Icon, StarIcon } from "../design/icons";
+import { StarIcon } from "../design/icons";
 import {
     AppBar,
     Avatar,
@@ -15,7 +15,8 @@ import {
     ListRow,
     Loading,
     ScrollBody,
-    Section
+    Section,
+    SongArt
 } from "../ui";
 import { useAsync } from "../ui";
 
@@ -171,23 +172,7 @@ export default function UserProfile() {
                                 <ListRow
                                     key={song.id}
                                     last={index === user.favoriteSongs.length - 1}
-                                    leading={
-                                        <div
-                                            style={{
-                                                width: 34,
-                                                height: 34,
-                                                borderRadius: R.sm,
-                                                background: C.surface3,
-                                                color: C.tintSoft,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                flexShrink: 0
-                                            }}
-                                        >
-                                            <Icon name="music" size={16} />
-                                        </div>
-                                    }
+                                    leading={<SongArt coverArt={song.coverArt} size={34} color={C.tintSoft} />}
                                     title={song.title}
                                     subtitle={song.artist}
                                 />

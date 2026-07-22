@@ -1165,6 +1165,57 @@ export function Avatar({
     );
 }
 
+/**
+ * Album art for a song, falling back to the music icon when the API has no
+ * coverArt for it — or when the Cover Art Archive URL fails to load, which is
+ * why this mirrors Avatar's broken-image handling rather than trusting the URL.
+ */
+export function SongArt({
+    coverArt,
+    size = 38,
+    radius = R.sm,
+    background = C.surface3,
+    color = C.textFaint
+}: {
+    coverArt?: string;
+    size?: number;
+    radius?: number;
+    background?: string;
+    color?: string;
+}) {
+    const [broken, setBroken] = useState(false);
+    const showArt = coverArt && !broken;
+
+    return (
+        <div
+            style={{
+                width: size,
+                height: size,
+                borderRadius: radius,
+                background: background,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: color,
+                flexShrink: 0,
+                overflow: "hidden"
+            }}
+        >
+            {showArt ? (
+                <img
+                    src={coverArt}
+                    alt=""
+                    loading="lazy"
+                    onError={() => setBroken(true)}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+            ) : (
+                <Icon name="music" size={Math.round(size * 0.47)} />
+            )}
+        </div>
+    );
+}
+
 /** Overlapping avatars, for "who is in this party". */
 export function AvatarStack({
     people,
