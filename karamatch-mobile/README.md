@@ -49,11 +49,9 @@ what GitHub Pages serves once enabled for this repo (Settings → Pages,
 source: `docs/` on `main`; the repo needs to be public for Pages to work on
 the free tier).
 
-In a consumer Expo project with NativeWind already set up
-(https://www.nativewind.dev/docs/getting-started/installation), add this
-registry's namespace to `components.json` so a component's own
-`registryDependencies` (other shelf pieces it imports) resolve here instead
-of defaulting to ui.shadcn.com:
+In a consumer Expo project, add this registry's namespace to
+`components.json` so a component's own `registryDependencies` (other shelf
+pieces it imports) resolve here instead of defaulting to ui.shadcn.com:
 
 ```json
 {
@@ -120,7 +118,7 @@ are structural, not nominal.
   in plain Expo Go, so neither is in the shelf. `VenueLocationCard` is a
   static stand-in for the first case that hands off to the device's own Maps
   app. For the onboarding case there is no map-based stand-in — build a
-  search-first picker instead: `SearchField` + a `Pressable` results list
+  search-first picker instead: `SearchField` + an `AppPressable` results list
   (both already in the shelf) hitting the same free Nominatim endpoints the
   web version uses (`/search` to look up a typed place, `/reverse` to label
   a point), plus `expo-location` for "use my current location" (it reads

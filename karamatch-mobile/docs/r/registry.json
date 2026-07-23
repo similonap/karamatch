@@ -717,17 +717,6 @@
           "type": "registry:lib"
         }
       ]
-    },
-    {
-      "name": "cn",
-      "type": "registry:lib",
-      "title": "cn",
-      "files": [
-        {
-          "path": "src/utils/cn.ts",
-          "type": "registry:lib"
-        }
-      ]
     }
   ]
 }

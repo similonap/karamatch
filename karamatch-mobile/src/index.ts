@@ -77,7 +77,6 @@ export { VenueLocationCard } from "./components/domain/VenueLocationCard";
 
 // Utils
 export { avatarColor, initial } from "./utils/avatar";
-export { cn } from "./utils/cn";
 export { formatAgo, formatDayLabel, formatTime, formatWhen, money, plural } from "./utils/format";
 export { useAsync, useDebounced } from "./utils/hooks";
 

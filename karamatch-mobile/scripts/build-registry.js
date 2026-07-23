@@ -34,8 +34,7 @@ const SUPPORT_FILES = [
     { file: "src/types.ts", type: "registry:lib" },
     { file: "src/utils/avatar.ts", type: "registry:lib" },
     { file: "src/utils/format.ts", type: "registry:lib" },
-    { file: "src/utils/hooks.ts", type: "registry:lib" },
-    { file: "src/utils/cn.ts", type: "registry:lib" }
+    { file: "src/utils/hooks.ts", type: "registry:lib" }
 ];
 
 // react/react-native/expo are assumed already present in any consumer RN

@@ -3,12 +3,15 @@
   "name": "divider",
   "type": "registry:ui",
   "title": "Divider",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
   "files": [
     {
       "path": "src/components/primitives/Divider.tsx",
       "type": "registry:ui",
       "target": "src/components/primitives/Divider.tsx",
-      "content": "import { View } from \"react-native\";\n\n// Ported from karamatch-web/src/ui.tsx's `Divider`.\nexport function Divider() {\n    return <View className=\"h-px bg-border\" />;\n}\n"
+      "content": "import { View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `Divider`.\nexport function Divider() {\n    const { C } = useTheme();\n    return <View style={{ height: 1, backgroundColor: C.border }} />;\n}\n"
     }
   ]
 }
