@@ -14,13 +14,16 @@ export function Chip({
     icon,
     tone = "neutral",
     onPress,
-    selected
+    selected,
+    chevron
 }: {
     label: ReactNode;
     icon?: IconName;
     tone?: ChipTone;
     onPress?: () => void;
     selected?: boolean;
+    /** Trailing chevron, for a chip that opens something (e.g. a location picker). */
+    chevron?: boolean;
 }) {
     const { C, R, T } = useTheme();
 
@@ -54,6 +57,7 @@ export function Chip({
             ) : (
                 label
             )}
+            {chevron ? <Icon name="chevronRight" size={12} strokeWidth={2} color={skin.color} /> : null}
         </View>
     );
 

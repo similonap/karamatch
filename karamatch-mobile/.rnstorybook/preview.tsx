@@ -6,24 +6,17 @@ import { useTheme, ThemeProvider } from "../src/theme/ThemeProvider";
 
 // Every story renders inside SafeAreaProvider + ThemeProvider, so a
 // component pulled straight from the shelf behaves exactly like it would in
-// a student's own app — no per-story boilerplate. The "Theme" toolbar
-// global drives ThemeProvider's initial mode; `key`-ing the provider on it
-// forces a clean remount when the toolbar is switched, since ThemeProvider
-// only reads `initialMode` once.
+// a student's own app — no per-story boilerplate. The "theme" global drives
+// ThemeProvider's initial mode; `key`-ing the provider on it forces a clean
+// remount when it changes, since ThemeProvider only reads `initialMode` once.
+// It's switched from the custom "Theme" addon panel (see
+// .rnstorybook/addons/theme-toggle) rather than a `toolbar` here — the
+// on-device Storybook UI, unlike web Storybook, never renders one.
 const preview: Preview = {
     globalTypes: {
         theme: {
             description: "Colour scheme",
-            defaultValue: "dark",
-            toolbar: {
-                title: "Theme",
-                icon: "mirror",
-                items: [
-                    { value: "dark", title: "Dark" },
-                    { value: "light", title: "Light" }
-                ],
-                dynamicTitle: true
-            }
+            defaultValue: "dark"
         }
     },
     decorators: [

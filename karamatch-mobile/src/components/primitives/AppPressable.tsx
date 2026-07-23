@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { Animated, Pressable } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 // Ported from karamatch-web/src/ui.tsx's `Pressable`, the foundation of every
 // touchable in the shelf. The web version faked RN's press feedback with
 // pointer events + a CSS transition; here it's the real thing — RN's own
@@ -45,17 +47,21 @@ export function AppPressable({
         ]).start();
     };
 
+    // A single animated node, not `Pressable` wrapping an `Animated.View` —
+    // splitting `style` across two nodes broke callers whose style does both
+    // jobs at once (e.g. a `flex` that sizes this pressable within its own
+    // parent row, alongside a `flexDirection` that arranges its children).
     return (
-        <Pressable
+        <AnimatedPressable
             onPress={onPress}
             disabled={disabled}
             hitSlop={hitSlop}
             accessibilityLabel={accessibilityLabel}
             onPressIn={() => animateTo(scaleTo, opacityTo, 60)}
             onPressOut={() => animateTo(1, 1, 160)}
-            style={[{ opacity: disabled ? 0.45 : 1 }, style]}
+            style={[style, { opacity: disabled ? 0.45 : opacity, transform: [{ scale }] }]}
         >
-            <Animated.View style={{ transform: [{ scale }], opacity }}>{children}</Animated.View>
-        </Pressable>
+            {children}
+        </AnimatedPressable>
     );
 }

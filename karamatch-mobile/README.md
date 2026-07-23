@@ -81,12 +81,22 @@ are structural, not nominal.
 
 ## What's deliberately not here
 
-- **A live venue map.** `VenueMap` in the web app embeds Leaflet; the native
-  equivalent needs a dev-client/prebuild (`react-native-maps` or similar),
-  which breaks running in plain Expo Go. `VenueLocationCard` is a static
-  stand-in that hands off to the device's own Maps app instead.
-  If you need a real embedded map, that's the one place you'll need to
-  step outside Expo Go.
+- **A live, pannable map.** The web app embeds Leaflet in two places —
+  `VenueMap` (a read-only "here it is" view on `VenueDetail`) and the
+  onboarding `Location` screen (drag the map to drop a pin, with live
+  reverse-geocoding as you pan). The native equivalent needs a
+  dev-client/prebuild (`react-native-maps` or similar), which breaks running
+  in plain Expo Go, so neither is in the shelf. `VenueLocationCard` is a
+  static stand-in for the first case that hands off to the device's own Maps
+  app. For the onboarding case there is no map-based stand-in — build a
+  search-first picker instead: `SearchField` + a `Pressable` results list
+  (both already in the shelf) hitting the same free Nominatim endpoints the
+  web version uses (`/search` to look up a typed place, `/reverse` to label
+  a point), plus `expo-location` for "use my current location" (it reads
+  GPS coordinates without needing a dev client, unlike `react-native-maps`).
+  That gets you the same outcome — the user ends up with a `{ lat, lng,
+  label }` — without a live pan-to-move map. If you need the actual pannable
+  map for either case, that's where you'll need to step outside Expo Go.
 - **Screen transitions.** The web version's `Transition` (push/pop/fade) is
   navigator-level choreography that belongs to whatever stack router you
   wire up (e.g. React Navigation's native stack already animates this) —

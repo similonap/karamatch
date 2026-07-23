@@ -41,3 +41,17 @@ export const AllTones: Story = {
         );
     }
 };
+
+// The web VenuesTab's tappable "set your location" pill: an icon, a label,
+// and a trailing chevron to show it opens something.
+export const LocationPicker: Story = {
+    args: { label: "Amsterdam", icon: "pin", tone: "neutral", chevron: true },
+    render: args => {
+        const { C } = useTheme();
+        return (
+            <View style={{ padding: 24, backgroundColor: C.surface, flexDirection: "row" }}>
+                <Chip {...args} onPress={() => {}} />
+            </View>
+        );
+    }
+};

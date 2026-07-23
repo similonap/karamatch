@@ -15,6 +15,7 @@ export type { IconName } from "./icons/types";
 // Primitives
 export { AppPressable } from "./components/primitives/AppPressable";
 export { Avatar } from "./components/primitives/Avatar";
+export { AvatarPicker } from "./components/primitives/AvatarPicker";
 export { AvatarStack } from "./components/primitives/AvatarStack";
 export { BrandMark } from "./components/primitives/BrandMark";
 export { Button } from "./components/primitives/Button";
@@ -27,11 +28,14 @@ export { EmptyState } from "./components/primitives/EmptyState";
 export { ErrorNote } from "./components/primitives/ErrorNote";
 export { Group } from "./components/primitives/Group";
 export { IconButton } from "./components/primitives/IconButton";
+export { IconTile } from "./components/primitives/IconTile";
 export { ListRow } from "./components/primitives/ListRow";
 export { Loading } from "./components/primitives/Loading";
 export { MatchBadge } from "./components/primitives/MatchBadge";
 export { OptionPill } from "./components/primitives/OptionPill";
 export { Rating } from "./components/primitives/Rating";
+export { ReceiptLine } from "./components/primitives/ReceiptLine";
+export { RemovableChip } from "./components/primitives/RemovableChip";
 export { SearchField } from "./components/primitives/SearchField";
 export { Section } from "./components/primitives/Section";
 export { Segmented } from "./components/primitives/Segmented";
@@ -50,15 +54,22 @@ export { Wordmark } from "./components/primitives/Wordmark";
 // Scaffolding
 export { AppBar } from "./components/scaffolding/AppBar";
 export { BottomBar } from "./components/scaffolding/BottomBar";
+export { BottomTabBar, TABS as BOTTOM_TAB_BAR_TABS } from "./components/scaffolding/BottomTabBar";
+export type { TabKey } from "./components/scaffolding/BottomTabBar";
 export { Screen } from "./components/scaffolding/Screen";
 
 // Domain composites
 export { ChatBubble, shouldShowChatName } from "./components/domain/ChatBubble";
+export { ChatInputBar } from "./components/domain/ChatInputBar";
+export { CrewMemberChip, InvitedMemberChip } from "./components/domain/CrewMemberChip";
+export { CrewRatingCard } from "./components/domain/CrewRatingCard";
 export { FriendRow } from "./components/domain/FriendRow";
+export { InviteFriendRow } from "./components/domain/InviteFriendRow";
 export { NotificationRow } from "./components/domain/NotificationRow";
 export { PartyCard } from "./components/domain/PartyCard";
 export type { PartyCardVariant } from "./components/domain/PartyCard";
 export { ReviewCard } from "./components/domain/ReviewCard";
+export { RoomOptionRow } from "./components/domain/RoomOptionRow";
 export { SongRow } from "./components/domain/SongRow";
 export { UserProfileHeader } from "./components/domain/UserProfileHeader";
 export { VenueCard } from "./components/domain/VenueCard";

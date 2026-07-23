@@ -3,9 +3,11 @@
 // running karamatch-api.
 import type {
     ChatMessage,
+    CrewMember,
     InviteNotification,
     MatchedUser,
     MatchView,
+    PartyRoomMember,
     PartyView,
     PastPartyView,
     PublicUser,
@@ -134,6 +136,11 @@ export const MOCK_VENUE_REVIEW: VenueReview = {
     createdAt: new Date(Date.now() - 12 * 86400 * 1000).toISOString(),
     from: MOCK_HOST
 };
+
+export const MOCK_CREW_MEMBER: CrewMember = { ...MOCK_MATCHED_USER, role: "member" };
+
+export const MOCK_PARTY_HOST_MEMBER: PartyRoomMember = { ...MOCK_HOST, matchPct: null, role: "host", paid: true };
+export const MOCK_PARTY_ROOM_MEMBER: PartyRoomMember = { ...MOCK_MATCHED_USER, role: "member", paid: false };
 
 export const MOCK_CHAT_MESSAGE: ChatMessage = {
     id: "m1",
