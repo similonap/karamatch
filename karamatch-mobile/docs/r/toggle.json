@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "toggle",
+  "type": "registry:ui",
+  "title": "Toggle",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Toggle.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Toggle.tsx",
+      "content": "import { useEffect, useRef } from \"react\";\nimport { Animated } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `Toggle` — one switch geometry for\n// both platforms, per the identical-design brief. The web version animated\n// the thumb's `left` with a CSS transition; RN animates the same distance as\n// a `translateX` on the native driver instead.\nexport function Toggle({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: string }) {\n    const { C, R, SHADOW } = useTheme();\n    const progress = useRef(new Animated.Value(on ? 1 : 0)).current;\n\n    useEffect(() => {\n        Animated.timing(progress, { toValue: on ? 1 : 0, duration: 200, useNativeDriver: true }).start();\n    }, [on, progress]);\n\n    const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 19] });\n\n    return (\n        <AppPressable\n            onPress={() => onChange(!on)}\n            accessibilityLabel={label}\n            scaleTo={1}\n            opacityTo={0.8}\n            style={{\n                width: 46,\n                height: 28,\n                borderRadius: R.full,\n                borderCurve: \"continuous\",\n                backgroundColor: on ? C.green : C.surface3,\n                borderWidth: on ? 0 : 1,\n                borderColor: C.border\n            }}\n        >\n            <Animated.View\n                style={{\n                    width: 22,\n                    height: 22,\n                    borderRadius: 11,\n                    backgroundColor: \"#fff\",\n                    position: \"absolute\",\n                    top: 2,\n                    left: 2,\n                    boxShadow: SHADOW.e1,\n                    transform: [{ translateX }]\n                }}\n            />\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

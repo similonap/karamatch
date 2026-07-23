@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "bottom-tab-bar",
+  "type": "registry:component",
+  "title": "BottomTabBar",
+  "dependencies": [
+    "react-native-safe-area-context"
+  ],
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/icons-types",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/scaffolding/BottomTabBar.tsx",
+      "type": "registry:component",
+      "target": "src/components/scaffolding/BottomTabBar.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport { useSafeAreaInsets } from \"react-native-safe-area-context\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { IconName } from \"../../icons/types\";\nimport { AppPressable } from \"../primitives/AppPressable\";\n\nexport type TabKey = \"venues\" | \"parties\" | \"match\" | \"friends\" | \"mine\";\n\nexport const TABS: { key: TabKey; label: string; icon: IconName }[] = [\n    { key: \"venues\", label: \"Venues\", icon: \"pin\" },\n    { key: \"parties\", label: \"Parties\", icon: \"mic\" },\n    { key: \"match\", label: \"Match\", icon: \"spark\" },\n    { key: \"friends\", label: \"Friends\", icon: \"users\" },\n    { key: \"mine\", label: \"Mine\", icon: \"calendar\" }\n];\n\n// Ported from karamatch-web/src/screens/MainTabs.tsx's inline `TabBar` — flat\n// and opaque, hairline on top, icon over label, the selected tab marked by a\n// filled glyph and the tint colour. Deliberately not a floating translucent\n// pill: that's an iOS-only idiom that renders differently wherever\n// backdrop-filter/blur is unsupported, breaking the \"identical on both\n// platforms\" requirement the web version calls out.\nexport function BottomTabBar({ current, onSelect }: { current: TabKey; onSelect: (tab: TabKey) => void }) {\n    const { C, FONT, LAYOUT, T } = useTheme();\n    const insets = useSafeAreaInsets();\n\n    return (\n        <View\n            style={{\n                flexDirection: \"row\",\n                alignItems: \"stretch\",\n                height: LAYOUT.tabBar + insets.bottom,\n                paddingBottom: insets.bottom,\n                backgroundColor: C.surface,\n                borderTopWidth: 1,\n                borderTopColor: C.border\n            }}\n        >\n            {TABS.map(tab => {\n                const on = tab.key === current;\n                return (\n                    <AppPressable\n                        key={tab.key}\n                        onPress={() => onSelect(tab.key)}\n                        scaleTo={0.92}\n                        opacityTo={0.6}\n                        accessibilityLabel={tab.label}\n                        style={{ flex: 1, alignItems: \"center\", justifyContent: \"center\", gap: 3 }}\n                    >\n                        <Icon name={tab.icon} size={24} strokeWidth={1.8} solid={on} color={on ? C.tint : C.textMuted} />\n                        <Text\n                            style={[\n                                T.footnote,\n                                {\n                                    fontFamily: on ? FONT.bodyBold : FONT.bodyMedium,\n                                    fontSize: 10,\n                                    letterSpacing: 0.1,\n                                    color: on ? C.tint : C.textMuted\n                                }\n                            ]}\n                        >\n                            {tab.label}\n                        </Text>\n                    </AppPressable>\n                );\n            })}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

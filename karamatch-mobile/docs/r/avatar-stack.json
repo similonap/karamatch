@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar-stack",
+  "type": "registry:ui",
+  "title": "AvatarStack",
+  "registryDependencies": [
+    "@karamatch/components-primitives-avatar",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/AvatarStack.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/AvatarStack.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Avatar } from \"./Avatar\";\n\n// Ported from karamatch-web/src/ui.tsx's `AvatarStack` — overlapping\n// avatars, for \"who is in this party\".\nexport function AvatarStack({\n    people,\n    max = 4,\n    size = 28\n}: {\n    people: { name: string; photoUrl?: string | null; id?: string | number }[];\n    max?: number;\n    size?: number;\n}) {\n    const { C } = useTheme();\n    const shown = people.slice(0, max);\n    const extra = people.length - shown.length;\n\n    return (\n        <View style={{ flexDirection: \"row\", alignItems: \"center\" }}>\n            {shown.map((person, index) => (\n                <View\n                    key={person.id ?? person.name + index}\n                    style={{\n                        marginLeft: index === 0 ? 0 : -size * 0.32,\n                        borderRadius: size / 2,\n                        boxShadow: \"0 0 0 2px \" + C.surface1,\n                        zIndex: shown.length - index\n                    }}\n                >\n                    <Avatar name={person.name} photoUrl={person.photoUrl} seed={person.id ?? person.name} size={size} />\n                </View>\n            ))}\n            {extra > 0 ? (\n                <View\n                    style={{\n                        marginLeft: -size * 0.32,\n                        width: size,\n                        height: size,\n                        borderRadius: size / 2,\n                        backgroundColor: C.surface3,\n                        alignItems: \"center\",\n                        justifyContent: \"center\",\n                        boxShadow: \"0 0 0 2px \" + C.surface1\n                    }}\n                >\n                    <Text style={{ fontSize: Math.round(size * 0.34), fontWeight: \"700\", color: C.textDim }}>+{extra}</Text>\n                </View>\n            ) : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

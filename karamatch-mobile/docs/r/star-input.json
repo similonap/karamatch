@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "star-input",
+  "type": "registry:ui",
+  "title": "StarInput",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/star-icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/StarInput.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/StarInput.tsx",
+      "content": "import { View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { StarIcon } from \"../../icons/StarIcon\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `StarInput` — a tappable 1-5 star\n// input, each star with a full-size touch target.\nexport function StarInput({ value, onChange }: { value: number; onChange: (stars: number) => void }) {\n    const { C, LAYOUT } = useTheme();\n    return (\n        <View style={{ flexDirection: \"row\", gap: 2 }} accessibilityLabel=\"Star rating\">\n            {[1, 2, 3, 4, 5].map(star => {\n                const on = star <= value;\n                return (\n                    <AppPressable\n                        key={star}\n                        onPress={() => onChange(star)}\n                        accessibilityLabel={star + (star === 1 ? \" star\" : \" stars\")}\n                        scaleTo={0.85}\n                        style={{\n                            width: LAYOUT.touch,\n                            height: LAYOUT.touch,\n                            alignItems: \"center\",\n                            justifyContent: \"center\"\n                        }}\n                    >\n                        <StarIcon size={26} filled={on} color={on ? C.gold : C.surface3} />\n                    </AppPressable>\n                );\n            })}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

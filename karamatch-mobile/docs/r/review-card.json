@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "review-card",
+  "type": "registry:component",
+  "title": "ReviewCard",
+  "registryDependencies": [
+    "@karamatch/card",
+    "@karamatch/components-primitives-avatar",
+    "@karamatch/format",
+    "@karamatch/star-row",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/ReviewCard.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/ReviewCard.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { formatAgo } from \"../../utils/format\";\nimport type { VenueReview } from \"../../types\";\nimport { Avatar } from \"../primitives/Avatar\";\nimport { Card } from \"../primitives/Card\";\nimport { StarRow } from \"../primitives/StarRow\";\n\n// Ported from karamatch-web/src/screens/VenueDetail.tsx's inline review card.\nexport function ReviewCard({ review }: { review: VenueReview }) {\n    const { C, S2, T } = useTheme();\n\n    return (\n        <Card style={{ gap: S2.s6 }}>\n            <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: S2.s10 }}>\n                <Avatar name={review.from?.name ?? \"Someone\"} photoUrl={review.from?.photoUrl ?? null} seed={review.from?.id ?? 0} size={28} />\n                <Text style={[T.captionStrong, { flex: 1, color: C.text }]} numberOfLines={1}>\n                    {review.from?.name ?? \"A singer\"}\n                </Text>\n                <StarRow value={review.stars} />\n                <Text style={[T.footnote, { color: C.textFaint }]}>{formatAgo(review.createdAt)}</Text>\n            </View>\n            {review.text ? <Text style={[T.caption, { color: C.textDim }]}>{review.text}</Text> : null}\n        </Card>\n    );\n}\n"
+    }
+  ]
+}

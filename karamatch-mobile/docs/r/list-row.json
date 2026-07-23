@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "list-row",
+  "type": "registry:ui",
+  "title": "ListRow",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/icons-types",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/ListRow.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/ListRow.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport type { ReactNode } from \"react\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { IconName } from \"../../icons/types\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `ListRow` — a row inside a Group:\n// leading icon, title/subtitle, trailing value + chevron.\nexport function ListRow({\n    icon,\n    iconColor,\n    leading,\n    title,\n    subtitle,\n    value,\n    onPress,\n    chevron,\n    danger,\n    trailing,\n    last\n}: {\n    icon?: IconName;\n    iconColor?: string;\n    leading?: ReactNode;\n    title: ReactNode;\n    subtitle?: ReactNode;\n    value?: ReactNode;\n    onPress?: () => void;\n    chevron?: boolean;\n    danger?: boolean;\n    trailing?: ReactNode;\n    last?: boolean;\n}) {\n    const { C, S, S2, T } = useTheme();\n\n    const body = (\n        <View\n            style={{\n                flexDirection: \"row\",\n                alignItems: \"center\",\n                gap: S2.s12,\n                minHeight: 52,\n                paddingVertical: 10,\n                paddingHorizontal: S.md,\n                borderBottomWidth: last ? 0 : 1,\n                borderBottomColor: C.border\n            }}\n        >\n            {leading}\n            {icon ? <Icon name={icon} size={20} color={danger ? C.tintSoft : iconColor ?? C.textMuted} /> : null}\n            <View style={{ flex: 1, minWidth: 0 }}>\n                {typeof title === \"string\" ? (\n                    <Text style={[T.bodyStrong, { color: danger ? C.tintSoft : C.text }]} numberOfLines={1}>\n                        {title}\n                    </Text>\n                ) : (\n                    title\n                )}\n                {subtitle ? (\n                    typeof subtitle === \"string\" ? (\n                        <Text style={[T.caption, { color: C.textMuted, marginTop: 1 }]}>{subtitle}</Text>\n                    ) : (\n                        subtitle\n                    )\n                ) : null}\n            </View>\n            {value ? (\n                typeof value === \"string\" ? <Text style={[T.caption, { color: C.textMuted }]}>{value}</Text> : value\n            ) : null}\n            {trailing}\n            {chevron ? <Icon name=\"chevronRight\" size={18} color={C.textFaint} /> : null}\n        </View>\n    );\n\n    if (!onPress) {\n        return body;\n    }\n    return (\n        <AppPressable onPress={onPress} scaleTo={1} opacityTo={0.6}>\n            {body}\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

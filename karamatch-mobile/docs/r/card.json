@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "card",
+  "type": "registry:ui",
+  "title": "Card",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Card.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Card.tsx",
+      "content": "import { View } from \"react-native\";\nimport type { StyleProp, ViewStyle } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `Card`.\nexport function Card({\n    children,\n    onPress,\n    style,\n    padded = true,\n    highlight\n}: {\n    children: React.ReactNode;\n    onPress?: () => void;\n    style?: StyleProp<ViewStyle>;\n    padded?: boolean;\n    /** Tints the border, for the one card that deserves attention. */\n    highlight?: boolean;\n}) {\n    const { C, R, S, SHADOW } = useTheme();\n    const base: ViewStyle = {\n        backgroundColor: C.surface1,\n        borderWidth: 1,\n        borderColor: highlight ? C.tintBorder : C.border,\n        borderRadius: R.lg,\n        borderCurve: \"continuous\",\n        boxShadow: SHADOW.e1,\n        padding: padded ? S.md : 0,\n        overflow: \"hidden\"\n    };\n\n    if (!onPress) {\n        return <View style={[base, style]}>{children}</View>;\n    }\n    return (\n        <AppPressable onPress={onPress} scaleTo={0.985} opacityTo={0.85} style={[base, style]}>\n            {children}\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

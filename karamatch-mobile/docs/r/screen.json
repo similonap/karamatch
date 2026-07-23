@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "screen",
+  "type": "registry:component",
+  "title": "Screen",
+  "dependencies": [
+    "react-native-safe-area-context"
+  ],
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/scaffolding/Screen.tsx",
+      "type": "registry:component",
+      "target": "src/components/scaffolding/Screen.tsx",
+      "content": "import { ScrollView } from \"react-native\";\nimport type { NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle } from \"react-native\";\nimport { useSafeAreaInsets } from \"react-native-safe-area-context\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `ScrollBody` — the scrolling body\n// of a screen, handling the gutter and the bottom safe-area pad. The web\n// version measured its own bottom inset with a `LAYOUT.safeBottom` constant;\n// RN reads the device's real inset from `react-native-safe-area-context` and\n// leans on `contentInsetAdjustmentBehavior=\"automatic\"` instead of manual\n// top padding.\nexport function Screen({\n    children,\n    pad = true,\n    bottomPad,\n    gap,\n    style,\n    onScroll\n}: {\n    children: React.ReactNode;\n    pad?: boolean;\n    bottomPad?: number;\n    gap?: number;\n    style?: StyleProp<ViewStyle>;\n    /** Scroll offset in px, for screens with a collapsing header. */\n    onScroll?: (offset: number) => void;\n}) {\n    const { LAYOUT, S, S2 } = useTheme();\n    const insets = useSafeAreaInsets();\n\n    const handleScroll = onScroll\n        ? (event: NativeSyntheticEvent<NativeScrollEvent>) => onScroll(event.nativeEvent.contentOffset.y)\n        : undefined;\n\n    return (\n        <ScrollView\n            style={{ flex: 1 }}\n            contentContainerStyle={[\n                {\n                    gap: gap ?? S2.s12,\n                    paddingHorizontal: pad ? LAYOUT.gutter : 0,\n                    paddingBottom: bottomPad ?? insets.bottom + S.md\n                },\n                style\n            ]}\n            contentInsetAdjustmentBehavior=\"automatic\"\n            onScroll={handleScroll}\n            scrollEventThrottle={handleScroll ? 16 : undefined}\n            showsVerticalScrollIndicator={false}\n        >\n            {children}\n        </ScrollView>\n    );\n}\n"
+    }
+  ]
+}

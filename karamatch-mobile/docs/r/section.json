@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "section",
+  "type": "registry:ui",
+  "title": "Section",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Section.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Section.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport type { ReactNode } from \"react\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `Section` — a titled block of\n// content within a screen.\nexport function Section({\n    title,\n    hint,\n    children,\n    gap\n}: {\n    title: string;\n    hint?: ReactNode;\n    children: ReactNode;\n    gap?: number;\n}) {\n    const { C, S, T } = useTheme();\n    return (\n        <View style={{ gap: gap ?? S.sm }}>\n            <Text style={[T.sectionHeader, { color: C.textMuted }]}>{title}</Text>\n            {children}\n            {hint ? (\n                typeof hint === \"string\" ? <Text style={[T.footnote, { color: C.textFaint }]}>{hint}</Text> : hint\n            ) : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

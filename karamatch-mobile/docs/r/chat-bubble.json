@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "chat-bubble",
+  "type": "registry:component",
+  "title": "ChatBubble",
+  "registryDependencies": [
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/ChatBubble.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/ChatBubble.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport type { ChatMessage } from \"../../types\";\n\n// Ported from karamatch-web/src/screens/PartyRoom.tsx's inline chat bubble —\n// a tail on the outer corner, the way both platforms' native bubbles are\n// shaped, and the sender's name shown only on the first message of a run.\nexport function ChatBubble({ message, mine, showName }: { message: ChatMessage; mine: boolean; showName: boolean }) {\n    const { C, R, S, T } = useTheme();\n\n    return (\n        <View style={{ alignItems: mine ? \"flex-end\" : \"flex-start\", gap: 2 }}>\n            {showName ? (\n                <Text style={[T.footnote, { fontSize: 10, color: C.textFaint, paddingHorizontal: 8 }]}>\n                    {mine ? \"You\" : message.from?.name ?? \"Someone\"}\n                </Text>\n            ) : null}\n            <View\n                style={{\n                    maxWidth: \"78%\",\n                    paddingVertical: 9,\n                    paddingHorizontal: 13,\n                    borderRadius: R.lg,\n                    borderCurve: \"continuous\",\n                    borderBottomRightRadius: mine ? 5 : R.lg,\n                    borderBottomLeftRadius: mine ? R.lg : 5,\n                    backgroundColor: mine ? C.tint : C.surface2,\n                    borderWidth: 1,\n                    borderColor: mine ? \"transparent\" : C.border\n                }}\n            >\n                <Text style={[T.callout, { color: mine ? C.onTint : C.text }]}>{message.text}</Text>\n            </View>\n        </View>\n    );\n}\n\n// Consecutive messages from one person only get a name once — a small\n// selector so a screen doesn't need to re-derive this itself when mapping\n// over a message list.\nexport function shouldShowChatName(messages: ChatMessage[], index: number) {\n    return index === 0 || messages[index - 1].userId !== messages[index].userId;\n}\n"
+    }
+  ]
+}

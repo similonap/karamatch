@@ -1,7 +1,8 @@
 const { getDefaultConfig } = require("expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
 const { withStorybook } = require("@storybook/react-native/metro/withStorybook");
 
-const config = getDefaultConfig(__dirname);
+const config = withNativeWind(getDefaultConfig(__dirname), { input: "./global.css" });
 
 // Generates .rnstorybook/storybook.requires from the `stories` glob in
 // .rnstorybook/main.ts every time Metro starts. `enabled: false` strips

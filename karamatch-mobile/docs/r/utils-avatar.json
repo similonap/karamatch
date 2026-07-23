@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "utils-avatar",
+  "type": "registry:lib",
+  "title": "avatar",
+  "registryDependencies": [
+    "@karamatch/colors"
+  ],
+  "files": [
+    {
+      "path": "src/utils/avatar.ts",
+      "type": "registry:lib",
+      "target": "src/utils/avatar.ts",
+      "content": "import { AVATAR_COLORS } from \"../theme/colors\";\n\n// Ported from karamatch-web/src/design/tokens.ts. Stable colour per person so\n// an avatar keeps its colour across screens.\nexport function avatarColor(key: string | number) {\n    const s = String(key);\n    let hash = 0;\n    for (let i = 0; i < s.length; i++) {\n        hash = (hash * 31 + s.charCodeAt(i)) >>> 0;\n    }\n    return AVATAR_COLORS[hash % AVATAR_COLORS.length];\n}\n\nexport function initial(name: string) {\n    return (name || \"?\").trim().charAt(0).toUpperCase() || \"?\";\n}\n"
+    }
+  ]
+}

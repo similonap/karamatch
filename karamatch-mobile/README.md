@@ -38,6 +38,37 @@ components, just enough to prove the pieces actually compose into a real
 screen rather than only ever being seen one at a time in Storybook. It is
 not itself part of the shelf.
 
+## Installing components via the registry
+
+Components are also distributable one at a time through the standard
+[shadcn CLI](https://ui.shadcn.com/docs/cli) — same mechanism
+[reactnativereusables.com](https://reactnativereusables.com) uses, no custom
+CLI needed. `npm run build:registry` (`scripts/build-registry.js`) generates
+a shadcn-schema registry into `docs/r/` from the current `src/` — this is
+what GitHub Pages serves once enabled for this repo (Settings → Pages,
+source: `docs/` on `main`; the repo needs to be public for Pages to work on
+the free tier).
+
+In a consumer Expo project with NativeWind already set up
+(https://www.nativewind.dev/docs/getting-started/installation), add this
+registry's namespace to `components.json` so a component's own
+`registryDependencies` (other shelf pieces it imports) resolve here instead
+of defaulting to ui.shadcn.com:
+
+```json
+{
+  "registries": {
+    "@karamatch": "https://<this-repo's-pages-url>/r/{name}.json"
+  }
+}
+```
+
+Then install a component and everything it transitively needs in one go:
+
+```sh
+npx shadcn@latest add https://<this-repo's-pages-url>/r/button.json
+```
+
 ## Using the shelf in your own app
 
 Copy `src/` into your project (or just the pieces you need — nothing in

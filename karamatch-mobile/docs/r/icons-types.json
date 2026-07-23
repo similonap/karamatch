@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "icons-types",
+  "type": "registry:lib",
+  "title": "types",
+  "files": [
+    {
+      "path": "src/icons/types.ts",
+      "type": "registry:lib",
+      "target": "src/icons/types.ts",
+      "content": "// Copied verbatim from karamatch-web/src/design/icons.tsx — the icon set is\n// geometry, not markup, so the name union carries over unchanged.\nexport type IconName =\n    | \"pin\"\n    | \"mic\"\n    | \"spark\"\n    | \"users\"\n    | \"calendar\"\n    | \"bell\"\n    | \"star\"\n    | \"check\"\n    | \"close\"\n    | \"chevronLeft\"\n    | \"chevronRight\"\n    | \"chevronDown\"\n    | \"search\"\n    | \"plus\"\n    | \"minus\"\n    | \"camera\"\n    | \"send\"\n    | \"sun\"\n    | \"moon\"\n    | \"logout\"\n    | \"crown\"\n    | \"music\"\n    | \"locate\"\n    | \"pencil\"\n    | \"clock\"\n    | \"card\"\n    | \"userPlus\"\n    | \"trash\"\n    | \"heart\"\n    | \"info\"\n    | \"share\"\n    | \"sliders\";\n"
+    }
+  ]
+}

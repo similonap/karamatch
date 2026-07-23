@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "invite-friend-row",
+  "type": "registry:component",
+  "title": "InviteFriendRow",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/check-ring",
+    "@karamatch/components-primitives-avatar",
+    "@karamatch/match-badge",
+    "@karamatch/star-icon",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/InviteFriendRow.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/InviteFriendRow.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { StarIcon } from \"../../icons/StarIcon\";\nimport type { MatchedUser } from \"../../types\";\nimport { AppPressable } from \"../primitives/AppPressable\";\nimport { Avatar } from \"../primitives/Avatar\";\nimport { CheckRing } from \"../primitives/CheckRing\";\nimport { MatchBadge } from \"../primitives/MatchBadge\";\n\n// Ported from karamatch-web/src/screens/InviteFriends.tsx's inline friend\n// row — SongRow's bordered/CheckRing shape (not ListRow's flush hairline\n// shape), because picking several friends to invite is a multi-select list\n// like the song picker, not a single navigable list.\nexport function InviteFriendRow({\n    friend,\n    selected,\n    onToggle\n}: {\n    friend: MatchedUser;\n    selected: boolean;\n    onToggle: () => void;\n}) {\n    const { C, R, S2, T } = useTheme();\n\n    return (\n        <AppPressable\n            onPress={onToggle}\n            scaleTo={0.99}\n            opacityTo={0.75}\n            style={{\n                flexDirection: \"row\",\n                alignItems: \"center\",\n                gap: S2.s12,\n                paddingVertical: 10,\n                paddingHorizontal: 12,\n                borderRadius: R.md,\n                borderCurve: \"continuous\",\n                borderWidth: 1,\n                borderColor: selected ? C.tintBorder : C.border,\n                backgroundColor: selected ? C.tintBg : C.surface1\n            }}\n        >\n            <Avatar name={friend.name} photoUrl={friend.photoUrl} seed={friend.id} size={42} />\n            <View style={{ flex: 1, minWidth: 0 }}>\n                <Text style={[T.bodyStrong, { color: C.text }]}>{friend.name}</Text>\n                <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: 4 }}>\n                    <Text style={[T.caption, { color: C.textMuted }]}>@{friend.username}</Text>\n                    <StarIcon size={10} color={C.gold} />\n                    <Text style={[T.caption, { color: C.textMuted }]}>{friend.singerRating.toFixed(1)}</Text>\n                </View>\n            </View>\n            <MatchBadge pct={friend.matchPct} />\n            <CheckRing on={selected} />\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

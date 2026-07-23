@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "wordmark",
+  "type": "registry:ui",
+  "title": "Wordmark",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Wordmark.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Wordmark.tsx",
+      "content": "import { Text } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `Wordmark`. The web version let\n// \"Kara\" inherit whatever text colour surrounded it via CSS; RN has no\n// inheritance, so that segment takes an explicit `color` instead (default:\n// the theme's primary text colour).\nexport function Wordmark({ size = 19, color }: { size?: number; color?: string }) {\n    const { C, FONT } = useTheme();\n    return (\n        <Text style={{ fontFamily: FONT.displayExtraBold, fontSize: size, letterSpacing: -0.4 }}>\n            <Text style={{ color: color ?? C.text }}>Kara</Text>\n            <Text style={{ color: C.tint }}>Match</Text>\n        </Text>\n    );\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "spinner",
+  "type": "registry:ui",
+  "title": "Spinner",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Spinner.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Spinner.tsx",
+      "content": "import { useEffect, useRef } from \"react\";\nimport { Animated, Easing } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `Spinner`. The web version drew an\n// arc with `border-top-color` on a circle and spun it with a CSS animation —\n// RN `View` borders support the same per-edge colouring, so the trick ports\n// directly; only the animation driver changes, to `Animated` + native driver.\nexport function Spinner({ size = 24, color }: { size?: number; color?: string }) {\n    const { C } = useTheme();\n    const tint = color ?? C.tint;\n    const rotation = useRef(new Animated.Value(0)).current;\n\n    useEffect(() => {\n        const loop = Animated.loop(\n            Animated.timing(rotation, { toValue: 1, duration: 800, easing: Easing.linear, useNativeDriver: true })\n        );\n        loop.start();\n        return () => loop.stop();\n    }, [rotation]);\n\n    const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: [\"0deg\", \"360deg\"] });\n    const border = Math.max(2, Math.round(size / 12));\n\n    return (\n        <Animated.View\n            style={{\n                width: size,\n                height: size,\n                borderRadius: size / 2,\n                borderWidth: border,\n                borderColor: C.border,\n                borderTopColor: tint,\n                transform: [{ rotate: spin }]\n            }}\n        />\n    );\n}\n"
+    }
+  ]
+}

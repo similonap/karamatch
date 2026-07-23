@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "crew-member-chip",
+  "type": "registry:component",
+  "title": "CrewMemberChip",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/components-primitives-avatar",
+    "@karamatch/icon",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/CrewMemberChip.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/CrewMemberChip.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { PartyRoomMember } from \"../../types\";\nimport { AppPressable } from \"../primitives/AppPressable\";\nimport { Avatar } from \"../primitives/Avatar\";\n\n// Ported from karamatch-web/src/screens/PartyRoom.tsx's inline crew pills —\n// a joined member (avatar + first name/\"You\" + role glyph) and a dashed\n// \"invited, not joined yet\" placeholder. Two different shapes (the invited\n// one has no avatar and isn't tappable), so two exports from one file.\nexport function CrewMemberChip({\n    member,\n    isMe,\n    onPress\n}: {\n    member: PartyRoomMember;\n    isMe: boolean;\n    onPress?: () => void;\n}) {\n    const { C, R, T } = useTheme();\n\n    return (\n        <AppPressable\n            onPress={onPress}\n            scaleTo={0.96}\n            style={{\n                flexDirection: \"row\",\n                alignItems: \"center\",\n                gap: 7,\n                backgroundColor: C.surface1,\n                borderWidth: 1,\n                borderColor: C.border,\n                borderRadius: R.full,\n                paddingVertical: 4,\n                paddingLeft: 4,\n                paddingRight: 11\n            }}\n        >\n            <Avatar name={member.name} photoUrl={member.photoUrl} seed={member.id} size={24} />\n            <Text style={[T.captionStrong, { color: C.text }]}>{isMe ? \"You\" : member.name.split(\" \")[0]}</Text>\n            {member.role === \"host\" ? (\n                <Icon name=\"crown\" size={12} color={C.gold} />\n            ) : member.paid ? (\n                <Icon name=\"check\" size={12} strokeWidth={2.6} color={C.green} />\n            ) : (\n                <Icon name=\"clock\" size={12} color={C.textFaint} />\n            )}\n        </AppPressable>\n    );\n}\n\nexport function InvitedMemberChip({ username }: { username: string }) {\n    const { C, R, T } = useTheme();\n\n    return (\n        <View\n            style={{\n                flexDirection: \"row\",\n                alignItems: \"center\",\n                gap: 6,\n                borderWidth: 1,\n                borderStyle: \"dashed\",\n                borderColor: C.borderStrong,\n                borderRadius: R.full,\n                paddingVertical: 6,\n                paddingHorizontal: 11\n            }}\n        >\n            <Text style={[T.footnote, { color: C.textMuted }]}>@{username}</Text>\n            <Text style={[T.footnote, { color: C.cyan }]}>invited</Text>\n        </View>\n    );\n}\n"
+    }
+  ]
+}

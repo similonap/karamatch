@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "user-profile-header",
+  "type": "registry:component",
+  "title": "UserProfileHeader",
+  "registryDependencies": [
+    "@karamatch/components-primitives-avatar",
+    "@karamatch/star-icon",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/UserProfileHeader.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/UserProfileHeader.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport type { ReactNode } from \"react\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { StarIcon } from \"../../icons/StarIcon\";\nimport type { UserProfile } from \"../../types\";\nimport { Avatar } from \"../primitives/Avatar\";\n\n// Ported from karamatch-web/src/screens/UserProfile.tsx's header block: an\n// avatar, name/@handle, bio, and a stat strip (rating, nights out, and\n// taste match when the profile isn't your own) that reads as one strip\n// rather than three floating cards.\nexport function UserProfileHeader({ user }: { user: UserProfile }) {\n    const { C, R, S, T } = useTheme();\n\n    return (\n        <View style={{ gap: S.lg }}>\n            <View style={{ alignItems: \"center\", gap: S.sm }}>\n                <Avatar name={user.name} photoUrl={user.photoUrl} seed={user.id} size={96} />\n                <View style={{ alignItems: \"center\" }}>\n                    <Text style={[T.title, { fontSize: 20, color: C.text }]}>{user.name}</Text>\n                    <Text style={[T.callout, { color: C.textMuted, marginTop: 2 }]}>@{user.username}</Text>\n                </View>\n                {user.bio ? (\n                    <Text style={[T.callout, { color: C.textDim, textAlign: \"center\", maxWidth: 280 }]}>{user.bio}</Text>\n                ) : null}\n            </View>\n\n            <View style={{ flexDirection: \"row\", backgroundColor: C.surface1, borderWidth: 1, borderColor: C.border, borderRadius: R.lg, borderCurve: \"continuous\", overflow: \"hidden\" }}>\n                <Stat label=\"rating\" value={user.singerRating.toFixed(1)} icon={<StarIcon size={13} color={C.gold} />} color={C.gold} />\n                <Stat label={user.eventsCount === 1 ? \"night out\" : \"nights out\"} value={String(user.eventsCount)} last={user.matchPct === null} />\n                {user.matchPct !== null ? <Stat label=\"taste match\" value={user.matchPct + \"%\"} color={C.tintSoft} last /> : null}\n            </View>\n        </View>\n    );\n}\n\nfunction Stat({ label, value, color, icon, last }: { label: string; value: string; color?: string; icon?: ReactNode; last?: boolean }) {\n    const { C, S, S2, T } = useTheme();\n    return (\n        <View\n            style={{\n                flex: 1,\n                paddingVertical: S2.s12,\n                paddingHorizontal: S.sm,\n                alignItems: \"center\",\n                borderRightWidth: last ? 0 : 1,\n                borderRightColor: C.border\n            }}\n        >\n            <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: 3 }}>\n                {icon}\n                <Text style={[T.bodyStrong, { fontSize: 17, color: color ?? C.text }]}>{value}</Text>\n            </View>\n            <Text style={[T.footnote, { fontSize: 10, color: C.textMuted, marginTop: 2 }]}>{label}</Text>\n        </View>\n    );\n}\n"
+    }
+  ]
+}

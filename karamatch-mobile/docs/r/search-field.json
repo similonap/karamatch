@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "search-field",
+  "type": "registry:ui",
+  "title": "SearchField",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/SearchField.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/SearchField.tsx",
+      "content": "import { TextInput, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `SearchField` — a search field with\n// a leading glyph and a clear button once it has content.\nexport function SearchField({\n    value,\n    onChange,\n    placeholder\n}: {\n    value: string;\n    onChange: (value: string) => void;\n    placeholder?: string;\n}) {\n    const { C, R, T } = useTheme();\n\n    return (\n        <View\n            style={{\n                flexDirection: \"row\",\n                alignItems: \"center\",\n                gap: 8,\n                height: 44,\n                paddingLeft: 12,\n                paddingRight: 10,\n                borderRadius: R.md,\n                borderCurve: \"continuous\",\n                backgroundColor: C.surface2,\n                borderWidth: 1,\n                borderColor: C.border\n            }}\n        >\n            <Icon name=\"search\" size={17} color={C.textFaint} />\n            <TextInput\n                value={value}\n                onChangeText={onChange}\n                placeholder={placeholder}\n                placeholderTextColor={C.textFaint}\n                style={[T.body, { flex: 1, color: C.text, padding: 0 }]}\n            />\n            {value ? (\n                <AppPressable\n                    onPress={() => onChange(\"\")}\n                    accessibilityLabel=\"Clear search\"\n                    style={{ width: 28, height: 28, alignItems: \"center\", justifyContent: \"center\", borderRadius: R.full }}\n                >\n                    <Icon name=\"close\" size={15} strokeWidth={2.2} color={C.textFaint} />\n                </AppPressable>\n            ) : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

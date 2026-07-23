@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "format",
+  "type": "registry:lib",
+  "title": "format",
+  "files": [
+    {
+      "path": "src/utils/format.ts",
+      "type": "registry:lib",
+      "target": "src/utils/format.ts",
+      "content": "// Ported verbatim from karamatch-web/src/ui.tsx — pure date/number\n// formatting, nothing DOM-specific to adapt.\n\nconst DAY_NAMES = [\"Sun\", \"Mon\", \"Tue\", \"Wed\", \"Thu\", \"Fri\", \"Sat\"];\n\nfunction startOfDay(date: Date) {\n    return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();\n}\n\n// \"Today 21:00\" / \"Tomorrow 20:00\" / \"Sat 21:00\"\nexport function formatWhen(iso: string) {\n    if (!iso) {\n        return \"\";\n    }\n    const date = new Date(iso);\n    const days = Math.round((startOfDay(date) - startOfDay(new Date())) / 86400000);\n    const time = String(date.getHours()).padStart(2, \"0\") + \":\" + String(date.getMinutes()).padStart(2, \"0\");\n    if (days === 0) {\n        return \"Today \" + time;\n    }\n    if (days === 1) {\n        return \"Tomorrow \" + time;\n    }\n    if (days === -1) {\n        return \"Yesterday \" + time;\n    }\n    if (days > 1 && days < 7) {\n        return DAY_NAMES[date.getDay()] + \" \" + time;\n    }\n    if (days < 0) {\n        return \"last \" + DAY_NAMES[date.getDay()];\n    }\n    return date.toLocaleDateString(undefined, { day: \"numeric\", month: \"short\" }) + \" \" + time;\n}\n\nexport function formatTime(iso: string) {\n    const date = new Date(iso);\n    return String(date.getHours()).padStart(2, \"0\") + \":\" + String(date.getMinutes()).padStart(2, \"0\");\n}\n\nexport function formatDayLabel(iso: string) {\n    const date = new Date(iso);\n    const days = Math.round((startOfDay(date) - startOfDay(new Date())) / 86400000);\n    if (days === 0) {\n        return \"Today\";\n    }\n    if (days === 1) {\n        return \"Tomorrow\";\n    }\n    return DAY_NAMES[date.getDay()];\n}\n\n/** Coarse \"how long ago\" for things that only need a rough age, like reviews. */\nexport function formatAgo(iso: string) {\n    if (!iso) {\n        return \"\";\n    }\n    const days = Math.round((Date.now() - new Date(iso).getTime()) / 86400000);\n    if (days <= 0) {\n        return \"today\";\n    }\n    if (days === 1) {\n        return \"yesterday\";\n    }\n    if (days < 7) {\n        return days + \" days ago\";\n    }\n    if (days < 60) {\n        const weeks = Math.round(days / 7);\n        return weeks === 1 ? \"a week ago\" : weeks + \" weeks ago\";\n    }\n    const months = Math.round(days / 30);\n    return months + \" months ago\";\n}\n\nexport function money(amount: number) {\n    return \"€\" + amount;\n}\n\nexport function plural(count: number, one: string, many: string) {\n    return count + \" \" + (count === 1 ? one : many);\n}\n"
+    }
+  ]
+}

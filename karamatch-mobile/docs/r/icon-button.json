@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "icon-button",
+  "type": "registry:ui",
+  "title": "IconButton",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/icons-types",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/IconButton.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/IconButton.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { IconName } from \"../../icons/types\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `IconButton` — a circular icon\n// button for an app bar or an overlay.\nexport function IconButton({\n    icon,\n    onPress,\n    label,\n    badge,\n    tone = \"plain\",\n    size\n}: {\n    icon: IconName;\n    onPress: () => void;\n    label: string;\n    badge?: number;\n    tone?: \"plain\" | \"filled\";\n    size?: number;\n}) {\n    const { C, LAYOUT, R, T } = useTheme();\n    const resolvedSize = size ?? LAYOUT.touch;\n\n    return (\n        <AppPressable\n            onPress={onPress}\n            accessibilityLabel={label}\n            style={{\n                width: resolvedSize,\n                height: resolvedSize,\n                borderRadius: R.full,\n                borderCurve: \"continuous\",\n                alignItems: \"center\",\n                justifyContent: \"center\",\n                backgroundColor: tone === \"filled\" ? C.surface2 : \"transparent\",\n                borderWidth: tone === \"filled\" ? 1 : 0,\n                borderColor: C.border\n            }}\n        >\n            <Icon name={icon} size={22} color={C.text} />\n            {badge && badge > 0 ? (\n                <View\n                    style={{\n                        position: \"absolute\",\n                        top: 5,\n                        right: 4,\n                        minWidth: 17,\n                        height: 17,\n                        borderRadius: R.full,\n                        backgroundColor: C.tint,\n                        alignItems: \"center\",\n                        justifyContent: \"center\",\n                        paddingHorizontal: 4,\n                        borderWidth: 2,\n                        borderColor: C.surface\n                    }}\n                >\n                    <Text style={[T.sectionHeader, { fontSize: 10, letterSpacing: 0, textTransform: \"none\", color: C.onTint }]}>\n                        {badge > 9 ? \"9+\" : badge}\n                    </Text>\n                </View>\n            ) : null}\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

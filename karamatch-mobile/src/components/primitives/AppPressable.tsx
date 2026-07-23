@@ -2,8 +2,14 @@ import { useRef } from "react";
 import type { ReactNode } from "react";
 import { Animated, Pressable } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
+import { cssInterop } from "nativewind";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// `Animated.createAnimatedComponent` returns a component NativeWind doesn't
+// know about out of the box (unlike a plain `Pressable`/`View`), so
+// `className` needs an explicit interop registration to resolve into style.
+cssInterop(AnimatedPressable, { className: { target: "style" } });
 
 // Ported from karamatch-web/src/ui.tsx's `Pressable`, the foundation of every
 // touchable in the shelf. The web version faked RN's press feedback with
@@ -21,6 +27,7 @@ export function AppPressable({
     onPress,
     disabled,
     style,
+    className,
     children,
     scaleTo = 0.97,
     opacityTo = 0.72,
@@ -30,6 +37,7 @@ export function AppPressable({
     onPress?: () => void;
     disabled?: boolean;
     style?: StyleProp<ViewStyle>;
+    className?: string;
     children: ReactNode;
     /** 1 disables the scale dip — right for full-bleed rows, wrong for buttons. */
     scaleTo?: number;
@@ -59,6 +67,7 @@ export function AppPressable({
             accessibilityLabel={accessibilityLabel}
             onPressIn={() => animateTo(scaleTo, opacityTo, 60)}
             onPressOut={() => animateTo(1, 1, 160)}
+            className={className}
             style={[style, { opacity: disabled ? 0.45 : opacity, transform: [{ scale }] }]}
         >
             {children}

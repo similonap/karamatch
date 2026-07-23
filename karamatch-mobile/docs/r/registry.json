@@ -1,0 +1,733 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "karamatch-mobile",
+  "homepage": "https://github.com/similonap/karamatch",
+  "items": [
+    {
+      "name": "app-pressable",
+      "type": "registry:ui",
+      "title": "AppPressable",
+      "files": [
+        {
+          "path": "src/components/primitives/AppPressable.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "components-primitives-avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "files": [
+        {
+          "path": "src/components/primitives/Avatar.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "avatar-picker",
+      "type": "registry:ui",
+      "title": "AvatarPicker",
+      "files": [
+        {
+          "path": "src/components/primitives/AvatarPicker.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "avatar-stack",
+      "type": "registry:ui",
+      "title": "AvatarStack",
+      "files": [
+        {
+          "path": "src/components/primitives/AvatarStack.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "brand-mark",
+      "type": "registry:ui",
+      "title": "BrandMark",
+      "files": [
+        {
+          "path": "src/components/primitives/BrandMark.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "files": [
+        {
+          "path": "src/components/primitives/Button.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "files": [
+        {
+          "path": "src/components/primitives/Card.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "check-ring",
+      "type": "registry:ui",
+      "title": "CheckRing",
+      "files": [
+        {
+          "path": "src/components/primitives/CheckRing.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "chip",
+      "type": "registry:ui",
+      "title": "Chip",
+      "files": [
+        {
+          "path": "src/components/primitives/Chip.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "confirm-dialog",
+      "type": "registry:ui",
+      "title": "ConfirmDialog",
+      "files": [
+        {
+          "path": "src/components/primitives/ConfirmDialog.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "divider",
+      "type": "registry:ui",
+      "title": "Divider",
+      "files": [
+        {
+          "path": "src/components/primitives/Divider.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "empty-state",
+      "type": "registry:ui",
+      "title": "EmptyState",
+      "files": [
+        {
+          "path": "src/components/primitives/EmptyState.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "error-note",
+      "type": "registry:ui",
+      "title": "ErrorNote",
+      "files": [
+        {
+          "path": "src/components/primitives/ErrorNote.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "group",
+      "type": "registry:ui",
+      "title": "Group",
+      "files": [
+        {
+          "path": "src/components/primitives/Group.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "icon-button",
+      "type": "registry:ui",
+      "title": "IconButton",
+      "files": [
+        {
+          "path": "src/components/primitives/IconButton.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "icon-tile",
+      "type": "registry:ui",
+      "title": "IconTile",
+      "files": [
+        {
+          "path": "src/components/primitives/IconTile.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "list-row",
+      "type": "registry:ui",
+      "title": "ListRow",
+      "files": [
+        {
+          "path": "src/components/primitives/ListRow.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "loading",
+      "type": "registry:ui",
+      "title": "Loading",
+      "files": [
+        {
+          "path": "src/components/primitives/Loading.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "match-badge",
+      "type": "registry:ui",
+      "title": "MatchBadge",
+      "files": [
+        {
+          "path": "src/components/primitives/MatchBadge.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "option-pill",
+      "type": "registry:ui",
+      "title": "OptionPill",
+      "files": [
+        {
+          "path": "src/components/primitives/OptionPill.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "rating",
+      "type": "registry:ui",
+      "title": "Rating",
+      "files": [
+        {
+          "path": "src/components/primitives/Rating.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "receipt-line",
+      "type": "registry:ui",
+      "title": "ReceiptLine",
+      "files": [
+        {
+          "path": "src/components/primitives/ReceiptLine.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "removable-chip",
+      "type": "registry:ui",
+      "title": "RemovableChip",
+      "files": [
+        {
+          "path": "src/components/primitives/RemovableChip.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "search-field",
+      "type": "registry:ui",
+      "title": "SearchField",
+      "files": [
+        {
+          "path": "src/components/primitives/SearchField.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "section",
+      "type": "registry:ui",
+      "title": "Section",
+      "files": [
+        {
+          "path": "src/components/primitives/Section.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "segmented",
+      "type": "registry:ui",
+      "title": "Segmented",
+      "files": [
+        {
+          "path": "src/components/primitives/Segmented.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:ui",
+      "title": "Skeleton",
+      "files": [
+        {
+          "path": "src/components/primitives/Skeleton.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "song-art",
+      "type": "registry:ui",
+      "title": "SongArt",
+      "files": [
+        {
+          "path": "src/components/primitives/SongArt.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "files": [
+        {
+          "path": "src/components/primitives/Spinner.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "star-input",
+      "type": "registry:ui",
+      "title": "StarInput",
+      "files": [
+        {
+          "path": "src/components/primitives/StarInput.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "star-row",
+      "type": "registry:ui",
+      "title": "StarRow",
+      "files": [
+        {
+          "path": "src/components/primitives/StarRow.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "step-header",
+      "type": "registry:ui",
+      "title": "StepHeader",
+      "files": [
+        {
+          "path": "src/components/primitives/StepHeader.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "stepper",
+      "type": "registry:ui",
+      "title": "Stepper",
+      "files": [
+        {
+          "path": "src/components/primitives/Stepper.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "text-field",
+      "type": "registry:ui",
+      "title": "TextField",
+      "files": [
+        {
+          "path": "src/components/primitives/TextField.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "toast",
+      "type": "registry:ui",
+      "title": "Toast",
+      "files": [
+        {
+          "path": "src/components/primitives/Toast.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "toggle",
+      "type": "registry:ui",
+      "title": "Toggle",
+      "files": [
+        {
+          "path": "src/components/primitives/Toggle.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "wordmark",
+      "type": "registry:ui",
+      "title": "Wordmark",
+      "files": [
+        {
+          "path": "src/components/primitives/Wordmark.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "chat-bubble",
+      "type": "registry:component",
+      "title": "ChatBubble",
+      "files": [
+        {
+          "path": "src/components/domain/ChatBubble.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "chat-input-bar",
+      "type": "registry:component",
+      "title": "ChatInputBar",
+      "files": [
+        {
+          "path": "src/components/domain/ChatInputBar.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "crew-member-chip",
+      "type": "registry:component",
+      "title": "CrewMemberChip",
+      "files": [
+        {
+          "path": "src/components/domain/CrewMemberChip.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "crew-rating-card",
+      "type": "registry:component",
+      "title": "CrewRatingCard",
+      "files": [
+        {
+          "path": "src/components/domain/CrewRatingCard.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "friend-row",
+      "type": "registry:component",
+      "title": "FriendRow",
+      "files": [
+        {
+          "path": "src/components/domain/FriendRow.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "invite-friend-row",
+      "type": "registry:component",
+      "title": "InviteFriendRow",
+      "files": [
+        {
+          "path": "src/components/domain/InviteFriendRow.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "notification-row",
+      "type": "registry:component",
+      "title": "NotificationRow",
+      "files": [
+        {
+          "path": "src/components/domain/NotificationRow.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "party-card",
+      "type": "registry:component",
+      "title": "PartyCard",
+      "files": [
+        {
+          "path": "src/components/domain/PartyCard.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "review-card",
+      "type": "registry:component",
+      "title": "ReviewCard",
+      "files": [
+        {
+          "path": "src/components/domain/ReviewCard.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "room-option-row",
+      "type": "registry:component",
+      "title": "RoomOptionRow",
+      "files": [
+        {
+          "path": "src/components/domain/RoomOptionRow.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "song-row",
+      "type": "registry:component",
+      "title": "SongRow",
+      "files": [
+        {
+          "path": "src/components/domain/SongRow.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "user-profile-header",
+      "type": "registry:component",
+      "title": "UserProfileHeader",
+      "files": [
+        {
+          "path": "src/components/domain/UserProfileHeader.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "venue-card",
+      "type": "registry:component",
+      "title": "VenueCard",
+      "files": [
+        {
+          "path": "src/components/domain/VenueCard.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "venue-location-card",
+      "type": "registry:component",
+      "title": "VenueLocationCard",
+      "files": [
+        {
+          "path": "src/components/domain/VenueLocationCard.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "app-bar",
+      "type": "registry:component",
+      "title": "AppBar",
+      "files": [
+        {
+          "path": "src/components/scaffolding/AppBar.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "bottom-bar",
+      "type": "registry:component",
+      "title": "BottomBar",
+      "files": [
+        {
+          "path": "src/components/scaffolding/BottomBar.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "bottom-tab-bar",
+      "type": "registry:component",
+      "title": "BottomTabBar",
+      "files": [
+        {
+          "path": "src/components/scaffolding/BottomTabBar.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "screen",
+      "type": "registry:component",
+      "title": "Screen",
+      "files": [
+        {
+          "path": "src/components/scaffolding/Screen.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "colors",
+      "type": "registry:theme",
+      "title": "colors",
+      "files": [
+        {
+          "path": "src/theme/colors.ts",
+          "type": "registry:theme"
+        }
+      ]
+    },
+    {
+      "name": "tokens",
+      "type": "registry:theme",
+      "title": "tokens",
+      "files": [
+        {
+          "path": "src/theme/tokens.ts",
+          "type": "registry:theme"
+        }
+      ]
+    },
+    {
+      "name": "theme-provider",
+      "type": "registry:lib",
+      "title": "ThemeProvider",
+      "files": [
+        {
+          "path": "src/theme/ThemeProvider.tsx",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "icon",
+      "type": "registry:ui",
+      "title": "Icon",
+      "files": [
+        {
+          "path": "src/icons/Icon.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "star-icon",
+      "type": "registry:ui",
+      "title": "StarIcon",
+      "files": [
+        {
+          "path": "src/icons/StarIcon.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "icons-types",
+      "type": "registry:lib",
+      "title": "types",
+      "files": [
+        {
+          "path": "src/icons/types.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "types",
+      "type": "registry:lib",
+      "title": "types",
+      "files": [
+        {
+          "path": "src/types.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "utils-avatar",
+      "type": "registry:lib",
+      "title": "avatar",
+      "files": [
+        {
+          "path": "src/utils/avatar.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "format",
+      "type": "registry:lib",
+      "title": "format",
+      "files": [
+        {
+          "path": "src/utils/format.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "hooks",
+      "type": "registry:lib",
+      "title": "hooks",
+      "files": [
+        {
+          "path": "src/utils/hooks.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "cn",
+      "type": "registry:lib",
+      "title": "cn",
+      "files": [
+        {
+          "path": "src/utils/cn.ts",
+          "type": "registry:lib"
+        }
+      ]
+    }
+  ]
+}

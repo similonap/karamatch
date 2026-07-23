@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "toast",
+  "type": "registry:ui",
+  "title": "Toast",
+  "dependencies": [
+    "react-native-safe-area-context"
+  ],
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Toast.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Toast.tsx",
+      "content": "import { Modal, Text, View } from \"react-native\";\nimport { useSafeAreaInsets } from \"react-native-safe-area-context\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `Toast`. The web version was a\n// hand-rolled absolutely-positioned overlay; RN uses a real, transparent,\n// fade `<Modal>` instead, which is why this needs an explicit `visible`.\nexport function Toast({ message, visible = true }: { message: string; visible?: boolean }) {\n    const { C, LAYOUT, R, S, SHADOW, T } = useTheme();\n    const insets = useSafeAreaInsets();\n\n    return (\n        <Modal visible={visible} transparent animationType=\"fade\" statusBarTranslucent>\n            <View\n                pointerEvents=\"none\"\n                style={{\n                    flex: 1,\n                    justifyContent: \"flex-end\",\n                    paddingHorizontal: LAYOUT.gutter,\n                    paddingBottom: insets.bottom + LAYOUT.tabBar + S.md\n                }}\n            >\n                <View\n                    accessibilityRole=\"alert\"\n                    style={{\n                        backgroundColor: C.surface3,\n                        borderWidth: 1,\n                        borderColor: C.borderStrong,\n                        borderRadius: R.md,\n                        borderCurve: \"continuous\",\n                        paddingVertical: 12,\n                        paddingHorizontal: 16,\n                        boxShadow: SHADOW.e2\n                    }}\n                >\n                    <Text style={[T.caption, { color: C.text, textAlign: \"center\" }]}>{message}</Text>\n                </View>\n            </View>\n        </Modal>\n    );\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "star-row",
+  "type": "registry:ui",
+  "title": "StarRow",
+  "registryDependencies": [
+    "@karamatch/star-icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/StarRow.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/StarRow.tsx",
+      "content": "import { View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { StarIcon } from \"../../icons/StarIcon\";\n\n// Ported from karamatch-web/src/ui.tsx's `StarRow` — five small stars filled\n// to `value`, the read-only twin of StarInput.\nexport function StarRow({ value, size = 13 }: { value: number; size?: number }) {\n    const { C } = useTheme();\n    return (\n        <View style={{ flexDirection: \"row\", gap: 1 }} accessibilityLabel={value + \" out of 5 stars\"}>\n            {[1, 2, 3, 4, 5].map(star => (\n                <StarIcon key={star} size={size} color={star <= value ? C.gold : C.surface3} />\n            ))}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

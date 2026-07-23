@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "app-bar",
+  "type": "registry:component",
+  "title": "AppBar",
+  "dependencies": [
+    "react-native-safe-area-context"
+  ],
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/scaffolding/AppBar.tsx",
+      "type": "registry:component",
+      "target": "src/components/scaffolding/AppBar.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport type { ReactNode } from \"react\";\nimport { useSafeAreaInsets } from \"react-native-safe-area-context\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport { AppPressable } from \"../primitives/AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `AppBar` — a stack screen's\n// navigation bar: fixed height, hairline underneath, back affordance on the\n// left and at most one action on the right. The web version relied on\n// `PhoneFrame`'s drawn status bar for the top inset; here `AppBar` reserves\n// the device's real safe-area top inset itself, since a shelf component has\n// no navigator chrome to sit below.\nexport function AppBar({\n    title,\n    onBack,\n    right,\n    large,\n    subtitle,\n    bordered = true\n}: {\n    title?: ReactNode;\n    onBack?: () => void;\n    right?: ReactNode;\n    /** Renders the title below the bar instead, as a large screen heading. */\n    large?: boolean;\n    subtitle?: string;\n    bordered?: boolean;\n}) {\n    const { C, LAYOUT, R, S, T } = useTheme();\n    const insets = useSafeAreaInsets();\n\n    return (\n        <View>\n            <View\n                style={{\n                    height: LAYOUT.appBar,\n                    paddingTop: insets.top,\n                    flexDirection: \"row\",\n                    alignItems: \"center\",\n                    gap: S.sm,\n                    paddingLeft: onBack ? 4 : LAYOUT.gutter,\n                    paddingRight: S.sm,\n                    borderBottomWidth: bordered && !large ? 1 : 0,\n                    borderBottomColor: C.border\n                }}\n            >\n                {onBack ? (\n                    <AppPressable\n                        onPress={onBack}\n                        accessibilityLabel=\"Go back\"\n                        style={{\n                            width: LAYOUT.touch,\n                            height: LAYOUT.touch,\n                            alignItems: \"center\",\n                            justifyContent: \"center\",\n                            borderRadius: R.full\n                        }}\n                    >\n                        <Icon name=\"chevronLeft\" size={24} strokeWidth={2} color={C.text} />\n                    </AppPressable>\n                ) : null}\n\n                <View style={{ flex: 1, minWidth: 0 }}>\n                    {!large && title ? (\n                        typeof title === \"string\" ? (\n                            <Text style={[T.navTitle, { color: C.text }]} numberOfLines={1}>\n                                {title}\n                            </Text>\n                        ) : (\n                            title\n                        )\n                    ) : null}\n                </View>\n\n                <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: 4 }}>{right}</View>\n            </View>\n\n            {large && title ? (\n                <View style={{ paddingHorizontal: LAYOUT.gutter, paddingBottom: S.md }}>\n                    {typeof title === \"string\" ? <Text style={[T.title, { color: C.text }]}>{title}</Text> : title}\n                    {subtitle ? <Text style={[T.caption, { color: C.textMuted, marginTop: 3 }]}>{subtitle}</Text> : null}\n                </View>\n            ) : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

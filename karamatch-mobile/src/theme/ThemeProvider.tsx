@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useColorScheme } from "react-native";
+import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 
 import { GRAD, GRAD_TILE, PALETTES, SHADOWS } from "./colors";
 import type { ColorScheme, Palette, Shadows } from "./colors";
@@ -33,6 +34,15 @@ export function ThemeProvider({ children, initialMode = "system" }: { children: 
     const [mode, setMode] = useState<ThemeMode>(initialMode);
 
     const scheme: ColorScheme = mode === "system" ? (systemScheme === "light" ? "light" : "dark") : mode;
+
+    // NativeWind's `dark:` variant classes key off its own colour scheme
+    // state, not this context — mirror the resolved (never "system") scheme
+    // into it so components migrated to className stay in lockstep with the
+    // ones still reading `C` here.
+    const { setColorScheme: setNativeWindColorScheme } = useNativeWindColorScheme();
+    useEffect(() => {
+        setNativeWindColorScheme(scheme);
+    }, [scheme, setNativeWindColorScheme]);
 
     const value = useMemo<ThemeValue>(
         () => ({

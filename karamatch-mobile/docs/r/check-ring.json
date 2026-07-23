@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "check-ring",
+  "type": "registry:ui",
+  "title": "CheckRing",
+  "registryDependencies": [
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/CheckRing.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/CheckRing.tsx",
+      "content": "import { View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\n\n// Ported from karamatch-web/src/ui.tsx's `CheckRing` — the check affordance\n// used by the song picker and invite list.\nexport function CheckRing({ on, size = 22 }: { on: boolean; size?: number }) {\n    const { C } = useTheme();\n    return (\n        <View\n            style={{\n                width: size,\n                height: size,\n                borderRadius: size / 2,\n                borderWidth: 2,\n                borderColor: on ? C.tint : C.borderStrong,\n                backgroundColor: on ? C.tint : \"transparent\",\n                alignItems: \"center\",\n                justifyContent: \"center\"\n            }}\n        >\n            {on ? <Icon name=\"check\" size={size * 0.6} strokeWidth={3} color={C.onTint} /> : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

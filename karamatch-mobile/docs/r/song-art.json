@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "song-art",
+  "type": "registry:ui",
+  "title": "SongArt",
+  "dependencies": [
+    "expo-image"
+  ],
+  "registryDependencies": [
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/SongArt.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/SongArt.tsx",
+      "content": "import { useState } from \"react\";\nimport { View } from \"react-native\";\nimport { Image } from \"expo-image\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\n\n// Ported from karamatch-web/src/ui.tsx's `SongArt` — album art for a song,\n// falling back to the music icon when the API has no coverArt for it, or\n// when the image fails to load.\nexport function SongArt({\n    coverArt,\n    size = 38,\n    radius,\n    background,\n    /** The brand gradient instead of a flat `background` — e.g. a selected song row. */\n    gradient,\n    color\n}: {\n    coverArt?: string;\n    size?: number;\n    radius?: number;\n    background?: string;\n    gradient?: boolean;\n    color?: string;\n}) {\n    const { C, GRAD, R } = useTheme();\n    const [broken, setBroken] = useState(false);\n    const showArt = coverArt && !broken;\n\n    return (\n        <View\n            style={{\n                width: size,\n                height: size,\n                borderRadius: radius ?? R.sm,\n                borderCurve: \"continuous\",\n                ...(gradient ? { experimental_backgroundImage: GRAD } : { backgroundColor: background ?? C.surface3 }),\n                alignItems: \"center\",\n                justifyContent: \"center\",\n                overflow: \"hidden\"\n            }}\n        >\n            {showArt ? (\n                <Image\n                    source={{ uri: coverArt }}\n                    onError={() => setBroken(true)}\n                    style={{ width: \"100%\", height: \"100%\" }}\n                    contentFit=\"cover\"\n                />\n            ) : (\n                <Icon name=\"music\" size={Math.round(size * 0.47)} color={color ?? C.textFaint} />\n            )}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

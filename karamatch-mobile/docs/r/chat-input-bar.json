@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "chat-input-bar",
+  "type": "registry:component",
+  "title": "ChatInputBar",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/ChatInputBar.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/ChatInputBar.tsx",
+      "content": "import { TextInput, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport { AppPressable } from \"../primitives/AppPressable\";\n\n// Ported from karamatch-web/src/screens/PartyRoom.tsx's inline chat composer\n// — a pill text field plus a circular send button that tints once there's a\n// draft to send.\nexport function ChatInputBar({\n    value,\n    onChangeText,\n    onSend,\n    placeholder = \"Message the party…\"\n}: {\n    value: string;\n    onChangeText: (text: string) => void;\n    onSend: () => void;\n    placeholder?: string;\n}) {\n    const { C, R, S, T } = useTheme();\n    const canSend = value.trim().length > 0;\n\n    return (\n        <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: S.sm }}>\n            <TextInput\n                value={value}\n                onChangeText={onChangeText}\n                onSubmitEditing={onSend}\n                placeholder={placeholder}\n                placeholderTextColor={C.textFaint}\n                style={[\n                    T.body,\n                    {\n                        flex: 1,\n                        height: 44,\n                        borderRadius: R.full,\n                        borderCurve: \"continuous\",\n                        borderWidth: 1,\n                        borderColor: C.border,\n                        backgroundColor: C.surface2,\n                        color: C.text,\n                        paddingHorizontal: 16\n                    }\n                ]}\n            />\n            <AppPressable\n                onPress={onSend}\n                disabled={!canSend}\n                accessibilityLabel=\"Send message\"\n                scaleTo={0.9}\n                style={{\n                    width: 44,\n                    height: 44,\n                    borderRadius: 22,\n                    alignItems: \"center\",\n                    justifyContent: \"center\",\n                    backgroundColor: canSend ? C.tint : C.surface3\n                }}\n            >\n                <Icon name=\"send\" size={19} color={canSend ? C.onTint : C.textFaint} />\n            </AppPressable>\n        </View>\n    );\n}\n"
+    }
+  ]
+}

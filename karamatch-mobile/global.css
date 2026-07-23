@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Mirrors theme/colors.ts's `light`/`dark` palettes. Kept in sync by hand for
+   the same reason as tailwind.config.js's spacing/radius copy: this file
+   isn't processed by anything that can read the TS module at build time.
+   ThemeProvider toggles the `dark` class to match its own resolved scheme. */
+:root {
+    --color-bg: #f4eefb;
+    --color-surface: #ffffff;
+    --color-surface1: #ffffff;
+    --color-surface2: #f7f2fd;
+    --color-surface3: #efe7f9;
+    --color-surface-press: #e5daf4;
+
+    --color-border: rgba(38, 16, 64, 0.1);
+    --color-border-strong: rgba(38, 16, 64, 0.18);
+
+    --color-text: #170e22;
+    --color-text-dim: #52466a;
+    --color-text-muted: #7a6e91;
+    --color-text-faint: #a396b8;
+    --color-on-tint: #ffffff;
+
+    --color-tint: #e01a72;
+    --color-tint-soft: #c8146c;
+    --color-tint-pale: #a81159;
+    --color-tint-bg: rgba(224, 26, 114, 0.1);
+    --color-tint-border: rgba(224, 26, 114, 0.35);
+    --color-tint-glow: rgba(224, 26, 114, 0.28);
+
+    --color-purple: #8c1fd6;
+    --color-violet: #7622c4;
+    --color-cyan: #0089a6;
+    --color-cyan-bg: rgba(0, 137, 166, 0.1);
+    --color-cyan-border: rgba(0, 137, 166, 0.26);
+    --color-green: #0f9a5c;
+    --color-gold: #96650a;
+
+    --color-danger: #d1373c;
+    --color-danger-bg: rgba(209, 55, 60, 0.1);
+    --color-danger-border: rgba(209, 55, 60, 0.32);
+
+    --color-scrim: rgba(38, 16, 64, 0.4);
+    --color-skeleton: #ece4f7;
+}
+
+.dark {
+    --color-bg: #07040d;
+    --color-surface: #0d0817;
+    --color-surface1: #171029;
+    --color-surface2: #211735;
+    --color-surface3: #2b1f43;
+    --color-surface-press: #342650;
+
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-strong: rgba(255, 255, 255, 0.14);
+
+    --color-text: #f6f2fb;
+    --color-text-dim: #b9aecf;
+    --color-text-muted: #8d82a5;
+    --color-text-faint: #665b7d;
+    --color-on-tint: #ffffff;
+
+    --color-tint: #ff3d8f;
+    --color-tint-soft: #ff6fae;
+    --color-tint-pale: #ff9ec8;
+    --color-tint-bg: rgba(255, 61, 143, 0.14);
+    --color-tint-border: rgba(255, 61, 143, 0.42);
+    --color-tint-glow: rgba(255, 61, 143, 0.38);
+
+    --color-purple: #b23dff;
+    --color-violet: #8a2be2;
+    --color-cyan: #29e0ff;
+    --color-cyan-bg: rgba(41, 224, 255, 0.12);
+    --color-cyan-border: rgba(41, 224, 255, 0.28);
+    --color-green: #3dff9a;
+    --color-gold: #ffc145;
+
+    --color-danger: #ff5a5f;
+    --color-danger-bg: rgba(255, 90, 95, 0.13);
+    --color-danger-border: rgba(255, 90, 95, 0.4);
+
+    --color-scrim: rgba(4, 2, 8, 0.66);
+    --color-skeleton: #211735;
+}

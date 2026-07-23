@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "step-header",
+  "type": "registry:ui",
+  "title": "StepHeader",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/StepHeader.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/StepHeader.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport type { ReactNode } from \"react\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `StepHeader` — onboarding progress\n// as a filled track instead of tracked-out \"STEP 1 OF 3\" caps.\nexport function StepHeader({\n    step,\n    total,\n    title,\n    subtitle,\n    trailing\n}: {\n    step: number;\n    total: number;\n    title: string;\n    subtitle?: string;\n    trailing?: ReactNode;\n}) {\n    const { C, T } = useTheme();\n    return (\n        <View style={{ gap: 10 }}>\n            <View\n                style={{ flexDirection: \"row\", gap: 4 }}\n                accessibilityRole=\"progressbar\"\n                accessibilityValue={{ min: 1, max: total, now: step }}\n            >\n                {Array.from({ length: total }, (_, index) => (\n                    <View\n                        key={index}\n                        style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: index < step ? C.tint : C.surface3 }}\n                    />\n                ))}\n            </View>\n            <View style={{ flexDirection: \"row\", alignItems: \"baseline\", justifyContent: \"space-between\", gap: 8 }}>\n                <Text style={[T.title, { color: C.text }]}>{title}</Text>\n                {trailing}\n            </View>\n            {subtitle ? <Text style={[T.callout, { color: C.textMuted }]}>{subtitle}</Text> : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

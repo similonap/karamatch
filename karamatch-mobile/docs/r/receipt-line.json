@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "receipt-line",
+  "type": "registry:ui",
+  "title": "ReceiptLine",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/ReceiptLine.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/ReceiptLine.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/screens/VenueDetail.tsx's inline `Line` — a\n// receipt-style label/value row for the booking screen's price breakdown.\nexport function ReceiptLine({\n    label,\n    value,\n    strong,\n    accent\n}: {\n    label: string;\n    value: string;\n    strong?: boolean;\n    accent?: boolean;\n}) {\n    const { C, S, T } = useTheme();\n\n    return (\n        <View style={{ flexDirection: \"row\", justifyContent: \"space-between\", alignItems: \"center\", gap: S.sm }}>\n            <Text style={[T.caption, { color: C.textMuted, flexShrink: 1 }]}>{label}</Text>\n            <Text style={[strong ? T.bodyStrong : T.captionStrong, { color: accent ? C.cyan : C.text, flexShrink: 0 }]}>{value}</Text>\n        </View>\n    );\n}\n"
+    }
+  ]
+}

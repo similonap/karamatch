@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "confirm-dialog",
+  "type": "registry:ui",
+  "title": "ConfirmDialog",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/button",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/ConfirmDialog.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/ConfirmDialog.tsx",
+      "content": "import { Modal, Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { AppPressable } from \"./AppPressable\";\nimport { Button } from \"./Button\";\n\n// Ported from karamatch-web/src/ui.tsx's `ConfirmDialog` — a blocking\n// confirm styled as a native alert: centred, short, two actions, the\n// destructive one on the right and tinted. Uses a real `<Modal>` instead of\n// the web version's hand-rolled scrim.\nexport function ConfirmDialog({\n    visible = true,\n    title,\n    body,\n    confirmLabel,\n    busy,\n    onConfirm,\n    onCancel\n}: {\n    visible?: boolean;\n    title: string;\n    body: string;\n    confirmLabel: string;\n    busy?: boolean;\n    onConfirm: () => void;\n    onCancel: () => void;\n}) {\n    const { C, R, S, SHADOW, T } = useTheme();\n\n    return (\n        <Modal visible={visible} transparent animationType=\"fade\" statusBarTranslucent onRequestClose={onCancel}>\n            <AppPressable\n                onPress={onCancel}\n                scaleTo={1}\n                opacityTo={1}\n                style={{\n                    flex: 1,\n                    backgroundColor: C.scrim,\n                    alignItems: \"center\",\n                    justifyContent: \"center\",\n                    padding: S.lg\n                }}\n            >\n                <AppPressable\n                    onPress={() => {}}\n                    scaleTo={1}\n                    opacityTo={1}\n                    style={{\n                        width: \"100%\",\n                        maxWidth: 300,\n                        backgroundColor: C.surface1,\n                        borderWidth: 1,\n                        borderColor: C.border,\n                        borderRadius: R.xl,\n                        borderCurve: \"continuous\",\n                        padding: S.lg,\n                        gap: S.sm,\n                        boxShadow: SHADOW.e3\n                    }}\n                >\n                    <Text style={[T.heading, { color: C.text, textAlign: \"center\" }]}>{title}</Text>\n                    <Text style={[T.caption, { color: C.textDim, textAlign: \"center\" }]}>{body}</Text>\n                    <View style={{ flexDirection: \"row\", gap: S.sm, marginTop: S.sm }}>\n                        <Button label=\"Cancel\" variant=\"secondary\" size=\"md\" onPress={onCancel} disabled={busy} style={{ flex: 1 }} />\n                        <Button\n                            label={confirmLabel}\n                            variant=\"danger\"\n                            size=\"md\"\n                            onPress={onConfirm}\n                            busy={busy}\n                            style={{ flex: 1 }}\n                        />\n                    </View>\n                </AppPressable>\n            </AppPressable>\n        </Modal>\n    );\n}\n"
+    }
+  ]
+}

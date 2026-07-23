@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "text-field",
+  "type": "registry:ui",
+  "title": "TextField",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/TextField.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/TextField.tsx",
+      "content": "import { useState } from \"react\";\nimport { Text, TextInput, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `TextField`. The web version forced\n// 16px text so mobile Safari wouldn't zoom the page on focus — moot on\n// native, so that constraint is dropped.\nexport function TextField({\n    value,\n    onChange,\n    placeholder,\n    label,\n    type = \"text\",\n    onEnter,\n    autoFocus,\n    multiline,\n    maxLength\n}: {\n    value: string;\n    onChange: (value: string) => void;\n    placeholder?: string;\n    label?: string;\n    type?: \"text\" | \"password\" | \"email\";\n    onEnter?: () => void;\n    autoFocus?: boolean;\n    multiline?: boolean;\n    maxLength?: number;\n}) {\n    const { C, R, T } = useTheme();\n    const [focused, setFocused] = useState(false);\n\n    return (\n        <View style={{ gap: 6 }}>\n            {label ? (\n                <Text style={[T.captionStrong, { color: C.textMuted, paddingLeft: 2 }]}>{label}</Text>\n            ) : null}\n            <TextInput\n                value={value}\n                onChangeText={onChange}\n                onFocus={() => setFocused(true)}\n                onBlur={() => setFocused(false)}\n                onSubmitEditing={onEnter}\n                placeholder={placeholder}\n                placeholderTextColor={C.textFaint}\n                maxLength={maxLength}\n                autoFocus={autoFocus}\n                multiline={multiline}\n                numberOfLines={multiline ? 3 : undefined}\n                secureTextEntry={type === \"password\"}\n                keyboardType={type === \"email\" ? \"email-address\" : \"default\"}\n                autoCapitalize={type === \"email\" ? \"none\" : \"sentences\"}\n                style={[\n                    T.body,\n                    {\n                        width: \"100%\",\n                        borderRadius: R.md,\n                        borderCurve: \"continuous\",\n                        borderWidth: 1,\n                        borderColor: focused ? C.tintBorder : C.border,\n                        backgroundColor: C.surface2,\n                        color: C.text,\n                        paddingHorizontal: 14,\n                        paddingVertical: multiline ? 12 : 0,\n                        height: multiline ? 88 : 50,\n                        textAlignVertical: multiline ? \"top\" : \"center\"\n                    }\n                ]}\n            />\n        </View>\n    );\n}\n"
+    }
+  ]
+}

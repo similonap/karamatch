@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "venue-card",
+  "type": "registry:component",
+  "title": "VenueCard",
+  "dependencies": [
+    "expo-image"
+  ],
+  "registryDependencies": [
+    "@karamatch/card",
+    "@karamatch/format",
+    "@karamatch/icon",
+    "@karamatch/rating",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/VenueCard.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/VenueCard.tsx",
+      "content": "import { useState } from \"react\";\nimport { Text, View } from \"react-native\";\nimport { Image } from \"expo-image\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport { money, plural } from \"../../utils/format\";\nimport type { VenueNearby } from \"../../types\";\nimport { Card } from \"../primitives/Card\";\nimport { Rating } from \"../primitives/Rating\";\n\n// Ported from karamatch-web/src/screens/tabs/VenuesTab.tsx's inline venue\n// card — a 124px photo (distance badge riding on top-left) over a name /\n// rating line and a rooms · from-price line.\nexport function VenueCard({ venue, onPress }: { venue: VenueNearby; onPress?: () => void }) {\n    const { C, R, S, S2, T } = useTheme();\n    const [broken, setBroken] = useState(false);\n    const showPhoto = venue.imageUrl && !broken;\n\n    return (\n        <Card onPress={onPress} padded={false}>\n            <View style={{ height: 124, backgroundColor: C.surface3, alignItems: \"center\", justifyContent: \"center\" }}>\n                {showPhoto ? (\n                    <Image\n                        source={{ uri: venue.imageUrl }}\n                        onError={() => setBroken(true)}\n                        style={{ width: \"100%\", height: \"100%\" }}\n                        contentFit=\"cover\"\n                    />\n                ) : (\n                    <Icon name=\"mic\" size={28} color={C.textFaint} />\n                )}\n                {/* Distance rides on the image so the row below stays a clean\n                    name/price line. */}\n                <View\n                    style={{\n                        position: \"absolute\",\n                        top: S.sm,\n                        left: S.sm,\n                        flexDirection: \"row\",\n                        alignItems: \"center\",\n                        gap: 4,\n                        height: 24,\n                        paddingHorizontal: 8,\n                        borderRadius: R.sm,\n                        backgroundColor: \"rgba(7,4,13,0.72)\"\n                    }}\n                >\n                    <Icon name=\"pin\" size={12} strokeWidth={2} color=\"#fff\" />\n                    <Text style={[T.footnote, { fontSize: 11, color: \"#fff\" }]}>{venue.distanceKm} km</Text>\n                </View>\n            </View>\n\n            <View style={{ paddingTop: S2.s12, paddingHorizontal: S.md, paddingBottom: S.md, gap: S2.s6 }}>\n                <View style={{ flexDirection: \"row\", justifyContent: \"space-between\", alignItems: \"center\", gap: S.sm }}>\n                    <Text style={[T.bodyStrong, { fontSize: 16, color: C.text, flexShrink: 1 }]} numberOfLines={1}>\n                        {venue.name}\n                    </Text>\n                    {/* A venue with no reviews yet has no rating to show. */}\n                    {venue.reviewsCount > 0 ? <Rating value={venue.rating} /> : null}\n                </View>\n                <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: S.sm }}>\n                    <Text style={[T.caption, { color: C.textMuted }]}>{plural(venue.rooms.length, \"room\", \"rooms\")}</Text>\n                    <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: C.textFaint }} />\n                    <Text style={[T.caption, { color: C.cyan }]}>from {money(venue.fromPrice)}/hr</Text>\n                </View>\n            </View>\n        </Card>\n    );\n}\n"
+    }
+  ]
+}

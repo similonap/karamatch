@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button",
+  "type": "registry:ui",
+  "title": "Button",
+  "dependencies": [
+    "class-variance-authority"
+  ],
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/icons-types",
+    "@karamatch/spinner",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Button.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Button.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport type { StyleProp, ViewStyle } from \"react-native\";\nimport { cva } from \"class-variance-authority\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { IconName } from \"../../icons/types\";\nimport { AppPressable } from \"./AppPressable\";\nimport { Spinner } from \"./Spinner\";\n\n// Ported from karamatch-web/src/ui.tsx's `Button`. Same variant x size\n// matrix; the gradient (reserved for the one enabled primary action per\n// screen) is a real CSS-gradient string via `experimental_backgroundImage`\n// instead of the web's `background: GRAD` — className can't express an\n// arbitrary gradient/boxShadow on RN, so those two stay inline style, same\n// as before.\ntype ButtonVariant = \"primary\" | \"tinted\" | \"secondary\" | \"ghost\" | \"danger\";\ntype ButtonSize = \"lg\" | \"md\" | \"sm\";\n\n// A disabled primary drops to a flat surface rather than a dimmed gradient,\n// so \"can't press this\" reads instantly — the only variant whose classes\n// change with `disabled`; the rest look the same disabled or not.\nconst buttonBox = cva(\"flex-row items-center justify-center gap-sm\", {\n    variants: {\n        variant: {\n            primary: \"\",\n            tinted: \"bg-tintBg border border-tintBorder\",\n            secondary: \"bg-surface2 border border-border\",\n            ghost: \"bg-transparent\",\n            danger: \"bg-dangerBg border border-dangerBorder\"\n        },\n        size: {\n            lg: \"h-[52px] rounded-md px-lg\",\n            md: \"h-[44px] rounded-md px-lg\",\n            sm: \"h-[36px] rounded-sm px-s12\"\n        },\n        disabled: { true: \"\", false: \"\" }\n    },\n    compoundVariants: [{ variant: \"primary\", disabled: true, class: \"bg-surface3\" }]\n});\n\nconst buttonText = cva(\"\", {\n    variants: {\n        variant: {\n            primary: \"text-onTint\",\n            tinted: \"text-tintSoft\",\n            secondary: \"text-text\",\n            ghost: \"text-tintSoft\",\n            danger: \"text-danger\"\n        },\n        disabled: { true: \"\", false: \"\" }\n    },\n    compoundVariants: [{ variant: \"primary\", disabled: true, class: \"text-textFaint\" }]\n});\n\n// Spinner/Icon take a resolved colour, not a className (react-native-svg has\n// no class-based styling here) — kept alongside the two className maps above.\nfunction textColorFor(C: ReturnType<typeof useTheme>[\"C\"], variant: ButtonVariant, off: boolean) {\n    if (variant === \"primary\") {\n        return off ? C.textFaint : C.onTint;\n    }\n    return { tinted: C.tintSoft, secondary: C.text, ghost: C.tintSoft, danger: C.danger }[variant];\n}\n\nexport function Button({\n    label,\n    onPress,\n    variant = \"primary\",\n    disabled,\n    busy,\n    icon,\n    size = \"lg\",\n    style\n}: {\n    label: string;\n    onPress: () => void;\n    variant?: ButtonVariant;\n    disabled?: boolean;\n    busy?: boolean;\n    icon?: IconName;\n    size?: ButtonSize;\n    style?: StyleProp<ViewStyle>;\n}) {\n    const { C, GRAD, T } = useTheme();\n    const off = Boolean(disabled || busy);\n    const textColor = textColorFor(C, variant, off);\n    const showGradient = variant === \"primary\" && !off;\n\n    return (\n        <AppPressable onPress={onPress} disabled={off} scaleTo={0.98} style={style}>\n            <View\n                className={buttonBox({ variant, size, disabled: off })}\n                style={[\n                    { borderCurve: \"continuous\" },\n                    showGradient\n                        ? { experimental_backgroundImage: GRAD, boxShadow: \"0 6px 20px \" + C.tintGlow }\n                        : null\n                ]}\n            >\n                {busy ? <Spinner size={16} color={textColor} /> : icon ? <Icon name={icon} size={18} strokeWidth={2} color={textColor} /> : null}\n                <Text\n                    className={buttonText({ variant, disabled: off })}\n                    style={[T.bodyStrong, { fontSize: size === \"lg\" ? 16 : size === \"md\" ? 15 : 13 }]}\n                >\n                    {label}\n                </Text>\n            </View>\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

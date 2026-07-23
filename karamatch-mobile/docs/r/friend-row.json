@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "friend-row",
+  "type": "registry:component",
+  "title": "FriendRow",
+  "registryDependencies": [
+    "@karamatch/button",
+    "@karamatch/components-primitives-avatar",
+    "@karamatch/list-row",
+    "@karamatch/match-badge",
+    "@karamatch/star-icon",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/FriendRow.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/FriendRow.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { StarIcon } from \"../../icons/StarIcon\";\nimport type { MatchedUser } from \"../../types\";\nimport { Avatar } from \"../primitives/Avatar\";\nimport { Button } from \"../primitives/Button\";\nimport { ListRow } from \"../primitives/ListRow\";\nimport { MatchBadge } from \"../primitives/MatchBadge\";\n\n// Ported from karamatch-web/src/screens/tabs/FriendsTab.tsx's two `ListRow`\n// usages: the friend list (chevron + singer rating) and the search-results\n// list (an \"Add\" button instead). Both are the same row shape over a\n// `MatchedUser`, so one composite with a `variant` covers both.\nexport function FriendRow({\n    person,\n    variant,\n    onPress,\n    onAdd,\n    last\n}: {\n    person: MatchedUser;\n    variant: \"friend\" | \"suggestion\";\n    onPress?: () => void;\n    /** variant=\"suggestion\" */\n    onAdd?: () => void;\n    last?: boolean;\n}) {\n    const { C, S, T } = useTheme();\n\n    return (\n        <ListRow\n            onPress={onPress}\n            last={last}\n            leading={<Avatar name={person.name} photoUrl={person.photoUrl} seed={person.id} size={variant === \"friend\" ? 44 : 40} />}\n            title={person.name}\n            subtitle={variant === \"friend\" ? \"@\" + person.username + \" · \" + person.eventsCount + \" nights\" : \"@\" + person.username}\n            chevron={variant === \"friend\"}\n            trailing={\n                <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: S.sm }}>\n                    <MatchBadge pct={person.matchPct} />\n                    {variant === \"friend\" ? (\n                        <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: 3 }}>\n                            <StarIcon size={12} color={C.gold} />\n                            <Text style={[T.captionStrong, { color: C.gold }]}>{person.singerRating.toFixed(1)}</Text>\n                        </View>\n                    ) : (\n                        <Button label=\"Add\" icon=\"userPlus\" variant=\"tinted\" size=\"sm\" onPress={() => onAdd?.()} />\n                    )}\n                </View>\n            }\n        />\n    );\n}\n"
+    }
+  ]
+}

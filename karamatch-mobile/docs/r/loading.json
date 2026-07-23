@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "loading",
+  "type": "registry:ui",
+  "title": "Loading",
+  "registryDependencies": [
+    "@karamatch/spinner",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Loading.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Loading.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Spinner } from \"./Spinner\";\n\n// Ported from karamatch-web/src/ui.tsx's `Loading` — centred filler while a\n// screen's first fetch is in flight.\nexport function Loading({ label }: { label?: string }) {\n    const { C, S, S2, T } = useTheme();\n    return (\n        <View style={{ flex: 1, alignItems: \"center\", justifyContent: \"center\", gap: S2.s12, padding: S.xl }}>\n            <Spinner size={28} />\n            {label ? <Text style={[T.caption, { color: C.textMuted, textAlign: \"center\" }]}>{label}</Text> : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

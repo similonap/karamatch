@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "bottom-bar",
+  "type": "registry:component",
+  "title": "BottomBar",
+  "dependencies": [
+    "react-native-safe-area-context"
+  ],
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/scaffolding/BottomBar.tsx",
+      "type": "registry:component",
+      "target": "src/components/scaffolding/BottomBar.tsx",
+      "content": "import { View } from \"react-native\";\nimport { useSafeAreaInsets } from \"react-native-safe-area-context\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `BottomBar` — a bottom-docked\n// action area, a primary button pinned above the safe inset. Uses the\n// device's real bottom inset instead of the web version's `LAYOUT.safeBottom`\n// constant.\nexport function BottomBar({ children }: { children: React.ReactNode }) {\n    const { C, LAYOUT, S } = useTheme();\n    const insets = useSafeAreaInsets();\n\n    return (\n        <View\n            style={{\n                paddingHorizontal: LAYOUT.gutter,\n                paddingTop: S.md,\n                paddingBottom: insets.bottom + S.sm,\n                borderTopWidth: 1,\n                borderTopColor: C.border,\n                backgroundColor: C.surface,\n                gap: S.sm\n            }}\n        >\n            {children}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

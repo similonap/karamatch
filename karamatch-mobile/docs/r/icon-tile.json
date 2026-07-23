@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "icon-tile",
+  "type": "registry:ui",
+  "title": "IconTile",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/icons-types",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/IconTile.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/IconTile.tsx",
+      "content": "import { Text } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { IconName } from \"../../icons/types\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/screens/Profile.tsx's inline theme-picker\n// tile — an icon-over-label option, tinted when selected. Generic enough for\n// any small icon+label choice; the web only ever used it for Dark/Light.\nexport function IconTile({\n    icon,\n    label,\n    selected,\n    onPress\n}: {\n    icon: IconName;\n    label: string;\n    selected: boolean;\n    onPress: () => void;\n}) {\n    const { C, FONT, R, T } = useTheme();\n\n    return (\n        <AppPressable\n            onPress={onPress}\n            scaleTo={0.97}\n            style={{\n                flex: 1,\n                height: 62,\n                borderRadius: R.md,\n                borderCurve: \"continuous\",\n                borderWidth: 1,\n                borderColor: selected ? C.tintBorder : C.border,\n                backgroundColor: selected ? C.tintBg : C.surface1,\n                alignItems: \"center\",\n                justifyContent: \"center\",\n                gap: 4\n            }}\n        >\n            <Icon name={icon} size={20} color={selected ? C.tintSoft : C.textDim} />\n            <Text style={[T.footnote, { fontFamily: FONT.bodyBold, color: selected ? C.tintSoft : C.textDim }]}>{label}</Text>\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

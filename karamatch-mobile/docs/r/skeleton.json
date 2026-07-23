@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "skeleton",
+  "type": "registry:ui",
+  "title": "Skeleton",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Skeleton.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Skeleton.tsx",
+      "content": "import { useEffect, useRef } from \"react\";\nimport { Animated, Easing, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `Skeleton` — placeholder blocks\n// that hold a list's shape while it loads. The web version pulsed opacity\n// with a staggered CSS animation; RN loops the same pulse per block with\n// `Animated`, delayed by the same 120ms step.\nfunction SkeletonBlock({ height, radius, delay, color }: { height: number; radius: number; delay: number; color: string }) {\n    const opacity = useRef(new Animated.Value(0.5)).current;\n\n    useEffect(() => {\n        const loop = Animated.loop(\n            Animated.sequence([\n                Animated.delay(delay),\n                Animated.timing(opacity, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),\n                Animated.timing(opacity, { toValue: 0.5, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true })\n            ])\n        );\n        loop.start();\n        return () => loop.stop();\n    }, [delay, opacity]);\n\n    return (\n        <Animated.View\n            style={{ height, borderRadius: radius, borderCurve: \"continuous\", backgroundColor: color, opacity }}\n        />\n    );\n}\n\n// Renders as a Fragment, like the web version, so it drops straight into a\n// parent that lays its children out with `gap` (e.g. Screen's ScrollView).\nexport function Skeleton({ height = 76, radius, count = 3 }: { height?: number; radius?: number; count?: number }) {\n    const { C, R } = useTheme();\n    return (\n        <>\n            {Array.from({ length: count }, (_, index) => (\n                <SkeletonBlock key={index} height={height} radius={radius ?? R.lg} delay={index * 120} color={C.skeleton} />\n            ))}\n        </>\n    );\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "removable-chip",
+  "type": "registry:ui",
+  "title": "RemovableChip",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/RemovableChip.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/RemovableChip.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/screens/Profile.tsx's inline \"picked song\"\n// chip — a fully tappable pill (not just its close icon) that removes the\n// item, used for favourites already added before they're searchable again.\nexport function RemovableChip({ label, onRemove }: { label: string; onRemove: () => void }) {\n    const { C, R, T } = useTheme();\n\n    return (\n        <AppPressable onPress={onRemove} accessibilityLabel={\"Remove \" + label} scaleTo={0.95}>\n            <View\n                style={{\n                    flexDirection: \"row\",\n                    alignItems: \"center\",\n                    gap: 6,\n                    backgroundColor: C.tintBg,\n                    borderWidth: 1,\n                    borderColor: C.tintBorder,\n                    borderRadius: R.full,\n                    paddingVertical: 5,\n                    paddingLeft: 11,\n                    paddingRight: 8\n                }}\n            >\n                <Text style={[T.footnote, { fontSize: 12, color: C.tintSoft }]} numberOfLines={1}>\n                    {label}\n                </Text>\n                <Icon name=\"close\" size={13} strokeWidth={2.4} color={C.tintSoft} />\n            </View>\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

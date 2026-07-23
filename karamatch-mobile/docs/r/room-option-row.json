@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "room-option-row",
+  "type": "registry:component",
+  "title": "RoomOptionRow",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/format",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/RoomOptionRow.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/RoomOptionRow.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { money } from \"../../utils/format\";\nimport type { Room } from \"../../types\";\nimport { AppPressable } from \"../primitives/AppPressable\";\n\n// Ported from karamatch-web/src/screens/VenueDetail.tsx's inline room-picker\n// row — name and seat count on the left, price/hr on the right, tinted when\n// selected.\nexport function RoomOptionRow({ room, selected, onPress }: { room: Room; selected: boolean; onPress: () => void }) {\n    const { C, R, S, T } = useTheme();\n\n    return (\n        <AppPressable\n            onPress={onPress}\n            scaleTo={0.99}\n            opacityTo={0.8}\n            style={{\n                flexDirection: \"row\",\n                alignItems: \"center\",\n                justifyContent: \"space-between\",\n                gap: S.sm,\n                minHeight: 58,\n                paddingHorizontal: S.md,\n                borderRadius: R.md,\n                borderCurve: \"continuous\",\n                borderWidth: 1,\n                borderColor: selected ? C.tintBorder : C.border,\n                backgroundColor: selected ? C.tintBg : C.surface1\n            }}\n        >\n            <View style={{ minWidth: 0 }}>\n                <Text style={[T.bodyStrong, { color: C.text }]}>{room.name}</Text>\n                <Text style={[T.footnote, { color: C.textMuted }]}>{room.seats} seats</Text>\n            </View>\n            <Text style={[T.captionStrong, { color: C.cyan, flexShrink: 0 }]}>{money(room.pricePerHour)}/hr</Text>\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

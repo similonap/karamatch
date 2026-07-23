@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "option-pill",
+  "type": "registry:ui",
+  "title": "OptionPill",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/OptionPill.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/OptionPill.tsx",
+      "content": "import { Text } from \"react-native\";\nimport type { ReactNode } from \"react\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `OptionPill` — a selectable option\n// pill, e.g. a day, a time, a room.\nexport function OptionPill({\n    label,\n    sub,\n    selected,\n    onPress,\n    disabled\n}: {\n    label: ReactNode;\n    sub?: ReactNode;\n    selected: boolean;\n    onPress: () => void;\n    disabled?: boolean;\n}) {\n    const { C, LAYOUT, R, T } = useTheme();\n\n    return (\n        <AppPressable\n            onPress={onPress}\n            disabled={disabled}\n            scaleTo={0.96}\n            style={{\n                minHeight: LAYOUT.touch,\n                paddingVertical: 8,\n                paddingHorizontal: 14,\n                borderRadius: R.md,\n                borderCurve: \"continuous\",\n                borderWidth: 1,\n                borderColor: selected ? C.tintBorder : C.border,\n                backgroundColor: selected ? C.tintBg : C.surface2,\n                alignItems: \"center\",\n                justifyContent: \"center\",\n                gap: 1\n            }}\n        >\n            <Text style={[T.captionStrong, { color: selected ? C.tintSoft : C.textDim }]}>{label}</Text>\n            {sub ? (\n                <Text style={[T.footnote, { fontSize: 10, opacity: 0.8, color: selected ? C.tintSoft : C.textDim }]}>\n                    {sub}\n                </Text>\n            ) : null}\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "venue-location-card",
+  "type": "registry:component",
+  "title": "VenueLocationCard",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/card",
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/VenueLocationCard.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/VenueLocationCard.tsx",
+      "content": "import { Linking, Platform, Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport { AppPressable } from \"../primitives/AppPressable\";\nimport { Card } from \"../primitives/Card\";\n\n// Replaces karamatch-web/src/ui.tsx's `VenueMap` (a read-only Leaflet\n// embed). A live map needs a dev-client/prebuild — out of scope for a shelf\n// that has to run in plain Expo Go — so this is a static placeholder with\n// the same footprint (rounded panel, pin, attribution-height caption) that\n// hands off to the device's own Maps app instead of embedding one.\nexport function VenueLocationCard({\n    name,\n    lat,\n    lng,\n    height = 132\n}: {\n    name: string;\n    lat: number;\n    lng: number;\n    height?: number;\n}) {\n    const { C, R, S, T } = useTheme();\n\n    const openInMaps = () => {\n        const label = encodeURIComponent(name);\n        const url = Platform.select({\n            ios: \"maps:0,0?q=\" + label + \"@\" + lat + \",\" + lng,\n            android: \"geo:\" + lat + \",\" + lng + \"?q=\" + lat + \",\" + lng + \"(\" + label + \")\",\n            default: \"https://maps.google.com/?q=\" + lat + \",\" + lng\n        });\n        Linking.openURL(url).catch(() => {});\n    };\n\n    return (\n        <AppPressable onPress={openInMaps} scaleTo={0.99} opacityTo={0.9}>\n            <Card padded={false}>\n                <View\n                    style={{\n                        height,\n                        backgroundColor: C.surface3,\n                        alignItems: \"center\",\n                        justifyContent: \"center\",\n                        gap: 6\n                    }}\n                >\n                    <View\n                        style={{\n                            width: 34,\n                            height: 34,\n                            borderRadius: 17,\n                            backgroundColor: C.tintBg,\n                            borderWidth: 1,\n                            borderColor: C.tintBorder,\n                            alignItems: \"center\",\n                            justifyContent: \"center\"\n                        }}\n                    >\n                        <Icon name=\"pin\" size={18} color={C.tintSoft} />\n                    </View>\n                    <Text style={[T.footnote, { color: C.textFaint }]}>\n                        {lat.toFixed(4)}, {lng.toFixed(4)}\n                    </Text>\n                </View>\n                <View style={{ flexDirection: \"row\", alignItems: \"center\", justifyContent: \"space-between\", padding: S.sm, borderTopWidth: 1, borderTopColor: C.border }}>\n                    <Text style={[T.captionStrong, { color: C.text, flexShrink: 1 }]} numberOfLines={1}>\n                        {name}\n                    </Text>\n                    <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: 3 }}>\n                        <Text style={[T.captionStrong, { color: C.tintSoft }]}>Open in Maps</Text>\n                        <Icon name=\"chevronRight\" size={14} strokeWidth={2.2} color={C.tintSoft} />\n                    </View>\n                </View>\n            </Card>\n        </AppPressable>\n    );\n}\n"
+    }
+  ]
+}

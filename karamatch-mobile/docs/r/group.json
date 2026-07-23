@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "group",
+  "type": "registry:ui",
+  "title": "Group",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Group.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Group.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `Group` — a grouped-list container:\n// rows share one rounded surface, split by hairlines drawn by `ListRow`.\nexport function Group({ children, title }: { children: React.ReactNode; title?: string }) {\n    const { C, R, S, SHADOW, T } = useTheme();\n    return (\n        <View style={{ gap: S.sm }}>\n            {title ? <Text style={[T.sectionHeader, { color: C.textMuted, paddingLeft: S.xs }]}>{title}</Text> : null}\n            <View\n                style={{\n                    backgroundColor: C.surface1,\n                    borderWidth: 1,\n                    borderColor: C.border,\n                    borderRadius: R.lg,\n                    borderCurve: \"continuous\",\n                    overflow: \"hidden\",\n                    boxShadow: SHADOW.e1\n                }}\n            >\n                {children}\n            </View>\n        </View>\n    );\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "divider",
+  "type": "registry:ui",
+  "title": "Divider",
+  "files": [
+    {
+      "path": "src/components/primitives/Divider.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Divider.tsx",
+      "content": "import { View } from \"react-native\";\n\n// Ported from karamatch-web/src/ui.tsx's `Divider`.\nexport function Divider() {\n    return <View className=\"h-px bg-border\" />;\n}\n"
+    }
+  ]
+}

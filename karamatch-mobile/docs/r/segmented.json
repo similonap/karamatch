@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "segmented",
+  "type": "registry:ui",
+  "title": "Segmented",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Segmented.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Segmented.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `Segmented` — an iOS/Material-\n// neutral segmented control, for switching a pane within a screen.\nexport function Segmented<K extends string>({\n    items,\n    value,\n    onChange\n}: {\n    items: { key: K; label: string; dot?: boolean }[];\n    value: K;\n    onChange: (key: K) => void;\n}) {\n    const { C, R, T } = useTheme();\n\n    return (\n        <View\n            style={{\n                flexDirection: \"row\",\n                backgroundColor: C.surface2,\n                borderWidth: 1,\n                borderColor: C.border,\n                borderRadius: R.md,\n                borderCurve: \"continuous\",\n                padding: 3,\n                gap: 2\n            }}\n        >\n            {items.map(item => {\n                const on = item.key === value;\n                return (\n                    <AppPressable\n                        key={item.key}\n                        onPress={() => onChange(item.key)}\n                        scaleTo={1}\n                        opacityTo={0.8}\n                        style={{\n                            flex: 1,\n                            height: 34,\n                            borderRadius: R.sm,\n                            borderCurve: \"continuous\",\n                            flexDirection: \"row\",\n                            alignItems: \"center\",\n                            justifyContent: \"center\",\n                            gap: 6,\n                            backgroundColor: on ? C.surfacePress : \"transparent\"\n                        }}\n                    >\n                        <Text style={[on ? T.captionStrong : T.caption, { color: on ? C.text : C.textMuted }]}>\n                            {item.label}\n                        </Text>\n                        {item.dot ? (\n                            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.tint }} />\n                        ) : null}\n                    </AppPressable>\n                );\n            })}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

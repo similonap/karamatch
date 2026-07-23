@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "stepper",
+  "type": "registry:ui",
+  "title": "Stepper",
+  "registryDependencies": [
+    "@karamatch/app-pressable",
+    "@karamatch/icon",
+    "@karamatch/icons-types",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Stepper.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Stepper.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { IconName } from \"../../icons/types\";\nimport { AppPressable } from \"./AppPressable\";\n\n// Ported from karamatch-web/src/ui.tsx's `Stepper` — a -/+ numeric stepper\n// with full-size touch targets.\nexport function Stepper({\n    value,\n    min,\n    max,\n    onChange,\n    suffix\n}: {\n    value: number;\n    min: number;\n    max: number;\n    onChange: (value: number) => void;\n    suffix?: string;\n}) {\n    const { C, FONT, LAYOUT, R, S2, T } = useTheme();\n\n    const step = (delta: number) => onChange(Math.min(max, Math.max(min, value + delta)));\n\n    const control = (label: string, icon: IconName, delta: number, off: boolean) => (\n        <AppPressable\n            onPress={() => step(delta)}\n            disabled={off}\n            accessibilityLabel={label}\n            scaleTo={0.9}\n            style={{\n                width: LAYOUT.touch,\n                height: LAYOUT.touch,\n                borderRadius: R.md,\n                borderCurve: \"continuous\",\n                borderWidth: 1,\n                borderColor: C.border,\n                backgroundColor: C.surface2,\n                alignItems: \"center\",\n                justifyContent: \"center\"\n            }}\n        >\n            <Icon name={icon} size={18} strokeWidth={2.4} color={C.text} />\n        </AppPressable>\n    );\n\n    return (\n        <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: S2.s12 }}>\n            {control(\"Decrease\", \"minus\", -1, value <= min)}\n            <View style={{ flexDirection: \"row\", alignItems: \"baseline\", gap: 4, minWidth: 52, justifyContent: \"center\" }}>\n                <Text style={{ fontFamily: FONT.displayBold, fontSize: 20, color: C.text }}>{value}</Text>\n                {suffix ? <Text style={[T.footnote, { color: C.textMuted }]}>{suffix}</Text> : null}\n            </View>\n            {control(\"Increase\", \"plus\", 1, value >= max)}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "empty-state",
+  "type": "registry:ui",
+  "title": "EmptyState",
+  "registryDependencies": [
+    "@karamatch/icon",
+    "@karamatch/icons-types",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/EmptyState.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/EmptyState.tsx",
+      "content": "import { Text, View } from \"react-native\";\nimport type { ReactNode } from \"react\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\nimport type { IconName } from \"../../icons/types\";\n\n// Ported from karamatch-web/src/ui.tsx's `EmptyState` — an icon, a line, and\n// ideally a way out.\nexport function EmptyState({\n    icon = \"info\",\n    title,\n    body,\n    action\n}: {\n    icon?: IconName;\n    title: string;\n    body?: string;\n    action?: ReactNode;\n}) {\n    const { C, R, S, T } = useTheme();\n    return (\n        <View style={{ alignItems: \"center\", justifyContent: \"center\", gap: S.sm, paddingVertical: S.xl, paddingHorizontal: S.lg }}>\n            <View\n                style={{\n                    width: 52,\n                    height: 52,\n                    borderRadius: R.lg,\n                    borderCurve: \"continuous\",\n                    backgroundColor: C.surface2,\n                    borderWidth: 1,\n                    borderColor: C.border,\n                    alignItems: \"center\",\n                    justifyContent: \"center\",\n                    marginBottom: S.xs\n                }}\n            >\n                <Icon name={icon} size={24} color={C.textFaint} />\n            </View>\n            <Text style={[T.bodyStrong, { color: C.text, textAlign: \"center\" }]}>{title}</Text>\n            {body ? <Text style={[T.caption, { color: C.textMuted, textAlign: \"center\", maxWidth: 250 }]}>{body}</Text> : null}\n            {action ? <View style={{ marginTop: S.sm }}>{action}</View> : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

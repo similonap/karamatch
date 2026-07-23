@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "rating",
+  "type": "registry:ui",
+  "title": "Rating",
+  "registryDependencies": [
+    "@karamatch/star-icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/Rating.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/Rating.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { StarIcon } from \"../../icons/StarIcon\";\n\n// Ported from karamatch-web/src/ui.tsx's `Rating` — a single star + number.\nexport function Rating({ value, size = 13, showValue = true }: { value: number; size?: number; showValue?: boolean }) {\n    const { C, T } = useTheme();\n    return (\n        <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: 4 }}>\n            <StarIcon size={size} color={C.gold} />\n            {showValue ? <Text style={[T.footnote, { fontSize: 12, color: C.gold }]}>{value.toFixed(1)}</Text> : null}\n        </View>\n    );\n}\n"
+    }
+  ]
+}

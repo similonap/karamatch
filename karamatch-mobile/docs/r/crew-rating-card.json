@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "crew-rating-card",
+  "type": "registry:component",
+  "title": "CrewRatingCard",
+  "registryDependencies": [
+    "@karamatch/card",
+    "@karamatch/components-primitives-avatar",
+    "@karamatch/match-badge",
+    "@karamatch/star-input",
+    "@karamatch/text-field",
+    "@karamatch/theme-provider",
+    "@karamatch/types"
+  ],
+  "files": [
+    {
+      "path": "src/components/domain/CrewRatingCard.tsx",
+      "type": "registry:component",
+      "target": "src/components/domain/CrewRatingCard.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport type { CrewMember } from \"../../types\";\nimport { Avatar } from \"../primitives/Avatar\";\nimport { Card } from \"../primitives/Card\";\nimport { MatchBadge } from \"../primitives/MatchBadge\";\nimport { StarInput } from \"../primitives/StarInput\";\nimport { TextField } from \"../primitives/TextField\";\n\nconst STAR_WORDS = [\"\", \"Rough night\", \"Off-key\", \"Solid\", \"Great voice\", \"Absolute star\"];\n\n// Ported from karamatch-web/src/screens/Rate.tsx's inline per-crew-member\n// card — star the person, and only once they have a star does the optional\n// review box appear, so an unrated crew doesn't read as a wall of textareas.\nexport function CrewRatingCard({\n    member,\n    stars,\n    text,\n    onStarsChange,\n    onTextChange\n}: {\n    member: CrewMember;\n    stars: number;\n    text: string;\n    onStarsChange: (stars: number) => void;\n    onTextChange: (text: string) => void;\n}) {\n    const { C, S, S2, T } = useTheme();\n\n    return (\n        <Card highlight={stars > 0} style={{ gap: S2.s12 }}>\n            <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: S2.s12 }}>\n                <Avatar name={member.name} photoUrl={member.photoUrl} seed={member.id} size={42} />\n                <View style={{ flex: 1, minWidth: 0 }}>\n                    <Text style={[T.bodyStrong, { color: C.text }]}>{member.name}</Text>\n                    <Text style={[T.caption, { color: C.textMuted }]}>@{member.username}</Text>\n                </View>\n                <MatchBadge pct={member.matchPct} />\n            </View>\n\n            <View style={{ flexDirection: \"row\", alignItems: \"center\", gap: S.sm }}>\n                <StarInput value={stars} onChange={onStarsChange} />\n                {stars > 0 ? <Text style={[T.caption, { color: C.gold }]}>{STAR_WORDS[stars]}</Text> : null}\n            </View>\n\n            {stars > 0 ? (\n                <TextField value={text} onChange={onTextChange} placeholder=\"Add a few words (optional)\" multiline maxLength={280} />\n            ) : null}\n        </Card>\n    );\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "match-badge",
+  "type": "registry:ui",
+  "title": "MatchBadge",
+  "registryDependencies": [
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/MatchBadge.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/MatchBadge.tsx",
+      "content": "import { Text, View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\n\n// Ported from karamatch-web/src/ui.tsx's `MatchBadge` — taste compatibility\n// as a compact pill, for singers listed in a row. Renders nothing when pct\n// is null (that singer is you).\nexport function MatchBadge({ pct }: { pct: number | null | undefined }) {\n    const { C, R, T } = useTheme();\n    if (pct === null || pct === undefined) {\n        return null;\n    }\n    const strong = pct >= 60;\n\n    return (\n        <View\n            style={{\n                borderRadius: R.sm,\n                borderCurve: \"continuous\",\n                paddingHorizontal: 8,\n                paddingVertical: 2,\n                borderWidth: 1,\n                borderColor: strong ? C.tintBorder : C.border,\n                backgroundColor: strong ? C.tintBg : C.surface2\n            }}\n        >\n            <Text style={[T.footnote, { fontSize: 11, color: strong ? C.tintSoft : C.textMuted }]}>{pct}%</Text>\n        </View>\n    );\n}\n"
+    }
+  ]
+}

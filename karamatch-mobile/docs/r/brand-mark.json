@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "brand-mark",
+  "type": "registry:ui",
+  "title": "BrandMark",
+  "registryDependencies": [
+    "@karamatch/icon",
+    "@karamatch/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "src/components/primitives/BrandMark.tsx",
+      "type": "registry:ui",
+      "target": "src/components/primitives/BrandMark.tsx",
+      "content": "import { View } from \"react-native\";\n\nimport { useTheme } from \"../../theme/ThemeProvider\";\nimport { Icon } from \"../../icons/Icon\";\n\n// Ported from karamatch-web/src/ui.tsx's `BrandMark` — a brand mark tile,\n// the app icon essentially.\nexport function BrandMark({ size = 72, radius }: { size?: number; radius?: number }) {\n    const { C, GRAD_TILE } = useTheme();\n    return (\n        <View\n            style={{\n                width: size,\n                height: size,\n                borderRadius: radius ?? Math.round(size * 0.28),\n                borderCurve: \"continuous\",\n                experimental_backgroundImage: GRAD_TILE,\n                alignItems: \"center\",\n                justifyContent: \"center\",\n                boxShadow: \"0 10px 40px \" + C.tintGlow\n            }}\n        >\n            <Icon name=\"mic\" size={Math.round(size * 0.5)} color=\"#fff\" solid />\n        </View>\n    );\n}\n"
+    }
+  ]
+}

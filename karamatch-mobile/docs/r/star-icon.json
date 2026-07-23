@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "star-icon",
+  "type": "registry:ui",
+  "title": "StarIcon",
+  "dependencies": [
+    "react-native-svg"
+  ],
+  "files": [
+    {
+      "path": "src/icons/StarIcon.tsx",
+      "type": "registry:ui",
+      "target": "src/icons/StarIcon.tsx",
+      "content": "import Svg, { Path } from \"react-native-svg\";\n\nconst STAR_PATH = \"M12 3.6l2.6 5.3 5.8.9-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.8l5.8-.9Z\";\n\n/** A filled star, for ratings — the outline form reads as \"not rated\". */\nexport function StarIcon({ size = 14, color, filled = true }: { size?: number; color: string; filled?: boolean }) {\n    return (\n        <Svg width={size} height={size} viewBox=\"0 0 24 24\">\n            <Path\n                d={STAR_PATH}\n                fill={filled ? color : \"none\"}\n                stroke={color}\n                strokeWidth={filled ? 0 : 1.75}\n                strokeLinejoin=\"round\"\n            />\n        </Svg>\n    );\n}\n"
+    }
+  ]
+}
